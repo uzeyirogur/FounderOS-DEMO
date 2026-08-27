@@ -11,6 +11,7 @@ import type {
   Metric,
   Person,
   Phase,
+  Project,
   RoadmapItem,
   LeadMagnet,
   SopTask,
@@ -507,6 +508,41 @@ const leadMagnets: LeadMagnet[] = [
     launchedAt: '2026-07-28',
     origin: 'seed',
     notes: 'Paused between cohorts. Reopen when the next intake is dated.',
+  },
+];
+
+// ── Project Registry — seeded starting point ─────────────────────────────────
+// Real projects Alex actually works, registered so agents have somewhere
+// legitimate to act. Both start read-only with no authorized agent: access
+// is granted explicitly from /projects, never implied by being listed here.
+const projects: Project[] = [
+  {
+    id: 'anka-tivaro',
+    name: 'ANKA+ / TIVARO',
+    kind: 'local',
+    pathOrUrl: 'C:/Users/HP/source/repos/ANKA+',
+    purpose:
+      'Athlete development platform for ANKA Spor Atasehir (working brand TIVARO). ASP.NET Core backend, ' +
+      'Vite admin web, Expo mobile.',
+    status: 'active',
+    permissionLevel: 'read_only',
+    authorizedAgentIds: [],
+    createdAt: '2026-08-27T00:00:00.000Z',
+    updatedAt: '2026-08-27T00:00:00.000Z',
+    origin: 'seed',
+  },
+  {
+    id: 'is-ilan-radar',
+    name: 'Is Ilan Radar',
+    kind: 'git',
+    pathOrUrl: 'https://github.com/example/is-ilan-radar.git',
+    purpose: 'Job-listing radar product Alex is building to sell. Placeholder remote until the real repo is registered.',
+    status: 'paused',
+    permissionLevel: 'read_only',
+    authorizedAgentIds: [],
+    createdAt: '2026-08-27T00:00:00.000Z',
+    updatedAt: '2026-08-27T00:00:00.000Z',
+    origin: 'seed',
   },
 ];
 
@@ -1636,6 +1672,8 @@ export function seedDatabase(db: FounderDb): void {
   db.people.deleteWhereIdNotIn(people.map((p) => p.id));
   for (const m of leadMagnets) db.leadMagnets.insert(m);
   db.leadMagnets.deleteWhereIdNotIn(leadMagnets.map((m) => m.id));
+  for (const pr of projects) db.projects.insert(pr);
+  db.projects.deleteWhereIdNotIn(projects.map((pr) => pr.id));
   for (const t of sopTasks) db.sopTasks.insert(t);
   db.sopTasks.deleteWhereIdNotIn(sopTasks.map((t) => t.id));
   for (const w of workflows) db.workflows.insert(w);

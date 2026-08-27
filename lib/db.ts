@@ -14,6 +14,7 @@ import {
   MetricSchema,
   PersonaSchema,
   PhaseSchema,
+  ProjectSchema,
   RoadmapItemSchema,
   SocialAccountSchema,
   SocialSnapshotSchema,
@@ -45,6 +46,7 @@ import {
   type Metric,
   type Persona,
   type Phase,
+  type Project,
   type RoadmapItem,
   type SocialAccount,
   type SocialPlatform,
@@ -316,6 +318,19 @@ CREATE TABLE IF NOT EXISTS skills (
   tools TEXT NOT NULL DEFAULT '[]',
   markdown TEXT NOT NULL DEFAULT '',
   ord INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  path_or_url TEXT NOT NULL,
+  purpose TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'active',
+  permission_level TEXT NOT NULL DEFAULT 'read_only',
+  authorized_agent_ids TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  origin TEXT NOT NULL DEFAULT 'seed'
 );
 `;
 
@@ -1001,6 +1016,77 @@ export function openDb(path: string) {
     },
   };
 
+  const projects = {
+    all(): Project[] {
+      return db
+        .prepare('SELECT * FROM projects ORDER BY updated_at DESC, name')
+        .all()
+        .map((r: any) =>
+          ProjectSchema.parse({
+            id: r.id,
+            name: r.name,
+            kind: r.kind,
+            pathOrUrl: r.path_or_url,
+            purpose: r.purpose,
+            status: r.status,
+            permissionLevel: r.permission_level,
+            authorizedAgentIds: JSON.parse(r.authorized_agent_ids),
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+            origin: r.origin ?? 'seed',
+          }),
+        );
+    },
+    insert(p: Project): void {
+      const parsed = ProjectSchema.parse(p);
+      db.prepare(
+        'INSERT OR REPLACE INTO projects (id, name, kind, path_or_url, purpose, status, permission_level, authorized_agent_ids, created_at, updated_at, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.name,
+        parsed.kind,
+        parsed.pathOrUrl,
+        parsed.purpose,
+        parsed.status,
+        parsed.permissionLevel,
+        JSON.stringify(parsed.authorizedAgentIds),
+        parsed.createdAt,
+        parsed.updatedAt,
+        parsed.origin,
+      );
+    },
+    byId(id: string): Project | null {
+      const r = db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as any;
+      if (!r) return null;
+      return ProjectSchema.parse({
+        id: r.id,
+        name: r.name,
+        kind: r.kind,
+        pathOrUrl: r.path_or_url,
+        purpose: r.purpose,
+        status: r.status,
+        permissionLevel: r.permission_level,
+        authorizedAgentIds: JSON.parse(r.authorized_agent_ids),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        origin: r.origin ?? 'seed',
+      });
+    },
+    /** Delete one row by id. Returns false when it was not there, so the API
+     *  can 404 instead of pretending. */
+    remove(id: string): boolean {
+      return db.prepare('DELETE FROM projects WHERE id = ?').run(id).changes > 0;
+    },
+    /** Prune retired SEED rows only — an operator- or agent-registered project
+     *  (origin: 'os') is never deleted by a re-seed. Same contract as leadMagnets. */
+    deleteWhereIdNotIn(ids: string[]): void {
+      const placeholders = ids.map(() => '?').join(', ');
+      db.prepare(
+        `DELETE FROM projects WHERE origin = 'seed' AND id NOT IN (${placeholders})`,
+      ).run(...ids);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1166,6 +1252,7 @@ export function openDb(path: string) {
     funnel,
     people,
     leadMagnets,
+    projects,
     sopTasks,
     workflows,
     skills,

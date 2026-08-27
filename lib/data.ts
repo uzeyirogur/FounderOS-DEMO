@@ -26,7 +26,8 @@ export function getDb(): FounderDb {
     instance.emailList.snapshots().length === 0 ||
     instance.social.dmSnapshots().length === 0 ||
     instance.social.dmMessages().length === 0 ||
-    instance.leadMagnets.all().length === 0
+    instance.leadMagnets.all().length === 0 ||
+    instance.projects.all().length === 0
   ) {
     seedDatabase(instance);
   }

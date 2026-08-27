@@ -415,6 +415,44 @@ export const LeadMagnetSchema = z.object({
 });
 export type LeadMagnet = z.infer<typeof LeadMagnetSchema>;
 
+// ── Project Registry — every project agents are allowed to touch ────────────
+// Dynamic by design: no project is hardcoded into agent logic. The operator
+// adds a row here (or an agent proposes one via Project Bootstrap) naming a
+// repo/folder, why it exists, and which agents may act on it at what
+// permission level. Claude Code / Coding Orchestrator and friends read this
+// table before touching any codebase.
+export const ProjectKindSchema = z.enum(['local', 'git']);
+export const ProjectStatusSchema = z.enum(['active', 'paused', 'archived']);
+// read_only: analysis/report only, no writes.
+// auto_safe_write: small safe changes (lint fixes, missing tests) may be
+//   committed locally without asking first; push/merge/deploy never happen.
+// full_with_approval: any change requires a plan the operator approves first.
+export const ProjectPermissionLevelSchema = z.enum(['read_only', 'auto_safe_write', 'full_with_approval']);
+
+export const ProjectSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  kind: ProjectKindSchema,
+  /** absolute local path (kind: local) or a git remote URL (kind: git). */
+  pathOrUrl: z.string().min(1),
+  purpose: z.string().default(''),
+  status: ProjectStatusSchema.default('active'),
+  permissionLevel: ProjectPermissionLevelSchema.default('read_only'),
+  /** RuntimeAgent ids allowed to act on this project; empty = no agent is
+   *  authorized yet (registering a project does not implicitly grant access). */
+  authorizedAgentIds: z.array(z.string().min(1)).default([]),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+  /** who made it: the seed file, or the operator adding one from the OS.
+   *  Seeding may only prune its own rows, so 'os' rows survive a re-seed
+   *  (same contract as LeadMagnetSchema.origin). */
+  origin: z.enum(['seed', 'os']).default('seed'),
+});
+export type ProjectKind = z.infer<typeof ProjectKindSchema>;
+export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
+export type ProjectPermissionLevel = z.infer<typeof ProjectPermissionLevelSchema>;
+export type Project = z.infer<typeof ProjectSchema>;
+
 export const SopTaskSchema = z.object({
   id: z.string().min(1),
   departmentId: z.string().min(1),

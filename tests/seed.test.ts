@@ -220,6 +220,18 @@ describe('seedDatabase', () => {
       db.phases.all();
     }).not.toThrow();
   });
+
+  test('seeds the Project Registry with real projects, read-only and unauthorized by default', () => {
+    db = openDb(':memory:');
+    seedDatabase(db);
+    const projects = db.projects.all();
+    expect(projects.length).toBeGreaterThanOrEqual(2);
+    for (const p of projects) {
+      expect(p.permissionLevel).toBe('read_only');
+      expect(p.authorizedAgentIds).toEqual([]);
+    }
+    expect(projects.map((p) => p.id)).toContain('anka-tivaro');
+  });
 });
 
 describe('roadmap grouping', () => {

@@ -22,6 +22,7 @@ import {
   BarChart3,
   LayoutGrid,
   Layers,
+  FolderGit2,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -55,6 +56,7 @@ export const NAV_INTELLIGENCE: NavItem[] = [
 
 export const NAV_SYSTEM: NavItem[] = [
   { href: '/integrations', label: 'Connections', icon: Plug },
+  { href: '/projects', label: 'Projects', icon: FolderGit2 },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/reference', label: 'Reference Model', icon: LayoutGrid },
