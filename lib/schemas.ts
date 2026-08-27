@@ -264,6 +264,9 @@ export const AgentCronSchema = z.object({
   description: z.string().min(1),
   enabled: z.boolean(),
   createdAt: z.string().min(1),
+  /** Set by the scheduler after firing; drives isDue()'s once-per-minute guard.
+   *  Null until the first tick actually runs this cron. */
+  lastRunAt: z.string().nullable().default(null),
 });
 
 export const SocialPlatformSchema = z.enum(['instagram', 'tiktok', 'twitter', 'youtube', 'linkedin']);
@@ -452,6 +455,27 @@ export type ProjectKind = z.infer<typeof ProjectKindSchema>;
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type ProjectPermissionLevel = z.infer<typeof ProjectPermissionLevelSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
+
+// ── Idea Lab — a transparent, deterministic scoring rubric ──────────────────
+// Every input is a 1..5 rating; scoreIdea() (lib/ideas.ts) is a plain weighted
+// sum over these fields — never an invented "AI opinion" number.
+export const IdeaStatusSchema = z.enum(['new', 'researching', 'scored', 'shipped', 'archived']);
+export const IdeaSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().default(''),
+  /** 1 = tiny/no market, 5 = huge market. */
+  marketSize: z.number().int().min(1).max(5),
+  /** 1 = huge effort to build, 5 = trivial to build — HIGHER is better (less work). */
+  effort: z.number().int().min(1).max(5),
+  /** 1 = off-strategy, 5 = directly compounds an existing project. */
+  strategicFit: z.number().int().min(1).max(5),
+  status: IdeaStatusSchema.default('new'),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
+export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
+export type Idea = z.infer<typeof IdeaSchema>;
 
 export const SopTaskSchema = z.object({
   id: z.string().min(1),

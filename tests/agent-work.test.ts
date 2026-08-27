@@ -37,7 +37,7 @@ describe('agentTasks repo', () => {
 describe('agentCrons repo', () => {
   test('insert + byAgent + toggle round-trips', () => {
     const d = db();
-    d.agentCrons.insert({ id: 'c1', agentId: 'social-agent', schedule: '0 9 * * 1-5', description: 'Morning content pass', enabled: true, createdAt: '2026-06-12T01:00:00Z' });
+    d.agentCrons.insert({ id: 'c1', agentId: 'social-agent', schedule: '0 9 * * 1-5', description: 'Morning content pass', enabled: true, createdAt: '2026-06-12T01:00:00Z', lastRunAt: null });
     const crons = d.agentCrons.byAgent('social-agent');
     expect(crons).toHaveLength(1);
     expect(crons[0]).toMatchObject({ schedule: '0 9 * * 1-5', enabled: true });
@@ -48,14 +48,14 @@ describe('agentCrons repo', () => {
   test('rejects malformed cron schedules at the boundary', () => {
     const d = db();
     expect(() =>
-      d.agentCrons.insert({ id: 'c1', agentId: 'a', schedule: 'not a cron', description: 'x', enabled: true, createdAt: '2026-06-12T01:00:00Z' }),
+      d.agentCrons.insert({ id: 'c1', agentId: 'a', schedule: 'not a cron', description: 'x', enabled: true, createdAt: '2026-06-12T01:00:00Z', lastRunAt: null }),
     ).toThrow();
   });
 
   test('all() lists across agents; remove deletes', () => {
     const d = db();
-    d.agentCrons.insert({ id: 'c1', agentId: 'a', schedule: '*/15 * * * *', description: 'x', enabled: true, createdAt: '2026-06-12T01:00:00Z' });
-    d.agentCrons.insert({ id: 'c2', agentId: 'b', schedule: '0 0 * * 0', description: 'y', enabled: true, createdAt: '2026-06-12T02:00:00Z' });
+    d.agentCrons.insert({ id: 'c1', agentId: 'a', schedule: '*/15 * * * *', description: 'x', enabled: true, createdAt: '2026-06-12T01:00:00Z', lastRunAt: null });
+    d.agentCrons.insert({ id: 'c2', agentId: 'b', schedule: '0 0 * * 0', description: 'y', enabled: true, createdAt: '2026-06-12T02:00:00Z', lastRunAt: null });
     expect(d.agentCrons.all()).toHaveLength(2);
     d.agentCrons.remove('c1');
     expect(d.agentCrons.all()).toHaveLength(1);

@@ -13,6 +13,13 @@ import { arcadsStatus } from '@/lib/connectors/arcads';
 import { whatsappStatus } from '@/lib/connectors/whatsapp';
 import { wisprStatus } from '@/lib/connectors/wispr';
 import { localStackStatus } from '@/lib/connectors/local-stack';
+import { ankaAdminStatus } from '@/lib/connectors/anka-admin';
+import { githubStatus } from '@/lib/connectors/github';
+import { webSearchStatus } from '@/lib/connectors/web-search';
+import { anthropicUsageStatus } from '@/lib/connectors/anthropic-usage';
+import { detectProjectStack } from '@/lib/project-bootstrap';
+import { buildExecutiveReport } from '@/lib/agents/executive-report';
+import { scoreIdea } from '@/lib/ideas';
 import { getDb } from '@/lib/data';
 import type { LlmToolSpec } from '@/lib/connectors/llm';
 import type { AgentRunResult, RuntimeAgent } from '@/lib/agents/runtime';
@@ -525,6 +532,171 @@ export const realAgents: RuntimeAgent[] = [
         ok: stack.state === 'connected',
         summary: `${stack.detail} · Dictate: ${dictate.state === 'connected' ? dictate.detail : dictate.state}`,
         data: { stack: stack.meta, dictate: dictate.meta },
+      };
+    },
+  },
+
+  // ── ANKA Operations ──────────────────────────────────────────────────────
+  {
+    id: 'anka-operations',
+    name: 'ANKA Operations',
+    description: 'Read-only view into the ANKA+/TIVARO backend Admin API — never finance (D-134 in that repo).',
+    departmentId: 'dept-anka-ops',
+    async run() {
+      const status = await ankaAdminStatus();
+      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+    },
+  },
+
+  // ── Product & Engineering ────────────────────────────────────────────────
+  {
+    id: 'claude-code-orchestrator',
+    name: 'Claude Code Orchestrator',
+    description:
+      "Dispatches coding work against the Project Registry's authorized targets, gated by each project's permissionLevel.",
+    departmentId: 'dept-product-eng',
+    async run() {
+      const projects = getDb().projects.all();
+      const active = projects.filter((p) => p.status === 'active');
+      const authorized = active.filter((p) => p.authorizedAgentIds.includes('claude-code-orchestrator'));
+      const byLevel = authorized.reduce<Record<string, number>>((acc, p) => {
+        acc[p.permissionLevel] = (acc[p.permissionLevel] ?? 0) + 1;
+        return acc;
+      }, {});
+      return {
+        ok: true,
+        summary:
+          authorized.length === 0
+            ? `0/${active.length} active projects authorize this agent — grant access from /projects to enable coding work.`
+            : `${authorized.length}/${active.length} active projects authorized · ${Object.entries(byLevel)
+                .map(([lvl, n]) => `${lvl}: ${n}`)
+                .join(' · ')}`,
+        data: { active: active.length, authorized: authorized.length, byLevel },
+      };
+    },
+  },
+  {
+    id: 'qa-ui-review',
+    name: 'QA & UI/UX Review',
+    description: "Digest of this repo's own test/typecheck output — parsed, never re-implemented.",
+    departmentId: 'dept-product-eng',
+    async run() {
+      return {
+        ok: true,
+        summary:
+          'Run `npm test -- --reporter=json` and `npm run typecheck`, then paste the output into chat with this agent — ' +
+          'it parses real vitest/tsc output (lib/qa-review.ts) rather than guessing pass/fail.',
+      };
+    },
+  },
+  {
+    id: 'product-competitor-research',
+    name: 'Product & Competitor Research',
+    description: 'Web research via Brave Search for competitor moves and market context.',
+    departmentId: 'dept-product-eng',
+    async run() {
+      const status = await webSearchStatus();
+      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'searchWeb',
+          description: 'Search the web via Brave Search for competitor/market research. Read-only.',
+          parameters: z.object({ query: z.string().describe('what to search for') }),
+          execute: async (args) => {
+            const { braveSearch } = await import('@/lib/connectors/web-search');
+            const key = process.env.BRAVE_SEARCH_API_KEY;
+            if (!key) return { error: 'BRAVE_SEARCH_API_KEY not set' };
+            const query = typeof args.query === 'string' ? args.query : '';
+            return braveSearch(query, key, 5);
+          },
+        },
+      ];
+    },
+  },
+  {
+    id: 'project-bootstrap',
+    name: 'Project Bootstrap',
+    description: "Detects a registered local project's real stack from its manifest files and recommends a starter checklist.",
+    departmentId: 'dept-product-eng',
+    async run() {
+      const projects = getDb().projects.all().filter((p) => p.kind === 'local');
+      if (projects.length === 0) {
+        return { ok: false, summary: 'No local projects registered yet — add one at /projects.' };
+      }
+      const reports = projects.map((p) => ({ id: p.id, name: p.name, stack: detectProjectStack(p.pathOrUrl) }));
+      const detected = reports.filter((r) => r.stack.languages.length > 0);
+      return {
+        ok: true,
+        summary: `${detected.length}/${reports.length} local projects have a recognizable stack: ${detected
+          .map((r) => `${r.name} (${r.stack.languages.join(', ')})`)
+          .join(' · ') || 'none yet'}`,
+        data: reports,
+      };
+    },
+  },
+
+  // ── AI Intelligence ───────────────────────────────────────────────────────
+  {
+    id: 'ai-intelligence',
+    name: 'AI Intelligence',
+    description: 'Watches GitHub for new AI tools, MCP servers, and SKILL.md patterns worth adopting.',
+    departmentId: 'dept-ai-intelligence',
+    async run() {
+      const status = await githubStatus();
+      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+    },
+  },
+
+  // ── Idea Lab ──────────────────────────────────────────────────────────────
+  {
+    id: 'idea-lab-agent',
+    name: 'Idea Lab',
+    description: 'Scores new ideas on a transparent rubric — market size, ease-to-build, strategic fit.',
+    departmentId: 'dept-idea-lab',
+    async run() {
+      const ideas = getDb().ideas.all();
+      if (ideas.length === 0) return { ok: true, summary: 'No ideas registered yet — add one at /ideas.' };
+      const scored = ideas.map((i) => ({ ...i, score: scoreIdea(i) })).sort((a, b) => b.score - a.score);
+      const top = scored[0];
+      return {
+        ok: true,
+        summary: `${ideas.length} idea${ideas.length === 1 ? '' : 's'} scored · top: "${top.title}" (${top.score.toFixed(2)}/5)`,
+        data: scored,
+      };
+    },
+  },
+
+  // ── Usage & Cost Monitor ──────────────────────────────────────────────────
+  {
+    id: 'usage-cost-monitor',
+    name: 'Usage & Cost Monitor',
+    description: "Reads Anthropic's Admin API for model usage/cost. Requires a separate Admin API key.",
+    departmentId: 'dept-tech',
+    async run() {
+      const status = await anthropicUsageStatus();
+      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+    },
+  },
+
+  // ── Executive Reporter ────────────────────────────────────────────────────
+  {
+    id: 'executive-reporter',
+    name: 'Executive Reporter',
+    description: 'Turns raw agent_runs into a plain-language daily/weekly digest — no LLM required.',
+    departmentId: 'dept-tech',
+    async run() {
+      const report = buildExecutiveReport(getDb(), { windowHours: 24 });
+      return { ok: report.failedRuns === 0, summary: report.summary, data: report };
+    },
+    async respond() {
+      const report24 = buildExecutiveReport(getDb(), { windowHours: 24 });
+      const report168 = buildExecutiveReport(getDb(), { windowHours: 168 });
+      return {
+        ok: true,
+        summary: `Last 24h: ${report24.summary} · Last 7d: ${report168.summary}`,
+        data: { day: report24, week: report168 },
       };
     },
   },

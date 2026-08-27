@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   Layers,
   FolderGit2,
+  Lightbulb,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -35,6 +36,7 @@ export const NAV_OPERATE: NavItem[] = [
   { href: '/social', label: 'Social', icon: Share2 },
   { href: '/content', label: 'Content', icon: Clapperboard },
   { href: '/finances', label: 'Finances', icon: Wallet },
+  { href: '/ideas', label: 'Idea Lab', icon: Lightbulb },
 ];
 
 // The agent workforce: the roster and the org chart that maps how they report.

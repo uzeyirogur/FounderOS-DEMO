@@ -36,7 +36,12 @@ const GRAY = {
   dark: '#525252',
 };
 
-// Alex's five operating pillars (2026-06-12 directive).
+// Alex's operating pillars. Six original pillars (2026-06-12 directive) plus
+// four added when the digital organization plan was approved: ANKA
+// Operations (the ANKA+/TIVARO real estate), Product & Engineering (coding /
+// QA / research), AI Intelligence (tooling scouting), and Idea Lab (scored
+// idea generation). Growth & Marketing / Social Content & Publishing already
+// live under Marketing/Growth; Communications and Clients were pre-existing.
 const departments: Department[] = [
   { id: 'dept-sales', name: 'Sales', slug: 'sales', tagline: 'Pipeline and deals.', color: GRAY.white, order: 1 },
   { id: 'dept-marketing-growth', name: 'Marketing/Growth', slug: 'marketing-growth', tagline: 'Publishing, content, attention.', color: GRAY.light, order: 2 },
@@ -44,6 +49,12 @@ const departments: Department[] = [
   { id: 'dept-finance', name: 'Finances', slug: 'finances', tagline: 'Every processor, one view.', color: GRAY.dim, order: 4 },
   { id: 'dept-comms', name: 'Communications', slug: 'communications', tagline: 'Gmail, WhatsApp, Slack → one feed.', color: GRAY.dark, order: 5 },
   { id: 'dept-clients', name: 'Clients', slug: 'clients', tagline: 'Every client, onboarded and served.', color: GRAY.light, order: 6 },
+  { id: 'dept-anka-ops', name: 'ANKA Operations', slug: 'anka-operations', tagline: 'ANKA+/TIVARO backend, read-only.', color: GRAY.mid, order: 7 },
+  { id: 'dept-product-eng', name: 'Product & Engineering', slug: 'product-engineering', tagline: 'Coding, QA/UI review, competitor research.', color: GRAY.dark, order: 8 },
+  { id: 'dept-ai-intelligence', name: 'AI Intelligence', slug: 'ai-intelligence', tagline: 'New AI tools, MCPs, skills, repos.', color: GRAY.light, order: 9 },
+  { id: 'dept-idea-lab', name: 'Idea Lab', slug: 'idea-lab', tagline: 'New ideas, scored transparently.', color: GRAY.dim, order: 10 },
+  { id: 'dept-usage-cost', name: 'Usage & Cost Monitor', slug: 'usage-cost', tagline: 'Claude/API usage and spend, tracked honestly.', color: GRAY.mid, order: 11 },
+  { id: 'dept-exec-reporting', name: 'Executive Reporter', slug: 'executive-reporting', tagline: 'Every agent, one daily/weekly digest.', color: GRAY.white, order: 12 },
 ];
 
 // The roster IS the runtime — every row here maps 1:1 to a RuntimeAgent in
@@ -452,6 +463,135 @@ const agents: Agent[] = [
     parentId: 'client-roster',
     instance: 'builtin',
   },
+  // ── ANKA Operations: read-only view into the ANKA+/TIVARO backend ───────
+  {
+    id: 'anka-operations',
+    departmentId: 'dept-anka-ops',
+    name: 'ANKA Operations',
+    role: 'ANKA+/TIVARO Read-Only Coordinator',
+    status: 'planned',
+    tier: 'lead',
+    description:
+      'Reads the ANKA+/TIVARO backend Admin API (pending applications, group/coach assignment, athlete counts) — never finance, ' +
+      'per that repo\'s D-134. Planned until its own dedicated read-only service account is provisioned on the ANKA+ side.',
+    model: 'anka-admin api (read-only)',
+    tools: ['anka-admin'],
+    parentId: null,
+    instance: 'builtin',
+  },
+  // ── Product & Engineering: coding, QA, and competitor research ───────────
+  {
+    id: 'claude-code-orchestrator',
+    departmentId: 'dept-product-eng',
+    name: 'Claude Code Orchestrator',
+    role: 'Coding Task Dispatch',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Reads the Project Registry for authorized targets and dispatches coding work at the project\'s permissionLevel: ' +
+      'read_only reports only, auto_safe_write may commit small fixes locally, full_with_approval always proposes a plan first. ' +
+      'Never pushes, merges, or deploys.',
+    model: 'claude code cli',
+    tools: ['claude-code', 'project-registry'],
+    parentId: null,
+    instance: 'builtin',
+  },
+  {
+    id: 'qa-ui-review',
+    departmentId: 'dept-product-eng',
+    name: 'QA & UI/UX Review',
+    role: 'Test & Typecheck Digest',
+    status: 'active',
+    tier: 'worker',
+    description: 'Parses this repo\'s own npm test (vitest JSON) and npm run typecheck (tsc) output into a plain pass/fail digest.',
+    model: 'vitest + tsc output parsing',
+    tools: ['vitest', 'tsc'],
+    parentId: 'claude-code-orchestrator',
+    instance: 'builtin',
+  },
+  {
+    id: 'product-competitor-research',
+    departmentId: 'dept-product-eng',
+    name: 'Product & Competitor Research',
+    role: 'Web Research',
+    status: 'planned',
+    tier: 'worker',
+    description: 'Searches the web (Brave Search API) for competitor moves and product research. Activates when BRAVE_SEARCH_API_KEY lands.',
+    model: 'brave search api',
+    tools: ['web-search'],
+    parentId: 'claude-code-orchestrator',
+    instance: 'builtin',
+  },
+  // ── AI Intelligence: new tools, MCPs, skills, repos ──────────────────────
+  {
+    id: 'ai-intelligence',
+    departmentId: 'dept-ai-intelligence',
+    name: 'AI Intelligence',
+    role: 'Tooling & Repo Scout',
+    status: 'planned',
+    tier: 'lead',
+    description: 'Watches GitHub for new AI tools, MCP servers, and SKILL.md patterns worth adopting. Activates when GITHUB_TOKEN lands.',
+    model: 'github api',
+    tools: ['github'],
+    parentId: null,
+    instance: 'builtin',
+  },
+  // ── Idea Lab: scored idea generation ──────────────────────────────────────
+  {
+    id: 'idea-lab-agent',
+    departmentId: 'dept-idea-lab',
+    name: 'Idea Lab',
+    role: 'Idea Registry & Scoring',
+    status: 'active',
+    tier: 'lead',
+    description: 'Scores new app/business ideas on a transparent rubric (market size, ease-to-build, strategic fit) — a plain weighted sum, never an opaque AI opinion.',
+    model: 'deterministic rubric',
+    tools: ['ideas-registry'],
+    parentId: null,
+    instance: 'builtin',
+  },
+  // ── Project Bootstrap: stack detection for registered projects ───────────
+  {
+    id: 'project-bootstrap',
+    departmentId: 'dept-product-eng',
+    name: 'Project Bootstrap',
+    role: 'Stack Detection & Checklist',
+    status: 'active',
+    tier: 'worker',
+    description: 'Reads a registered local project\'s real manifest files (package.json, .csproj, requirements.txt, ...) and recommends a stack summary and starter checklist. Never installs anything itself.',
+    model: 'filesystem inspection',
+    tools: ['project-registry'],
+    parentId: 'claude-code-orchestrator',
+    instance: 'builtin',
+  },
+  // ── Usage & Cost Monitor: Anthropic Admin API usage/cost ─────────────────
+  {
+    id: 'usage-cost-monitor',
+    departmentId: 'dept-usage-cost',
+    name: 'Usage & Cost Monitor',
+    role: 'Model Usage & Cost Tracking',
+    status: 'planned',
+    tier: 'worker',
+    description: 'Reads Anthropic\'s Admin API usage/cost reports. Requires a separate Admin API key (sk-ant-admin...) from the Anthropic Console — activates when ANTHROPIC_ADMIN_KEY lands.',
+    model: 'anthropic admin api',
+    tools: ['anthropic-usage'],
+    parentId: 'stack-monitor',
+    instance: 'builtin',
+  },
+  // ── Executive Reporter: turns agent_runs into a plain-language digest ────
+  {
+    id: 'executive-reporter',
+    departmentId: 'dept-exec-reporting',
+    name: 'Executive Reporter',
+    role: 'Daily/Weekly Digest',
+    status: 'active',
+    tier: 'worker',
+    description: 'Reads every agent_run in a time window and reports run counts, failures, and per-agent breakdowns — no LLM required, works offline.',
+    model: 'deterministic digest',
+    tools: ['agent-runs'],
+    parentId: 'conductor',
+    instance: 'builtin',
+  },
 ];
 
 // ── Humans in the process ─────────────────────────────────────────────────────
@@ -620,6 +760,123 @@ const sopTasks: SopTask[] = [
       'Record honest ConnectorStatus, never fake connected',
       'Compare against the last sweep to catch flapping services',
       'Alert the console when something that was up goes down',
+    ],
+  },
+  {
+    id: 'sop-usage-cost-monitor', departmentId: 'dept-usage-cost', assigneeKind: 'agent', assigneeId: 'usage-cost-monitor',
+    title: 'Track model usage and cost',
+    summary: "Reads Anthropic's Admin API usage/cost report honestly.",
+    steps: [
+      'Check for an ANTHROPIC_ADMIN_KEY, a separate credential from a normal API key',
+      'Call the organizations usage_report endpoint with a short timeout',
+      'Report not_configured honestly when no admin key is present',
+      'Never fabricate a cost or token count when the API is unreachable',
+      'Surface the daily/weekly spend trend once the key is wired',
+    ],
+  },
+  {
+    id: 'sop-executive-reporter', departmentId: 'dept-exec-reporting', assigneeKind: 'agent', assigneeId: 'executive-reporter',
+    title: 'Turn agent runs into a plain digest',
+    summary: 'Deterministic daily/weekly summary, no LLM required.',
+    steps: [
+      'Read every agent_run inside the requested time window',
+      'Group run counts and failures by agent id',
+      'Sort recent failures newest first with their real summary text',
+      'Compose one human-readable sentence with the real totals',
+      'Never invent commentary the underlying runs do not support',
+    ],
+  },
+
+  // ANKA OPERATIONS
+  {
+    id: 'sop-anka-operations', departmentId: 'dept-anka-ops', assigneeKind: 'agent', assigneeId: 'anka-operations',
+    title: 'Read ANKA+/TIVARO operations, never finance',
+    summary: 'Read-only Admin API view once a service account exists.',
+    steps: [
+      'Confirm ANKA_ADMIN_BASE_URL and ANKA_ADMIN_TOKEN are both set',
+      'Call only read-only, non-financial routes on the ANKA+ backend',
+      'Report pending applications, group/coach assignment, athlete counts',
+      'Never surface price, subscription status, or payment data (D-134)',
+      'Report not_configured honestly until the dedicated service account exists',
+    ],
+  },
+
+  // PRODUCT & ENGINEERING
+  {
+    id: 'sop-claude-code-orchestrator', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'claude-code-orchestrator',
+    title: 'Dispatch coding work at the authorized permission level',
+    summary: 'Reads the Project Registry before touching any codebase.',
+    steps: [
+      'Read every active project from the Project Registry',
+      'Filter to projects that explicitly authorize this agent',
+      'For read_only projects, produce analysis only, never write',
+      'For auto_safe_write projects, commit small safe fixes locally only',
+      'For full_with_approval projects, always propose a plan and wait for yes',
+      'Never push, merge, or deploy under any permission level',
+    ],
+  },
+  {
+    id: 'sop-qa-ui-review', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'qa-ui-review',
+    title: 'Digest real test and typecheck output',
+    summary: 'Parses vitest JSON and tsc output, never re-implements them.',
+    steps: [
+      'Take the real npm test --reporter=json output as input',
+      'Take the real npm run typecheck stderr as input',
+      'Count passed/failed tests and TypeScript error lines',
+      'List which files actually failed, by name',
+      'Never report green when the underlying tool output says otherwise',
+    ],
+  },
+  {
+    id: 'sop-product-competitor-research', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'product-competitor-research',
+    title: 'Research competitors and market context',
+    summary: 'Brave Search-backed web research, honestly gated on a key.',
+    steps: [
+      'Check for a BRAVE_SEARCH_API_KEY before attempting any search',
+      'Report not_configured honestly when no key is present',
+      'Run the requested query through the Brave Search API',
+      'Return titles, URLs, and descriptions verbatim from the API',
+      'Never invent a competitor fact the search did not actually return',
+    ],
+  },
+  {
+    id: 'sop-project-bootstrap', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'project-bootstrap',
+    title: 'Detect a new project stack from real files',
+    summary: 'Reads manifest files on disk, never guesses from a name.',
+    steps: [
+      'List every local project in the Project Registry',
+      'Read each project\'s real manifest files (package.json, .csproj, requirements.txt)',
+      'Report detected languages, frameworks, and test runners',
+      'Recommend a starter checklist based only on what was actually found',
+      'Never run an install or write a file itself — recommend only',
+    ],
+  },
+
+  // AI INTELLIGENCE
+  {
+    id: 'sop-ai-intelligence', departmentId: 'dept-ai-intelligence', assigneeKind: 'agent', assigneeId: 'ai-intelligence',
+    title: 'Scout new AI tools, MCPs, and skills',
+    summary: 'GitHub-backed scouting, honestly gated on a token.',
+    steps: [
+      'Check for a GITHUB_TOKEN before attempting any GitHub call',
+      'Report not_configured honestly when no token is present',
+      'Check the rate limit endpoint to confirm the token is valid',
+      'Surface newly released tools, MCP servers, or SKILL.md patterns',
+      'Never claim a repo exists or was updated without checking the API',
+    ],
+  },
+
+  // IDEA LAB
+  {
+    id: 'sop-idea-lab-agent', departmentId: 'dept-idea-lab', assigneeKind: 'agent', assigneeId: 'idea-lab-agent',
+    title: 'Score ideas on a transparent rubric',
+    summary: 'Weighted sum of market size, ease-to-build, strategic fit.',
+    steps: [
+      'Read every idea registered in the ideas table',
+      'Compute the score as a plain weighted sum of the three ratings',
+      'Sort ideas by score, highest-leverage idea first',
+      'Report the top idea and how many total ideas are tracked',
+      'Never invent a rating the operator did not actually supply',
     ],
   },
 

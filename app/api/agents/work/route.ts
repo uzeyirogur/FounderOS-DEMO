@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   if (!isValidCron(parsed.data.schedule)) {
     return NextResponse.json({ error: `invalid cron schedule: ${parsed.data.schedule} — use 5 fields like "0 9 * * 1-5"` }, { status: 400 });
   }
-  const cron = { id: randomUUID(), agentId: parsed.data.agentId, schedule: parsed.data.schedule, description: parsed.data.description, enabled: true, createdAt: now };
+  const cron = { id: randomUUID(), agentId: parsed.data.agentId, schedule: parsed.data.schedule, description: parsed.data.description, enabled: true, createdAt: now, lastRunAt: null };
   db.agentCrons.insert(cron);
   return NextResponse.json({ ok: true, cron });
 }

@@ -11,6 +11,7 @@ import {
   ContactTagSchema,
   DepartmentSchema,
   DomainSchema,
+  IdeaSchema,
   MetricSchema,
   PersonaSchema,
   PhaseSchema,
@@ -43,6 +44,7 @@ import {
   type ContactTag,
   type Department,
   type Domain,
+  type Idea,
   type Metric,
   type Persona,
   type Phase,
@@ -175,7 +177,8 @@ CREATE TABLE IF NOT EXISTS agent_crons (
   schedule TEXT NOT NULL,
   description TEXT NOT NULL,
   enabled INTEGER NOT NULL,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  last_run_at TEXT
 );
 CREATE TABLE IF NOT EXISTS contact_tags (
   person TEXT NOT NULL,
@@ -332,6 +335,17 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at TEXT NOT NULL,
   origin TEXT NOT NULL DEFAULT 'seed'
 );
+CREATE TABLE IF NOT EXISTS ideas (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  market_size INTEGER NOT NULL,
+  effort INTEGER NOT NULL,
+  strategic_fit INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 `;
 
 /** Databases created before the hierarchy build lack these columns. */
@@ -407,6 +421,15 @@ function migrateLeadMagnetsTable(db: InstanceType<typeof Database>): void {
   if (!columns.has('origin')) db.exec("ALTER TABLE lead_magnets ADD COLUMN origin TEXT NOT NULL DEFAULT 'seed'");
 }
 
+/** agent_crons gained `last_run_at` when the scheduler engine landed; older
+ *  databases predate the column. */
+function migrateAgentCronsTable(db: InstanceType<typeof Database>): void {
+  const columns = new Set(
+    (db.prepare('PRAGMA table_info(agent_crons)').all() as { name: string }[]).map((c) => c.name),
+  );
+  if (!columns.has('last_run_at')) db.exec('ALTER TABLE agent_crons ADD COLUMN last_run_at TEXT');
+}
+
 export function openDb(path: string) {
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
@@ -415,6 +438,7 @@ export function openDb(path: string) {
   migrateLeadMagnetsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
+  migrateAgentCronsTable(db);
 
   const departments = {
     all(): Department[] {
@@ -725,7 +749,7 @@ export function openDb(path: string) {
   const rowToCron = (r: any): AgentCron =>
     AgentCronSchema.parse({
       id: r.id, agentId: r.agent_id, schedule: r.schedule, description: r.description,
-      enabled: Boolean(r.enabled), createdAt: r.created_at,
+      enabled: Boolean(r.enabled), createdAt: r.created_at, lastRunAt: r.last_run_at ?? null,
     });
 
   const agentCrons = {
@@ -733,8 +757,8 @@ export function openDb(path: string) {
       AgentCronSchema.parse(c);
       if (!isValidCron(c.schedule)) throw new Error(`invalid cron schedule: ${c.schedule}`);
       db.prepare(
-        'INSERT OR REPLACE INTO agent_crons (id, agent_id, schedule, description, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      ).run(c.id, c.agentId, c.schedule, c.description, c.enabled ? 1 : 0, c.createdAt);
+        'INSERT OR REPLACE INTO agent_crons (id, agent_id, schedule, description, enabled, created_at, last_run_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(c.id, c.agentId, c.schedule, c.description, c.enabled ? 1 : 0, c.createdAt, c.lastRunAt ?? null);
     },
     byAgent(agentId: string): AgentCron[] {
       return db
@@ -745,8 +769,18 @@ export function openDb(path: string) {
     all(): AgentCron[] {
       return db.prepare('SELECT * FROM agent_crons ORDER BY created_at DESC, rowid DESC').all().map(rowToCron);
     },
+    /** Every enabled cron, regardless of agent — what the scheduler tick reads. */
+    allEnabled(): AgentCron[] {
+      return db
+        .prepare('SELECT * FROM agent_crons WHERE enabled = 1 ORDER BY created_at DESC, rowid DESC')
+        .all()
+        .map(rowToCron);
+    },
     setEnabled(id: string, enabled: boolean): void {
       db.prepare('UPDATE agent_crons SET enabled = ? WHERE id = ?').run(enabled ? 1 : 0, id);
+    },
+    setLastRunAt(id: string, lastRunAt: string): void {
+      db.prepare('UPDATE agent_crons SET last_run_at = ? WHERE id = ?').run(lastRunAt, id);
     },
     remove(id: string): void {
       db.prepare('DELETE FROM agent_crons WHERE id = ?').run(id);
@@ -1087,6 +1121,61 @@ export function openDb(path: string) {
     },
   };
 
+  const ideas = {
+    all(): Idea[] {
+      return db
+        .prepare('SELECT * FROM ideas ORDER BY updated_at DESC, title')
+        .all()
+        .map((r: any) =>
+          IdeaSchema.parse({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            marketSize: r.market_size,
+            effort: r.effort,
+            strategicFit: r.strategic_fit,
+            status: r.status,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          }),
+        );
+    },
+    insert(i: Idea): void {
+      const parsed = IdeaSchema.parse(i);
+      db.prepare(
+        'INSERT OR REPLACE INTO ideas (id, title, description, market_size, effort, strategic_fit, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.title,
+        parsed.description,
+        parsed.marketSize,
+        parsed.effort,
+        parsed.strategicFit,
+        parsed.status,
+        parsed.createdAt,
+        parsed.updatedAt,
+      );
+    },
+    byId(id: string): Idea | null {
+      const r = db.prepare('SELECT * FROM ideas WHERE id = ?').get(id) as any;
+      if (!r) return null;
+      return IdeaSchema.parse({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        marketSize: r.market_size,
+        effort: r.effort,
+        strategicFit: r.strategic_fit,
+        status: r.status,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      });
+    },
+    remove(id: string): boolean {
+      return db.prepare('DELETE FROM ideas WHERE id = ?').run(id).changes > 0;
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1253,6 +1342,7 @@ export function openDb(path: string) {
     people,
     leadMagnets,
     projects,
+    ideas,
     sopTasks,
     workflows,
     skills,
