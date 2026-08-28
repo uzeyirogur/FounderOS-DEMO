@@ -1,0 +1,34 @@
+# FounderOS — Agent Reality Audit (2026-08-29 overnight session)
+
+Status legend: **LIVE** (tested against real data/API/tool this session or a prior one, with evidence) · **PARTIAL** (real implementation but a real dependency is missing/optional) · **NOT_CONFIGURED** (real code path exists, honestly reports missing credential) · **BLOCKED_BY_APPROVAL** (real code path exists, gated behind a spend/credential/social/deploy approval) · **BLOCKED_BY_CREDENTIAL** (cannot proceed without a new key/account the operator hasn't provided).
+
+| # | Agent | Status | Real tool? | Project-agnostic? | Credential needed | Capability Registry use | Approval policy | Cron |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Chief of Staff / Conductor | **LIVE** | Yes — `lib/conductor.ts` `aggregateStatus()` reads 5 real repos (lifecycle approvals, publish plans, outbound messages, capability candidates, content needing capability) | Yes | none | reads capability candidate count | none (read-only) | none yet |
+| 2 | Project Lifecycle Orchestrator | **PARTIAL** | Yes — real state machine, DB-backed tasks/approvals | Yes | none | no | approval gate at deployment_approval phase | none |
+| 3 | Claude Code Orchestrator | **PARTIAL** | Yes — real `claude` CLI dispatch (`lib/claude-code-dispatch.ts`), tested with execFn mocked | Yes | `claude` CLI already installed+authed on this machine, no new key needed | no | Project Registry permissionLevel + never push/merge; real paid call needs explicit go-ahead | none |
+| 4 | QA / Bug Hunter | **PARTIAL** | Yes — real `npm test/typecheck/build` execution (`lib/qa-review-orchestrator.ts`), found and fixed a real Windows bug this session | **No — Node/npm hardcoded**, see Faz F below | none | no | Project Registry authorization gate | none |
+| 5 | UI/UX Reviewer | **PARTIAL** | Yes — static JSX a11y scan (`lib/ui-ux-review.ts`), real, no Playwright | Yes | none | no | Project Registry authorization gate | none |
+| 6 | Security Reviewer | **LIVE** | Yes — real `npm audit` + real secret-scan file walk, live-tested against ANKA+ | Partial — npm-audit-shaped, generalizing later | none | no | Project Registry authorization gate | none |
+| 7 | Product & Competitor Research | **LIVE** | Yes — real Brave Search | Yes | `BRAVE_SEARCH_API_KEY` (present) | no | none (read-only) | none |
+| 8 | AI Intelligence | **PARTIAL** | Yes — real GitHub status + real live Brave-Search-backed capability discovery | Yes | `BRAVE_SEARCH_API_KEY` for discovery | writes candidates | never auto-activates paid/credentialed | none |
+| 9 | Idea Lab | **LIVE** | Yes — deterministic scoring rubric over real seeded/entered ideas | Yes | none | no | none | none |
+| 10 | Project Bootstrap | **LIVE** | Yes — real filesystem manifest detection (`lib/project-bootstrap.ts`), detects Node/.NET/Python/Go/Rust | Yes | none | no | none (read-only) | none |
+| 11 | Growth & Marketing | **LIVE** | Yes — real Brave-Search-backed research, live-tested against anka-tivaro | Yes | `BRAVE_SEARCH_API_KEY` | no | tied to Project Registry authorization implicitly via chat tool | none |
+| 12 | Social Content Studio | **PARTIAL** | Yes — text-native via LLM gateway (needs `AI_GATEWAY_API_KEY`, currently unset → honest failure), media kinds correctly check Capability Registry | Yes | `AI_GATEWAY_API_KEY` for text; media tools per-capability | reads + can trigger discovery | never fabricates media | none |
+| 13 | Social Publishing | **NOT_CONFIGURED** | Yes — real plan/adaptation logic; the one real "publish" connector (Zernio) is read-only, no write API exists yet | Yes | a real publish-capable connector (none exists) | no | approval-gated by design (publish never automatic) | none |
+| 14 | Ad / Creative Research | **LIVE** | Yes — real Brave-Search-backed research, live-tested against anka-tivaro | Yes | `BRAVE_SEARCH_API_KEY` | no | tied to Project Registry authorization implicitly via chat tool | none |
+| 15 | Communications | **PARTIAL** | Yes — real SMTP reply path (`lib/connectors/email.ts`), local WhatsApp ChatStorage read works; honestly fails "no inbox configured" without `INBOX_n_*` | Yes (not project-tied by design) | `INBOX_n_*` env vars for real send | no | drafts require approval before send | none |
+| 16 | Usage & Cost Monitor | **BLOCKED_BY_CREDENTIAL** | Real code path, calls real Anthropic Admin API | Yes | `ANTHROPIC_ADMIN_KEY` — explicitly NOT requested per operator instruction (individual account) | no | none | none |
+| 17 | Executive Reporter | **LIVE** | Yes — real digest built from real `agent_runs` rows, no LLM | Yes | none | no | none | none — should be cron'd, see Faz M |
+| 18 | ANKA Operations | **LIVE** | Yes — real D-169 read-only service-account API (branches/sports), correctly reports disconnected when ANKA+ backend is down | No — intentionally ANKA-specific, kept as separate domain per operator instruction | `ANKA_ADMIN_BASE_URL`/`ANKA_ADMIN_TOKEN` (present) | no | none (read-only, never finance) | none |
+| 19 | Work Assistant | **LIVE** | Yes — real CRUD + real CalDAV calendar status, live-tested | Yes (deliberately separate from Project Registry) | calendar via CalDAV (optional) | no | none | none |
+| 20 | Personal Ops | **LIVE** | Yes — real routines/streak logic, live-tested (idempotent same-day check-in verified) | Yes (deliberately separate) | none | no | none | none |
+
+## Findings that need real work tonight (not just documentation)
+
+1. **QA is Node/npm-hardcoded** (item 4) — the plan calls for stack detection via `detectProjectStack()` (already exists, built for Project Bootstrap) so QA can run `dotnet build`/`dotnet test` or `pytest` on a non-Node registered project. **→ Faz F tonight.**
+2. **No task/work-item domain exists** — Conductor only aggregates counts, it cannot classify intent, delegate, track dependencies, or retry a failed agent. **→ Faz C tonight, the single highest-leverage piece of work.**
+3. **Project Lifecycle phases have no entry/exit criteria or evidence requirement** — a phase currently advances on an approval record or nothing at all; there's no artifact/evidence field tying e.g. "implementation done" to a real test run. **→ Faz D tonight.**
+4. **Usage & Cost Monitor is a dead end** — correctly not treated as a blocker (operator's own instruction), but it should read from a locally-computable proxy per Faz 19 (agent_runs cost/latency, if any is tracked) rather than sitting fully blocked forever. Flagged as a future idea, not done tonight (no evidence agent_runs tracks token cost yet).
+5. **Security Reviewer is single-purpose (npm audit)** — item 8 of tonight's plan asks for dependency audit + secret scan + more (auth guard review, unsafe route checks, CORS exposure). Secret scan already exists; the rest needs new pattern-based checks. **→ Faz H tonight, best-effort.**
