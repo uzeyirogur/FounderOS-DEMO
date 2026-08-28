@@ -11,6 +11,7 @@ import {
   CapabilityProviderSchema,
   ContactTagSchema,
   ContentPieceSchema,
+  CreativeBriefSchema,
   DepartmentSchema,
   DomainSchema,
   GrowthBriefSchema,
@@ -56,6 +57,7 @@ import {
   type CapabilityProvider,
   type ContactTag,
   type ContentPiece,
+  type CreativeBrief,
   type Department,
   type Domain,
   type GrowthBrief,
@@ -501,6 +503,15 @@ CREATE TABLE IF NOT EXISTS routine_completions (
   completed_on TEXT NOT NULL,
   completed_at TEXT NOT NULL,
   UNIQUE(routine_id, completed_on)
+);
+CREATE TABLE IF NOT EXISTS creative_briefs (
+  id TEXT PRIMARY KEY,
+  project_id TEXT,
+  format TEXT NOT NULL,
+  query TEXT NOT NULL,
+  recommendation TEXT NOT NULL,
+  sources TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL
 );
 `;
 
@@ -1691,6 +1702,36 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Ad / Creative Research ───────────────────────────────────────────────
+  function rowToCreativeBrief(r: any): CreativeBrief {
+    return CreativeBriefSchema.parse({
+      id: r.id,
+      projectId: r.project_id ?? null,
+      format: r.format,
+      query: r.query,
+      recommendation: r.recommendation,
+      sources: JSON.parse(r.sources),
+      createdAt: r.created_at,
+    });
+  }
+
+  const creativeBriefs = {
+    all(): CreativeBrief[] {
+      return (db.prepare('SELECT * FROM creative_briefs ORDER BY created_at DESC').all() as any[]).map(rowToCreativeBrief);
+    },
+    byProjectId(projectId: string): CreativeBrief[] {
+      return (
+        db.prepare('SELECT * FROM creative_briefs WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as any[]
+      ).map(rowToCreativeBrief);
+    },
+    insert(c: CreativeBrief): void {
+      const parsed = CreativeBriefSchema.parse(c);
+      db.prepare(
+        'INSERT OR REPLACE INTO creative_briefs (id, project_id, format, query, recommendation, sources, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(parsed.id, parsed.projectId, parsed.format, parsed.query, parsed.recommendation, JSON.stringify(parsed.sources), parsed.createdAt);
+    },
+  };
+
   // ── Growth & Marketing ───────────────────────────────────────────────────
   function rowToGrowthBrief(r: any): GrowthBrief {
     return GrowthBriefSchema.parse({
@@ -2154,6 +2195,7 @@ export function openDb(path: string) {
     lifecycleApprovals,
     capabilities,
     contentPieces,
+    creativeBriefs,
     growthBriefs,
     publishPlans,
     outboundMessages,

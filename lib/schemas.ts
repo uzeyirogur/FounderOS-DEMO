@@ -1084,3 +1084,24 @@ export const RoutineCompletionSchema = z.object({
 });
 export type RoutineCompletion = z.infer<typeof RoutineCompletionSchema>;
 
+// ── Ad / Creative Research ────────────────────────────────────────────────
+export const CreativeFormatSchema = z.enum(['social_post', 'carousel', 'short_video', 'static_ad', 'landing_page', 'demo_video']);
+
+export const CreativeSourceSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+});
+
+export const CreativeBriefSchema = z.object({
+  id: z.string(),
+  projectId: z.string().nullable(),
+  format: CreativeFormatSchema,
+  query: z.string(),
+  recommendation: z.string(),
+  sources: z.array(CreativeSourceSchema).default([]),
+  createdAt: z.string(),
+});
+export type CreativeFormat = z.infer<typeof CreativeFormatSchema>;
+export type CreativeSource = z.infer<typeof CreativeSourceSchema>;
+export type CreativeBrief = z.infer<typeof CreativeBriefSchema>;
+
