@@ -74,8 +74,7 @@ describe('buildBrainDocs', () => {
   test('a tool doc lists who uses it, wikilinked', () => {
     const docs = docsFor(seeded());
     const ledger = docs.find((x) => x.path === 'tools/ledger.md')!.content;
-    expect(ledger).toContain('[[sales-agent]]');
-    expect(ledger).toContain('[[person-marco]]');
+    expect(ledger).toContain('[[client-roster]]');
   });
 
   test('a pillar doc rosters its workers and SOPs', () => {

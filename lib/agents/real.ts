@@ -5,11 +5,7 @@ import { parseInboxConfigs, unreadCounts } from '@/lib/connectors/email';
 import { configuredProcessors, stripeSnapshot } from '@/lib/connectors/payments';
 import { recentMessages } from '@/lib/connectors/slack';
 import { recentPages } from '@/lib/connectors/notion';
-import { zernioStatus } from '@/lib/connectors/zernio';
 import { attioClients, attioStatus } from '@/lib/connectors/attio';
-import { webinarjamStatus, listRegistrants } from '@/lib/connectors/webinarjam';
-import { trakyoStatus } from '@/lib/connectors/trakyo';
-import { arcadsStatus } from '@/lib/connectors/arcads';
 import { whatsappStatus } from '@/lib/connectors/whatsapp';
 import { wisprStatus } from '@/lib/connectors/wispr';
 import { localStackStatus } from '@/lib/connectors/local-stack';
@@ -105,16 +101,6 @@ async function slackRun(): Promise<AgentRunResult> {
   };
 }
 
-async function zernioRun(): Promise<AgentRunResult> {
-  const status = await zernioStatus();
-  return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
-}
-
-async function arcadsRun(): Promise<AgentRunResult> {
-  const status = await arcadsStatus();
-  return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
-}
-
 const label = (r: AgentRunResult) => (r.ok ? 'LIVE' : 'DOWN');
 
 const envIntegrationRun =
@@ -125,10 +111,6 @@ const envIntegrationRun =
     }
     return { ok: true, summary: `${name} credential present · ${purpose}` };
   };
-
-const plannedLaneRun =
-  (name: string, detail: string) =>
-  async (): Promise<AgentRunResult> => ({ ok: false, summary: `${name} lane planned — ${detail}` });
 
 async function stripeSalesRun(): Promise<AgentRunResult> {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -261,47 +243,14 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'social-agent',
     name: 'Social Agent',
-    description: 'Aggregates the Postly publishing and Adsmith ad-generation workers.',
+    description: 'Legacy social/content pillar. Real production runs through Content Studio (social-content-studio, growth-marketing, social-publishing, ad-creative-research) — this instance now only carries the DM automation lane.',
     departmentId: 'dept-marketing-growth',
     async run() {
-      const [postly, adsmith] = await Promise.all([zernioRun(), arcadsRun()]);
-      const live = [postly, adsmith].filter((r) => r.ok).length;
-      const queued = getDb().socialPosts.queued().length;
-      const queueNote = queued > 0 ? `${queued} post${queued === 1 ? '' : 's'} queued for publish` : 'no posts queued';
+      const dmflow = await envIntegrationRun('DMFlow', 'MANYCHAT_API_KEY', 'DM automation and lead capture')();
       return {
-        ok: live > 0,
-        summary: `${live}/2 core content APIs live · Postly ${label(postly)} · Adsmith ${label(adsmith)} · ${queueNote}`,
-        data: { postly, adsmith, queuedPosts: queued },
-      };
-    },
-  },
-  { id: 'postly-publisher', name: 'Postly Publisher', description: 'Six platforms under @founderos.ai via Postly.', departmentId: 'dept-marketing-growth', run: zernioRun },
-  { id: 'adsmith-creative', name: 'Adsmith Creative', description: 'UGC ads for Vantage via the Adsmith API.', departmentId: 'dept-marketing-growth', run: arcadsRun },
-  {
-    id: 'reelkit-editor',
-    name: 'Reelkit Editor',
-    description: 'Editing and rendering pipeline for social clips, captions, and promotional cuts.',
-    departmentId: 'dept-marketing-growth',
-    async run() {
-      const stack = await localStackStatus();
-      return {
-        ok: stack.state === 'connected',
-        summary: `Reelkit/social editing lane mapped · local stack: ${stack.detail}`,
-        data: stack.meta,
-      };
-    },
-  },
-  {
-    id: 'renderly-creative',
-    name: 'Renderly Creative',
-    description: 'Renderly creative generation for campaign visuals and product assets.',
-    departmentId: 'dept-marketing-growth',
-    async run() {
-      const stack = await localStackStatus();
-      return {
-        ok: stack.state === 'connected',
-        summary: `Renderly creative lane mapped · local stack: ${stack.detail}`,
-        data: stack.meta,
+        ok: dmflow.ok,
+        summary: `DM automation lane: ${dmflow.summary} · real content production lives under Content Studio`,
+        data: { dmflow },
       };
     },
   },
@@ -317,75 +266,16 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'sales-agent',
     name: 'Sales Agent',
-    description: 'Aggregates the revenue pipeline workers for Sales.',
+    description: 'Legacy sales pillar. The named account lanes (Vantage, Launchpad Cohort) and the Ledger CRM connection were a prior operator\'s demo data, removed 2026-08-28 — reports processor health pending a real CRM connection.',
     departmentId: 'dept-sales',
     async run() {
-      const [crm, processors] = await Promise.all([attioStatus(), processorConfirmationRun()]);
+      const processors = await processorConfirmationRun();
       return {
-        ok: crm.state === 'connected' || processors.ok,
-        summary: `Sales pipeline · Ledger ${crm.state === 'connected' ? 'LIVE' : 'DOWN'} · processors ${label(processors)} · PayKit/FlexPay/calls lanes mapped`,
-        data: { crm, processors },
+        ok: processors.ok,
+        summary: `Sales pipeline · no CRM connected yet · processors ${label(processors)} · calls lane mapped`,
+        data: { processors },
       };
     },
-  },
-  {
-    id: 'launchpad-cohort-sales',
-    name: 'Launchpad Cohort',
-    description:
-      'Launchpad Cohort sales lane: WebinarJam funnel (registrants/attendees → leads), Trakyo revenue attribution, plus offer/call/payment context.',
-    departmentId: 'dept-sales',
-    async run() {
-      const [webinar, trakyo] = await Promise.all([webinarjamStatus(), trakyoStatus()]);
-      const live = [webinar, trakyo].filter((s) => s.state === 'connected').length;
-      return {
-        ok: live > 0,
-        summary: `Launchpad Cohort · WebinarJam ${webinar.state} · Trakyo ${trakyo.state}${
-          live === 0 ? ' — set WEBINARJAM_API_KEY to pull webinar leads' : ''
-        }`,
-        data: { webinar, trakyo },
-      };
-    },
-    chatTools(): LlmToolSpec[] {
-      return [
-        {
-          name: 'searchWebinarRegistrants',
-          description:
-            "List registrants/attendees for an Launchpad Cohort WebinarJam session (these are leads). Read-only. Needs the webinar's id and schedule id.",
-          parameters: z.object({
-            webinarId: z.string().describe('WebinarJam webinar_id'),
-            scheduleId: z.string().describe('WebinarJam schedule_id for the session'),
-          }),
-          execute: async (args) => {
-            const webinarId = typeof args.webinarId === 'string' ? args.webinarId : '';
-            const scheduleId = typeof args.scheduleId === 'string' ? args.scheduleId : '';
-            if (!webinarId || !scheduleId) return { error: 'webinarId and scheduleId are required' };
-            const registrants = await listRegistrants(webinarId, scheduleId);
-            return { count: registrants.length, registrants: registrants.slice(0, 25) };
-          },
-        },
-      ];
-    },
-  },
-  {
-    id: 'vantage-sales',
-    name: 'Vantage',
-    description: 'Vantage sales lane: pipeline, PayKit context, payments, and call data.',
-    departmentId: 'dept-sales',
-    run: plannedLaneRun('Vantage sales', 'connect Vantage-specific CRM/payment/call sources'),
-  },
-  {
-    id: 'paykit-sales',
-    name: 'PayKit',
-    description: 'PayKit offer/payment/customer context for Sales.',
-    departmentId: 'dept-sales',
-    run: envIntegrationRun('PayKit', 'FANBASIS_API_KEY', 'offers, customers, and payment context'),
-  },
-  {
-    id: 'vantage-paykit',
-    name: 'Vantage PayKit',
-    description: 'PayKit lane specifically under Vantage.',
-    departmentId: 'dept-sales',
-    run: envIntegrationRun('Vantage PayKit', 'FANBASIS_API_KEY', 'Vantage offer/payment context'),
   },
   { id: 'stripe-sales', name: 'Stripe', description: 'Stripe payment confirmation for sales workflows.', departmentId: 'dept-sales', run: stripeSalesRun },
   {
@@ -394,13 +284,6 @@ export const realAgents: RuntimeAgent[] = [
     description: 'Confirms payment states across configured processor APIs.',
     departmentId: 'dept-sales',
     run: processorConfirmationRun,
-  },
-  {
-    id: 'flexpay-financing',
-    name: 'FlexPay Financing',
-    description: 'FlexPay financing options for offers and payment plans.',
-    departmentId: 'dept-sales',
-    run: envIntegrationRun('FlexPay', 'FlexPay_API_KEY', 'financing options for sales offers'),
   },
   {
     id: 'sales-calls-data',
@@ -542,16 +425,6 @@ export const realAgents: RuntimeAgent[] = [
         };
       }
       return { ok: true, summary: `${configured.map((p) => p.name).join(', ')} configured (no live client yet)` };
-    },
-  },
-  {
-    id: 'crm-pulse',
-    name: 'Ledger CRM',
-    description: 'Queries the Ledger deals pipeline (Vantage + Launchpad Cohort). Read-scoped.',
-    departmentId: 'dept-sales',
-    async run() {
-      const status = await attioStatus();
-      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
     },
   },
 

@@ -24,15 +24,14 @@ describe('graph lenses — Alex taxonomy (2026-07-12)', () => {
     ]);
     expect(FUNCTION_LENSES.map((l) => l.label)).toContain('Core');
     expect(FUNCTION_LENSES.map((l) => l.label)).toContain('Enabling');
-    expect(FUNCTION_LENSES.map((l) => l.label)).toContain('Vantage team');
-    expect(FUNCTION_LENSES.map((l) => l.label)).toContain('Launchpad Cohort team');
+    expect(FUNCTION_LENSES).toHaveLength(2);
     expect(ACTION_LENSES).toHaveLength(11);
     expect(new Set(ALL_LENSES.map((l) => l.id)).size).toBe(ALL_LENSES.length);
   });
 
   test('entity lenses match by node kind against the real seeded graph', () => {
     expect(lensNodeSet('ent-people', ctx).size).toBe(5);
-    expect(lensNodeSet('ent-subagents', ctx).size).toBe(47);
+    expect(lensNodeSet('ent-subagents', ctx).size).toBe(37);
     expect(lensNodeSet('ent-departments', ctx).size).toBe(14);
     expect(lensNodeSet('ent-sops', ctx).size).toBeGreaterThan(20);
     expect(lensNodeSet('ent-tools', ctx).size).toBeGreaterThan(20);
@@ -54,12 +53,9 @@ describe('graph lenses — Alex taxonomy (2026-07-12)', () => {
     expect(core.has('emp:sales-agent')).toBe(true);
   });
 
-  test('venture team lenses light their rosters', () => {
-    const mer = lensNodeSet('fn-vantage', ctx);
-    expect(mer.has('emp:vantage-sales')).toBe(true);
-    expect(mer.has('emp:vantage-paykit')).toBe(true);
-    const aa = lensNodeSet('fn-launchpad-cohort', ctx);
-    expect(aa.has('emp:launchpad-cohort-sales')).toBe(true);
+  test('unknown function lens returns an empty set, never throws (venture-team lenses retired)', () => {
+    expect(lensNodeSet('fn-vantage', ctx).size).toBe(0);
+    expect(lensNodeSet('fn-launchpad-cohort', ctx).size).toBe(0);
   });
 
   test('every action lens resolves to real seeded agents', () => {
@@ -71,10 +67,10 @@ describe('graph lenses — Alex taxonomy (2026-07-12)', () => {
   });
 
   test('specific action mappings hold', () => {
-    expect(lensNodeSet('act-ad-creation', ctx).has('emp:adsmith-creative')).toBe(true);
+    expect(lensNodeSet('act-ad-creation', ctx).has('emp:social-content-studio')).toBe(true);
     expect(lensNodeSet('act-lead-generation', ctx).has('emp:sales-agent')).toBe(true);
-    expect(lensNodeSet('act-social-scheduler', ctx).has('emp:postly-publisher')).toBe(true);
-    expect(lensNodeSet('act-ai-visuals', ctx).has('emp:renderly-creative')).toBe(true);
+    expect(lensNodeSet('act-social-scheduler', ctx).has('emp:social-publishing')).toBe(true);
+    expect(lensNodeSet('act-ai-visuals', ctx).has('emp:social-content-studio')).toBe(true);
   });
 
   test('unknown lens returns an empty set, never throws', () => {

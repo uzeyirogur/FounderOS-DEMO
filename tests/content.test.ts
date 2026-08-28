@@ -7,13 +7,13 @@ let db: FounderDb;
 afterEach(() => db?.close());
 
 describe('contentAgents', () => {
-  test('returns the content-creation crew (Marketing/Growth pillar), lead first', () => {
+  test('returns the Marketing/Growth pillar (legacy DM automation lane), lead first', () => {
     db = openDb(':memory:');
     seedDatabase(db);
     const crew = contentAgents(db.agents.all());
     expect(crew[0].id).toBe('social-agent');
     const ids = crew.map((a) => a.id);
-    for (const id of ['social-agent', 'postly-publisher', 'adsmith-creative', 'reelkit-editor', 'renderly-creative', 'dmflow-mcp']) {
+    for (const id of ['social-agent', 'dmflow-mcp']) {
       expect(ids).toContain(id);
     }
   });
@@ -33,6 +33,6 @@ describe('contentAgents', () => {
     const a = contentAgents(db.agents.all()).map((x) => x.id);
     const b = contentAgents(db.agents.all()).map((x) => x.id);
     expect(a).toEqual(b);
-    expect(a.length).toBeGreaterThanOrEqual(5);
+    expect(a.length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, BarChart3, Brain, Clapperboard, ExternalLink, Play, Wrench } from 'lucide-react';
+import { ArrowUpRight, Clapperboard, ExternalLink, Play, Wrench } from 'lucide-react';
 import { getDb } from '@/lib/data';
 import { contentAgents } from '@/lib/content';
 import { zernioRecentPosts, zernioPostDays } from '@/lib/connectors/zernio';
@@ -10,10 +10,6 @@ import { Badge, Dot, SectionHead } from '@/components/terminal';
 import type { Agent } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
-
-// The Vantage content-intelligence system this view backlinks out to.
-const INTEL_URL = 'https://intel.vantage.ai';
-const INTEL_ANALYTICS_URL = 'https://intel.vantage.ai/my-analytics';
 
 function prettyTool(slug: string): string {
   return slug.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -66,36 +62,6 @@ function AgentCard({ agent, lead = false }: { agent: Agent; lead?: boolean }) {
   );
 }
 
-function BacklinkCard({
-  href, icon: Icon, title, sub,
-}: {
-  href: string;
-  icon: typeof Brain;
-  title: string;
-  sub: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-start gap-3 rounded-lg-t border border-os-border bg-os-surface p-4 transition-colors hover:border-os-border-strong"
-    >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md-t border border-os-border bg-os-surface2 text-os-accent">
-        <Icon className="h-4 w-4" strokeWidth={1.8} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 text-[13.5px] font-semibold">
-          {title}
-          <ExternalLink className="h-3.5 w-3.5 text-os-dim transition-colors group-hover:text-os-accent" />
-        </span>
-        <span className="mt-0.5 block text-[12px] leading-relaxed text-os-dim [text-wrap:pretty]">{sub}</span>
-        <span className="mt-1.5 block truncate font-mono text-[10px] text-os-muted">{href.replace('https://', '')}</span>
-      </span>
-    </a>
-  );
-}
-
 export default async function ContentPage() {
   const leadMagnets = getDb().leadMagnets.all();
   const db = getDb();
@@ -116,27 +82,8 @@ export default async function ContentPage() {
         right={<Badge tone="accent">{crew.length} agents</Badge>}
       />
 
-      {/* Backlinks to the Vantage content-intelligence system */}
-      <section>
-        <SectionHead label="Content intelligence" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <BacklinkCard
-            href={INTEL_URL}
-            icon={Brain}
-            title="Vantage Intel"
-            sub="Your content intelligence system — research, hooks, and what's working, feeding the content agent."
-          />
-          <BacklinkCard
-            href={INTEL_ANALYTICS_URL}
-            icon={BarChart3}
-            title="My Analytics"
-            sub="Per-piece performance and audience analytics from the intelligence system."
-          />
-        </div>
-      </section>
-
       {/* Content agent + crew (real seed roster) */}
-      <section className="mt-8">
+      <section>
         <SectionHead
           label="Content agents"
           count={`${crew.length}`}

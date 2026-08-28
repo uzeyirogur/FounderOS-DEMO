@@ -69,38 +69,24 @@ describe('seedDatabase', () => {
     db = openDb(':memory:');
     seedDatabase(db);
     const byId = new Map(db.agents.all().map((a) => [a.id, a.departmentId]));
-    // Sales: the deal / account / CRM lanes
-    for (const id of [
-      'sales-agent',
-      'crm-pulse',
-      'launchpad-cohort-sales',
-      'vantage-sales',
-      'vantage-paykit',
-      'sales-calls-data',
-    ]) {
+    // Sales: the deal / account / CRM lanes (named account lanes and the
+    // Ledger CRM connection were a prior operator's demo data, removed
+    // 2026-08-28 — this pillar now only carries what actually connects)
+    for (const id of ['sales-agent', 'sales-calls-data']) {
       expect(byId.get(id)).toBe('dept-sales');
     }
     // Finances: the payment processors moved off Sales
-    for (const id of [
-      'payments-pulse',
-      'stripe-sales',
-      'processor-confirmation',
-      'paykit-sales',
-      'flexpay-financing',
-    ]) {
+    for (const id of ['payments-pulse', 'stripe-sales', 'processor-confirmation']) {
       expect(byId.get(id)).toBe('dept-finance');
     }
-    expect(db.agents.all().filter((a) => a.departmentId === 'dept-finance').length).toBeGreaterThanOrEqual(5);
-    // Marketing/Growth: the social/content crew
-    for (const id of [
-      'social-agent',
-      'postly-publisher',
-      'adsmith-creative',
-      'reelkit-editor',
-      'renderly-creative',
-      'dmflow-mcp',
-    ]) {
+    expect(db.agents.all().filter((a) => a.departmentId === 'dept-finance').length).toBeGreaterThanOrEqual(3);
+    // Marketing/Growth: the legacy DM automation lane — real production is
+    // Content Studio (checked separately below)
+    for (const id of ['social-agent', 'dmflow-mcp']) {
       expect(byId.get(id)).toBe('dept-marketing-growth');
+    }
+    for (const id of ['social-content-studio', 'growth-marketing', 'ad-creative-research', 'social-publishing']) {
+      expect(byId.get(id)).toBe('dept-content-studio');
     }
     // TECH: AI head, the G-Brain data crew, and automations
     for (const id of ['conductor', 'data-agent', 'markdown-auditor', 'vector-auditor', 'notion-sync', 'stack-monitor']) {
@@ -129,24 +115,19 @@ describe('seedDatabase', () => {
       expect(byId.get(worker)?.parentId).toBe('comms-agent');
       expect(byId.get(worker)?.tier).toBe('worker');
     }
-    // Studio: social media + content creation
-    for (const worker of ['postly-publisher', 'adsmith-creative', 'reelkit-editor', 'renderly-creative', 'dmflow-mcp']) {
+    // Studio: legacy DM automation lane — real Content Studio agents are
+    // department-scoped instances, not parented under social-agent
+    for (const worker of ['dmflow-mcp']) {
       expect(byId.get(worker)?.parentId).toBe('social-agent');
     }
-    // Sales: CRM / account lanes hang off the sales instance
-    for (const worker of [
-      'crm-pulse',
-      'launchpad-cohort-sales',
-      'vantage-sales',
-      'sales-calls-data',
-    ]) {
+    // Sales: the calls-data lane hangs off the sales instance (named account
+    // lanes and the Ledger CRM connection were removed 2026-08-28)
+    for (const worker of ['sales-calls-data']) {
       expect(byId.get(worker)?.parentId).toBe('sales-agent');
       expect(byId.get(worker)?.tier).toBe('worker');
     }
-    expect(byId.get('vantage-paykit')?.parentId).toBe('vantage-sales');
-    expect(byId.get('vantage-paykit')?.tier).toBe('worker');
     // Finances: the payment processors now report to Payments Pulse
-    for (const worker of ['stripe-sales', 'processor-confirmation', 'paykit-sales', 'flexpay-financing']) {
+    for (const worker of ['stripe-sales', 'processor-confirmation']) {
       expect(byId.get(worker)?.parentId).toBe('payments-pulse');
       expect(byId.get(worker)?.tier).toBe('worker');
     }
