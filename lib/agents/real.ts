@@ -707,7 +707,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'ui-ux-reviewer',
     name: 'UI/UX Reviewer',
     description:
-      'Runs a real static accessibility scan (missing alt text, icon-only buttons with no aria-label) against a Project Registry-authorized directory. Separate from QA (test/build output) and Security Reviewer (audit/secrets) — this is presentation-layer quality.',
+      "Runs a real static accessibility scan (missing alt text, icon-only buttons with no aria-label, unlabeled form inputs, empty headings) against a Project Registry-authorized directory. Every finding carries severity, real matched-source evidence, and a concrete suggestion — never just a good/bad verdict. Separate from QA (test/build output) and Security Reviewer (audit/secrets) — this is presentation-layer quality. No live browser/Playwright run yet (see KI note): this is a real static pass, not a claim of pixel-level visual review.",
     departmentId: 'dept-product-eng',
     async run() {
       const authorized = getDb()
