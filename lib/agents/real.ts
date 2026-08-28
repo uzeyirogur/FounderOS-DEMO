@@ -1265,7 +1265,14 @@ export const realAgents: RuntimeAgent[] = [
         title: 'Daily digest',
         body: report.summary,
       });
-      return { ok: report.failedRuns === 0, summary: report.summary, data: report };
+      // Executive Reporter's own run succeeds if IT built the report.
+      // report.failedRuns counts OTHER agents' failures over the window —
+      // that is DATA the digest reports, not a verdict on this run. Tying
+      // ok to it created a self-feeding loop: a genuinely successful
+      // digest got recorded as 'failed' whenever anything else had a
+      // blip, and that failure then counted against the NEXT run's own
+      // failedRuns tally, forever, long after the real issue cleared.
+      return { ok: true, summary: report.summary, data: report };
     },
     async respond() {
       const report24 = buildExecutiveReport(getDb(), { windowHours: 24 });
