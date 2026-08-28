@@ -598,6 +598,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── UI/UX Reviewer: real static accessibility scan against a registered project ──
+  {
+    id: 'ui-ux-reviewer',
+    departmentId: 'dept-product-eng',
+    name: 'UI/UX Reviewer',
+    role: 'Presentation-Layer Quality',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Runs a real static accessibility scan (missing alt text, icon-only buttons with no aria-label) against a Project Registry-authorized directory. Separate from QA (test/build output) and Security Reviewer (audit/secrets) — this is presentation-layer quality.',
+    model: 'regex JSX accessibility scan (no LLM, no live browser)',
+    tools: ['jsx-scan'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Work Assistant: personal task list, separate from Project Registry ──
   {
     id: 'work-assistant',
@@ -905,6 +920,19 @@ const sopTasks: SopTask[] = [
       'Never include a matched secret value in the report — file, line, and pattern name only',
       'If npm audit could not run at all, report that honestly rather than reporting clean',
       'Flag high/critical vulnerabilities and any secret finding as blockers before deployment approval',
+    ],
+  },
+  {
+    id: 'sop-ui-ux-reviewer', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'ui-ux-reviewer',
+    title: 'Scan a Project Registry-authorized directory for accessibility defects',
+    summary: 'Real static regex scan of .tsx source — missing alt text, icon-only buttons with no label. Separate from QA and Security Reviewer.',
+    steps: [
+      'Confirm the target project is registered and authorizes this agent',
+      'Walk the project .tsx source (skipping node_modules/.git/.next)',
+      'Flag every <img> with no alt attribute (empty alt="" is a valid decorative choice, not flagged)',
+      'Flag every icon-only <button> with no aria-label and no visible text',
+      'Report file and line for each finding — a real fix location, not a vague summary',
+      'Never claim clean when nothing was actually scanned (e.g. the directory has no .tsx files)',
     ],
   },
   {

@@ -735,6 +735,50 @@ export const realAgents: RuntimeAgent[] = [
     },
   },
   {
+    id: 'ui-ux-reviewer',
+    name: 'UI/UX Reviewer',
+    description:
+      'Runs a real static accessibility scan (missing alt text, icon-only buttons with no aria-label) against a Project Registry-authorized directory. Separate from QA (test/build output) and Security Reviewer (audit/secrets) — this is presentation-layer quality.',
+    departmentId: 'dept-product-eng',
+    async run() {
+      const authorized = getDb()
+        .projects.all()
+        .filter((p) => p.status === 'active' && p.authorizedAgentIds.includes('ui-ux-reviewer'));
+      return {
+        ok: true,
+        summary:
+          authorized.length === 0
+            ? 'No active project authorizes this agent yet — grant access from /projects, then use the runReview chat tool.'
+            : `${authorized.length} project(s) authorized for UI/UX review · use the runReview chat tool to scan one.`,
+        data: { authorized: authorized.map((p) => ({ id: p.id, name: p.name, pathOrUrl: p.pathOrUrl })) },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'runReview',
+          description:
+            'Runs a REAL static accessibility scan against a Project Registry-authorized project directory (.tsx source only). Refuses any project not both active and explicitly authorizing this agent. Reports file + line for every real finding — never a vague summary.',
+          parameters: z.object({ projectId: z.string() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const project = getDb().projects.byId(projectId);
+            if (!project) return { ok: false, reason: 'project not found' };
+            if (project.status !== 'active') return { ok: false, reason: `project is not active (status: ${project.status})` };
+            if (!project.authorizedAgentIds.includes('ui-ux-reviewer')) {
+              return { ok: false, reason: 'ui-ux-reviewer is not authorized on this project — grant access from /projects first' };
+            }
+            if (project.kind !== 'local') {
+              return { ok: false, reason: 'only local projects can be scanned on this machine today' };
+            }
+            const { runUiUxReview } = await import('@/lib/ui-ux-review-orchestrator');
+            return runUiUxReview(project.pathOrUrl);
+          },
+        },
+      ];
+    },
+  },
+  {
     id: 'product-competitor-research',
     name: 'Product & Competitor Research',
     description: 'Web research via Brave Search for competitor moves and market context.',
