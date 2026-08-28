@@ -567,6 +567,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Social Publishing: real publish planning, approval-gated ────────────
+  {
+    id: 'social-publishing',
+    departmentId: 'dept-content-studio',
+    name: 'Social Publishing',
+    role: 'Publish Planning & Channel Adaptation',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Plans which channels a Content Studio piece goes to and adapts the caption per platform. Never posts live without explicit operator approval, and never claims a post went out without a real channel connector confirming it.',
+    model: 'draft/approve/publish state machine',
+    tools: ['publish-plans'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Idea Lab: scored idea generation ──────────────────────────────────────
   {
     id: 'idea-lab-agent',
@@ -975,6 +990,19 @@ const sopTasks: SopTask[] = [
   },
 
   // CONTENT STUDIO
+  {
+    id: 'sop-social-publishing', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'social-publishing',
+    title: 'Draft a publish plan, never post without approval',
+    summary: 'Plans channels + per-platform caption adaptation for a Content Studio piece; a real post needs an explicit yes first.',
+    steps: [
+      'Read the produced content piece and the target platforms',
+      'Adapt the caption per platform (length limits, tone) — flag anything truncated',
+      'Save the plan at pending_approval — never skip straight to published',
+      'Wait for an explicit approve/reject from the operator',
+      'On approve, attempt the real publish via the channel connector; record the true result (published or failed with the real reason)',
+      'Never report a post as published without a real connector confirming it',
+    ],
+  },
   {
     id: 'sop-growth-marketing', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'growth-marketing',
     title: 'Research a growth focus area for a real project',

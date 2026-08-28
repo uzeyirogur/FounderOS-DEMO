@@ -23,6 +23,7 @@ import {
   ProjectLifecycleStateSchema,
   PhaseSchema,
   ProjectSchema,
+  PublishPlanSchema,
   RoadmapItemSchema,
   SocialAccountSchema,
   SocialSnapshotSchema,
@@ -63,6 +64,7 @@ import {
   type Phase,
   type Project,
   type ProjectLifecycleState,
+  type PublishPlan,
   type RoadmapItem,
   type SocialAccount,
   type SocialPlatform,
@@ -442,6 +444,19 @@ CREATE TABLE IF NOT EXISTS growth_briefs (
   findings TEXT NOT NULL,
   sources TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS publish_plans (
+  id TEXT PRIMARY KEY,
+  project_id TEXT,
+  content_piece_id TEXT NOT NULL,
+  platforms TEXT NOT NULL DEFAULT '[]',
+  adaptations TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'drafted',
+  created_at TEXT NOT NULL,
+  decided_at TEXT,
+  decided_by TEXT,
+  published_at TEXT,
+  failure_reason TEXT
 );
 `;
 
@@ -1669,6 +1684,77 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Social Publishing ────────────────────────────────────────────────────
+  function rowToPublishPlan(r: any): PublishPlan {
+    return PublishPlanSchema.parse({
+      id: r.id,
+      projectId: r.project_id ?? null,
+      contentPieceId: r.content_piece_id,
+      platforms: JSON.parse(r.platforms),
+      adaptations: JSON.parse(r.adaptations),
+      status: r.status,
+      createdAt: r.created_at,
+      decidedAt: r.decided_at ?? null,
+      decidedBy: r.decided_by ?? null,
+      publishedAt: r.published_at ?? null,
+      failureReason: r.failure_reason ?? null,
+    });
+  }
+
+  const publishPlans = {
+    all(): PublishPlan[] {
+      return (db.prepare('SELECT * FROM publish_plans ORDER BY created_at DESC').all() as any[]).map(rowToPublishPlan);
+    },
+    byId(id: string): PublishPlan | null {
+      const r = db.prepare('SELECT * FROM publish_plans WHERE id = ?').get(id) as any;
+      return r ? rowToPublishPlan(r) : null;
+    },
+    pending(): PublishPlan[] {
+      return (
+        db.prepare("SELECT * FROM publish_plans WHERE status = 'pending_approval' ORDER BY created_at").all() as any[]
+      ).map(rowToPublishPlan);
+    },
+    insert(p: PublishPlan): void {
+      const parsed = PublishPlanSchema.parse(p);
+      db.prepare(
+        `INSERT OR REPLACE INTO publish_plans
+         (id, project_id, content_piece_id, platforms, adaptations, status, created_at, decided_at, decided_by, published_at, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.contentPieceId,
+        JSON.stringify(parsed.platforms),
+        JSON.stringify(parsed.adaptations),
+        parsed.status,
+        parsed.createdAt,
+        parsed.decidedAt,
+        parsed.decidedBy,
+        parsed.publishedAt,
+        parsed.failureReason,
+      );
+    },
+    /** The ONE path that can approve/reject — only ever called from a route
+     *  the operator hit; a real publish never happens without this first. */
+    decide(id: string, status: 'approved' | 'rejected', decidedBy: string): void {
+      db.prepare('UPDATE publish_plans SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?').run(
+        status,
+        new Date().toISOString(),
+        decidedBy,
+        id,
+      );
+    },
+    markPublished(id: string): void {
+      db.prepare("UPDATE publish_plans SET status = 'published', published_at = ? WHERE id = ?").run(
+        new Date().toISOString(),
+        id,
+      );
+    },
+    markFailed(id: string, reason: string): void {
+      db.prepare("UPDATE publish_plans SET status = 'failed', failure_reason = ? WHERE id = ?").run(reason, id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1843,6 +1929,7 @@ export function openDb(path: string) {
     capabilities,
     contentPieces,
     growthBriefs,
+    publishPlans,
     sopTasks,
     workflows,
     skills,

@@ -48,6 +48,7 @@ const PAGES: PageEntry[] = [
   { file: 'ideas/page.tsx', load: () => import('@/app/ideas/page') },
   { file: 'notifications/page.tsx', load: () => import('@/app/notifications/page') },
   { file: 'capabilities/page.tsx', load: () => import('@/app/capabilities/page') },
+  { file: 'publish-plans/page.tsx', load: () => import('@/app/publish-plans/page') },
 ];
 
 function discoverPages(dir: string, base = ''): string[] {

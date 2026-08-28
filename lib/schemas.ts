@@ -979,3 +979,44 @@ export type GrowthFocus = z.infer<typeof GrowthFocusSchema>;
 export type GrowthSource = z.infer<typeof GrowthSourceSchema>;
 export type GrowthBrief = z.infer<typeof GrowthBriefSchema>;
 
+// ── Social Publishing ─────────────────────────────────────────────────────
+// Separate from Content Studio by design (per the spec): Content Studio
+// produces content, Social Publishing plans WHICH channels it goes to and
+// HOW it is adapted per channel. A real publish is never automatic — see
+// the Approval Policy: 'pending_approval' is the resting state until a
+// human decides, and 'published' only happens after that decision AND a
+// real channel connector actually confirms delivery.
+export const PublishPlanStatusSchema = z.enum([
+  'drafted',
+  'pending_approval',
+  'approved',
+  'rejected',
+  'published',
+  'failed',
+]);
+
+export const PlatformAdaptationSchema = z.object({
+  platform: SocialPlatformSchema,
+  caption: z.string().min(1),
+  truncated: z.boolean().default(false),
+});
+
+export const PublishPlanSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().nullable().default(null),
+  /** The Content Studio piece this plan is publishing. */
+  contentPieceId: z.string().min(1),
+  platforms: z.array(SocialPlatformSchema).min(1),
+  adaptations: z.array(PlatformAdaptationSchema).default([]),
+  status: PublishPlanStatusSchema.default('drafted'),
+  createdAt: z.string().min(1),
+  decidedAt: z.string().min(1).nullable().default(null),
+  decidedBy: z.string().min(1).nullable().default(null),
+  publishedAt: z.string().min(1).nullable().default(null),
+  failureReason: z.string().nullable().default(null),
+});
+
+export type PublishPlanStatus = z.infer<typeof PublishPlanStatusSchema>;
+export type PlatformAdaptation = z.infer<typeof PlatformAdaptationSchema>;
+export type PublishPlan = z.infer<typeof PublishPlanSchema>;
+

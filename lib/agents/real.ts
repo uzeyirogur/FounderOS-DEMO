@@ -848,6 +848,69 @@ export const realAgents: RuntimeAgent[] = [
       ];
     },
   },
+
+  // ── Social Publishing ────────────────────────────────────────────────────
+  {
+    id: 'social-publishing',
+    name: 'Social Publishing',
+    description:
+      'Plans which channels a Content Studio piece goes to and adapts the caption per platform. Never posts live without explicit operator approval, and never claims a post went out without a real channel connector confirming it.',
+    departmentId: 'dept-content-studio',
+    async run() {
+      const pending = getDb().publishPlans.pending();
+      const total = getDb().publishPlans.all().length;
+      return {
+        ok: true,
+        summary:
+          total === 0
+            ? 'No publish plans yet — use the chat tool draftPublish to create one.'
+            : `${total} publish plan(s) · ${pending.length} awaiting approval.`,
+        data: { total, pending },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'draftPublish',
+          description:
+            'Draft a publish plan for a produced content piece: which platforms, and the per-platform adapted caption. Always starts pending_approval — never posts live on its own.',
+          parameters: z.object({
+            contentPieceId: z.string(),
+            platforms: z.array(z.enum(['instagram', 'tiktok', 'twitter', 'youtube', 'linkedin'])).min(1),
+            caption: z.string(),
+            projectId: z.string().nullable().optional(),
+          }),
+          execute: async (args) => {
+            const { draftPublishPlan } = await import('@/lib/social-publishing');
+            const contentPieceId = typeof args.contentPieceId === 'string' ? args.contentPieceId : '';
+            const platforms = Array.isArray(args.platforms) ? (args.platforms as any) : [];
+            const caption = typeof args.caption === 'string' ? args.caption : '';
+            const projectId = typeof args.projectId === 'string' ? args.projectId : null;
+            return draftPublishPlan(getDb(), { contentPieceId, platforms, caption, projectId });
+          },
+        },
+        {
+          name: 'attemptPublish',
+          description:
+            'Attempt to actually publish an APPROVED plan via the real channel connector. Refuses anything not already approved. Reports the true outcome — never fakes success.',
+          parameters: z.object({ planId: z.string() }),
+          execute: async (args) => {
+            const { attemptPublishLive } = await import('@/lib/social-publishing');
+            const planId = typeof args.planId === 'string' ? args.planId : '';
+            return attemptPublishLive(getDb(), planId);
+          },
+        },
+        {
+          name: 'listPublishPlans',
+          description: 'List every publish plan, or only ones awaiting approval.',
+          parameters: z.object({ onlyPending: z.boolean().nullable().optional() }),
+          execute: async (args) => {
+            return args.onlyPending ? getDb().publishPlans.pending() : getDb().publishPlans.all();
+          },
+        },
+      ];
+    },
+  },
   // ── Idea Lab ──────────────────────────────────────────────────────────────
   {
     id: 'idea-lab-agent',

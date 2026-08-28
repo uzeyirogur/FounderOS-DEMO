@@ -26,6 +26,7 @@ import {
   Lightbulb,
   Bell,
   Boxes,
+  Send,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -40,6 +41,7 @@ export const NAV_OPERATE: NavItem[] = [
   { href: '/finances', label: 'Finances', icon: Wallet },
   { href: '/ideas', label: 'Idea Lab', icon: Lightbulb },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/publish-plans', label: 'Publish Plans', icon: Send },
 ];
 
 // The agent workforce: the roster and the org chart that maps how they report.
