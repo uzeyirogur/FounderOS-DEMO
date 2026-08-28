@@ -13,7 +13,7 @@ import { arcadsStatus } from '@/lib/connectors/arcads';
 import { whatsappStatus } from '@/lib/connectors/whatsapp';
 import { wisprStatus } from '@/lib/connectors/wispr';
 import { localStackStatus } from '@/lib/connectors/local-stack';
-import { ankaAdminStatus } from '@/lib/connectors/anka-admin';
+import { ankaAdminStatus, fetchAnkaBranches, fetchAnkaSports } from '@/lib/connectors/anka-admin';
 import { githubStatus } from '@/lib/connectors/github';
 import { webSearchStatus } from '@/lib/connectors/web-search';
 import { anthropicUsageStatus } from '@/lib/connectors/anthropic-usage';
@@ -544,7 +544,28 @@ export const realAgents: RuntimeAgent[] = [
     departmentId: 'dept-anka-ops',
     async run() {
       const status = await ankaAdminStatus();
-      return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+      if (status.state !== 'connected') {
+        return { ok: false, summary: status.detail, data: status.meta };
+      }
+      const baseUrl = process.env.ANKA_ADMIN_BASE_URL!;
+      const token = process.env.ANKA_ADMIN_TOKEN!;
+      try {
+        const [branches, sports] = await Promise.all([
+          fetchAnkaBranches(baseUrl, token),
+          fetchAnkaSports(baseUrl, token),
+        ]);
+        return {
+          ok: true,
+          summary: `${status.detail} · ${branches.length} branch(es) · ${sports.length} sport(s).`,
+          data: { dashboard: status.meta, branches, sports },
+        };
+      } catch (err) {
+        return {
+          ok: false,
+          summary: `Dashboard reachable but branches/sports probe failed: ${err instanceof Error ? err.message : String(err)}`,
+          data: status.meta,
+        };
+      }
     },
   },
 
