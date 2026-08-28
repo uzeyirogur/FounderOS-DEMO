@@ -10,6 +10,7 @@ import {
   BroadcastSchema,
   CapabilityProviderSchema,
   ContactTagSchema,
+  ContentPieceSchema,
   DepartmentSchema,
   DomainSchema,
   IdeaSchema,
@@ -48,6 +49,7 @@ import {
   type BroadcastReply,
   type CapabilityProvider,
   type ContactTag,
+  type ContentPiece,
   type Department,
   type Domain,
   type Idea,
@@ -418,6 +420,17 @@ CREATE TABLE IF NOT EXISTS capabilities (
   allowed_agents TEXT NOT NULL DEFAULT '[]',
   notes TEXT,
   last_verified_at TEXT
+);
+CREATE TABLE IF NOT EXISTS content_pieces (
+  id TEXT PRIMARY KEY,
+  project_id TEXT,
+  kind TEXT NOT NULL,
+  brief TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'drafted',
+  output TEXT,
+  required_capability TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 `;
 
@@ -1552,6 +1565,62 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Social Content Studio ───────────────────────────────────────────────
+  function rowToContentPiece(r: any): ContentPiece {
+    return ContentPieceSchema.parse({
+      id: r.id,
+      projectId: r.project_id ?? null,
+      kind: r.kind,
+      brief: r.brief,
+      status: r.status,
+      output: r.output ?? null,
+      requiredCapability: r.required_capability ?? null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    });
+  }
+
+  const contentPieces = {
+    all(): ContentPiece[] {
+      return (db.prepare('SELECT * FROM content_pieces ORDER BY created_at DESC').all() as any[]).map(rowToContentPiece);
+    },
+    byId(id: string): ContentPiece | null {
+      const r = db.prepare('SELECT * FROM content_pieces WHERE id = ?').get(id) as any;
+      return r ? rowToContentPiece(r) : null;
+    },
+    byProjectId(projectId: string): ContentPiece[] {
+      return (
+        db.prepare('SELECT * FROM content_pieces WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as any[]
+      ).map(rowToContentPiece);
+    },
+    needsCapability(): ContentPiece[] {
+      return (
+        db.prepare("SELECT * FROM content_pieces WHERE status = 'needs_capability' ORDER BY created_at").all() as any[]
+      ).map(rowToContentPiece);
+    },
+    insert(c: ContentPiece): void {
+      const parsed = ContentPieceSchema.parse(c);
+      db.prepare(
+        'INSERT OR REPLACE INTO content_pieces (id, project_id, kind, brief, status, output, required_capability, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.kind,
+        parsed.brief,
+        parsed.status,
+        parsed.output,
+        parsed.requiredCapability,
+        parsed.createdAt,
+        parsed.updatedAt,
+      );
+    },
+    updateStatus(id: string, status: ContentPiece['status'], output: string | null, requiredCapability: string | null): void {
+      db.prepare(
+        'UPDATE content_pieces SET status = ?, output = ?, required_capability = ?, updated_at = ? WHERE id = ?',
+      ).run(status, output, requiredCapability, new Date().toISOString(), id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1724,6 +1793,7 @@ export function openDb(path: string) {
     lifecycleTasks,
     lifecycleApprovals,
     capabilities,
+    contentPieces,
     sopTasks,
     workflows,
     skills,

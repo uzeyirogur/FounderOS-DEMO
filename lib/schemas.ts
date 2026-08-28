@@ -874,3 +874,71 @@ export type CapabilityCostModel = z.infer<typeof CapabilityCostModelSchema>;
 export type CapabilityStatus = z.infer<typeof CapabilityStatusSchema>;
 export type CapabilityProvider = z.infer<typeof CapabilityProviderSchema>;
 
+// ── Social Content Studio ────────────────────────────────────────────────────
+// The full production surface, not just text posts: a social post or
+// carousel an LLM can write directly (textNative), everything else needs a
+// real Capability Registry entry (video/image/animation/design tooling) —
+// see lib/capability-discovery.ts. This is the map Content Studio's
+// planning step consults to know what it is actually being asked to build.
+export const CONTENT_KINDS = [
+  'social_post',
+  'carousel',
+  'ad_creative',
+  'product_demo_video',
+  'motion_content',
+  'short_video',
+  'image',
+  'mockup',
+  'landing_page_creative',
+  'voiceover',
+  'animation',
+  '3d_web_interactive',
+] as const;
+
+export const ContentKindSchema = z.enum(CONTENT_KINDS);
+export type ContentKind = z.infer<typeof ContentKindSchema>;
+
+export const CONTENT_KIND_REQUIREMENT: Record<ContentKind, { textNative: boolean; capability: string | null }> = {
+  social_post: { textNative: true, capability: null },
+  carousel: { textNative: true, capability: null },
+  ad_creative: { textNative: false, capability: 'ad-creative-generation' },
+  product_demo_video: { textNative: false, capability: 'video-generation' },
+  motion_content: { textNative: false, capability: 'motion-graphics' },
+  short_video: { textNative: false, capability: 'video-generation' },
+  image: { textNative: false, capability: 'image-generation' },
+  mockup: { textNative: false, capability: 'design-mockup' },
+  landing_page_creative: { textNative: false, capability: 'landing-page-design' },
+  voiceover: { textNative: false, capability: 'voice-synthesis' },
+  animation: { textNative: false, capability: 'animation' },
+  '3d_web_interactive': { textNative: false, capability: '3d-web-animation' },
+};
+
+/** drafted: brief exists, nothing produced yet.
+ *  needs_capability: this kind needs a Capability Registry entry that isn't
+ *    active yet — Content Studio ran discovery and is waiting on a decision.
+ *  produced: real output exists (text, or a link/path to generated media).
+ *  failed: production was attempted and failed (kept, with a reason, rather
+ *    than silently disappearing). */
+export const ContentPieceStatusSchema = z.enum(['drafted', 'needs_capability', 'produced', 'failed']);
+
+export const ContentPieceSchema = z.object({
+  id: z.string().min(1),
+  /** Optional Project Registry link — a content piece may exist standalone
+   *  (e.g. a personal-brand post) or tied to a project's 'social' phase. */
+  projectId: z.string().nullable().default(null),
+  kind: ContentKindSchema,
+  brief: z.string().min(1),
+  status: ContentPieceStatusSchema.default('drafted'),
+  /** The actual output: text for textNative kinds, a URL/path once a media
+   *  tool produces something. Null until produced. */
+  output: z.string().nullable().default(null),
+  /** Set when status is 'needs_capability' — which Capability Registry tag
+   *  is blocking this piece, so the UI can link straight to /capabilities. */
+  requiredCapability: z.string().nullable().default(null),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
+
+export type ContentPieceStatus = z.infer<typeof ContentPieceStatusSchema>;
+export type ContentPiece = z.infer<typeof ContentPieceSchema>;
+

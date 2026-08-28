@@ -45,16 +45,17 @@ const GRAY = {
 const departments: Department[] = [
   { id: 'dept-sales', name: 'Sales', slug: 'sales', tagline: 'Pipeline and deals.', color: GRAY.white, order: 1 },
   { id: 'dept-marketing-growth', name: 'Marketing/Growth', slug: 'marketing-growth', tagline: 'Publishing, content, attention.', color: GRAY.light, order: 2 },
-  { id: 'dept-tech', name: 'TECH', slug: 'tech', tagline: 'AI & automations · G-Brain.', color: GRAY.mid, order: 3 },
-  { id: 'dept-finance', name: 'Finances', slug: 'finances', tagline: 'Every processor, one view.', color: GRAY.dim, order: 4 },
-  { id: 'dept-comms', name: 'Communications', slug: 'communications', tagline: 'Gmail, WhatsApp, Slack → one feed.', color: GRAY.dark, order: 5 },
-  { id: 'dept-clients', name: 'Clients', slug: 'clients', tagline: 'Every client, onboarded and served.', color: GRAY.light, order: 6 },
-  { id: 'dept-anka-ops', name: 'ANKA Operations', slug: 'anka-operations', tagline: 'ANKA+/TIVARO backend, read-only.', color: GRAY.mid, order: 7 },
-  { id: 'dept-product-eng', name: 'Product & Engineering', slug: 'product-engineering', tagline: 'Coding, QA/UI review, competitor research.', color: GRAY.dark, order: 8 },
-  { id: 'dept-ai-intelligence', name: 'AI Intelligence', slug: 'ai-intelligence', tagline: 'New AI tools, MCPs, skills, repos.', color: GRAY.light, order: 9 },
-  { id: 'dept-idea-lab', name: 'Idea Lab', slug: 'idea-lab', tagline: 'New ideas, scored transparently.', color: GRAY.dim, order: 10 },
-  { id: 'dept-usage-cost', name: 'Usage & Cost Monitor', slug: 'usage-cost', tagline: 'Claude/API usage and spend, tracked honestly.', color: GRAY.mid, order: 11 },
-  { id: 'dept-exec-reporting', name: 'Executive Reporter', slug: 'executive-reporting', tagline: 'Every agent, one daily/weekly digest.', color: GRAY.white, order: 12 },
+  { id: 'dept-content-studio', name: 'Content Studio', slug: 'content-studio', tagline: 'Real production: posts, media, growth, ads.', color: GRAY.dim, order: 3 },
+  { id: 'dept-tech', name: 'TECH', slug: 'tech', tagline: 'AI & automations · G-Brain.', color: GRAY.mid, order: 4 },
+  { id: 'dept-finance', name: 'Finances', slug: 'finances', tagline: 'Every processor, one view.', color: GRAY.dim, order: 5 },
+  { id: 'dept-comms', name: 'Communications', slug: 'communications', tagline: 'Gmail, WhatsApp, Slack → one feed.', color: GRAY.dark, order: 6 },
+  { id: 'dept-clients', name: 'Clients', slug: 'clients', tagline: 'Every client, onboarded and served.', color: GRAY.light, order: 7 },
+  { id: 'dept-anka-ops', name: 'ANKA Operations', slug: 'anka-operations', tagline: 'ANKA+/TIVARO backend, read-only.', color: GRAY.mid, order: 8 },
+  { id: 'dept-product-eng', name: 'Product & Engineering', slug: 'product-engineering', tagline: 'Coding, QA/UI review, competitor research.', color: GRAY.dark, order: 9 },
+  { id: 'dept-ai-intelligence', name: 'AI Intelligence', slug: 'ai-intelligence', tagline: 'New AI tools, MCPs, skills, repos.', color: GRAY.light, order: 10 },
+  { id: 'dept-idea-lab', name: 'Idea Lab', slug: 'idea-lab', tagline: 'New ideas, scored transparently.', color: GRAY.dim, order: 11 },
+  { id: 'dept-usage-cost', name: 'Usage & Cost Monitor', slug: 'usage-cost', tagline: 'Claude/API usage and spend, tracked honestly.', color: GRAY.mid, order: 12 },
+  { id: 'dept-exec-reporting', name: 'Executive Reporter', slug: 'executive-reporting', tagline: 'Every agent, one daily/weekly digest.', color: GRAY.white, order: 13 },
 ];
 
 // The roster IS the runtime — every row here maps 1:1 to a RuntimeAgent in
@@ -536,6 +537,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Social Content Studio: real, tool-agnostic content production ───────
+  {
+    id: 'social-content-studio',
+    departmentId: 'dept-content-studio',
+    name: 'Social Content Studio',
+    role: 'Content Production (text-native + capability-discovered media)',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Produces the full content surface — posts, carousels, ad creative, product demo videos, motion content, images, mockups, landing-page creative, voiceover, animation, 3D/web interactive — by writing text directly via the LLM gateway and discovering real production tools for everything else via the Capability Registry. Never fakes media it did not actually produce.',
+    model: 'llm gateway + capability registry',
+    tools: ['llm', 'capability-registry'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Idea Lab: scored idea generation ──────────────────────────────────────
   {
     id: 'idea-lab-agent',
@@ -943,7 +959,20 @@ const sopTasks: SopTask[] = [
     ],
   },
 
-  // MARKETING / GROWTH
+  // CONTENT STUDIO
+  {
+    id: 'sop-social-content-studio', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'social-content-studio',
+    title: 'Produce a content piece, real tools only',
+    summary: 'Text-native kinds go straight through the LLM; media kinds check the Capability Registry first.',
+    steps: [
+      'Read the brief and the requested content kind',
+      'If the kind is text-native (social_post, carousel), write it directly via the LLM gateway',
+      'Otherwise check the Capability Registry for an ACTIVE, approved provider for that capability',
+      'If one exists, name it in the output — real invocation happens through that provider\'s own connector',
+      'If none exists, run a live discovery search via AI Intelligence and record the candidates found',
+      'Never fabricate media output — a piece without a real tool comes back needs_capability, not a fake link',
+    ],
+  },
   {
     id: 'sop-social-agent', departmentId: 'dept-marketing-growth', assigneeKind: 'agent', assigneeId: 'social-agent',
     title: 'Run the daily content pipeline',

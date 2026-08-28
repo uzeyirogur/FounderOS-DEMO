@@ -44,12 +44,13 @@ describe('seedDatabase', () => {
     }
   });
 
-  test('the twelve operating pillars, in order', () => {
+  test('the thirteen operating pillars, in order', () => {
     db = openDb(':memory:');
     seedDatabase(db);
     expect(db.departments.all().map((d) => d.name)).toEqual([
       'Sales',
       'Marketing/Growth',
+      'Content Studio',
       'TECH',
       'Finances',
       'Communications',

@@ -5,6 +5,7 @@ import { contentAgents } from '@/lib/content';
 import { zernioRecentPosts, zernioPostDays } from '@/lib/connectors/zernio';
 import { PageHeader } from '@/components/PageHeader';
 import { LeadMagnets } from '@/components/LeadMagnets';
+import { ContentStudioProducer } from '@/components/ContentStudioProducer';
 import { Badge, Dot, SectionHead } from '@/components/terminal';
 import type { Agent } from '@/lib/schemas';
 
@@ -101,6 +102,7 @@ export default async function ContentPage() {
   const crew = contentAgents(db.agents.all());
   const lead = crew[0] ?? null;
   const workers = lead ? crew.slice(1) : crew;
+  const contentPieces = db.contentPieces.all();
 
   const posts = await zernioRecentPosts(8).catch(() => []);
   const days = await zernioPostDays().catch(() => []);
@@ -133,7 +135,7 @@ export default async function ContentPage() {
         </div>
       </section>
 
-      {/* The content agent + crew (real seed roster) */}
+      {/* Content agent + crew (real seed roster) */}
       <section className="mt-8">
         <SectionHead
           label="Content agents"
@@ -153,6 +155,19 @@ export default async function ContentPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Social Content Studio — real production, not just text */}
+      <section className="mt-8">
+        <SectionHead label="Social Content Studio" count={`${contentPieces.length} produced`} />
+        <p className="mb-3 text-xs text-os-dim">
+          Posts and carousels are written directly. Everything else (video, image, motion, 3D/web interactive, mockups,
+          voiceover) checks the Capability Registry for a real tool first — see{' '}
+          <Link href="/capabilities" className="inline-flex items-center gap-0.5 text-os-accent hover:underline">
+            Capabilities <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </p>
+        <ContentStudioProducer recent={contentPieces.slice(0, 6)} />
       </section>
 
       {/* Zernio content pipeline — recent published content + cadence */}

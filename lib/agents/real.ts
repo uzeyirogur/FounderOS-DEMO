@@ -734,6 +734,66 @@ export const realAgents: RuntimeAgent[] = [
     },
   },
 
+  // ── Social Content Studio ────────────────────────────────────────────────
+  {
+    id: 'social-content-studio',
+    name: 'Social Content Studio',
+    description:
+      'Produces the full content surface (posts, carousels, ad creative, product demo videos, motion content, images, mockups, landing-page creative, voiceover, animation, 3D/web interactive) — text-native kinds go straight through the LLM gateway; every media kind checks the Capability Registry for a real active tool first, and runs live discovery if nothing is active yet. Never fakes media it did not actually produce.',
+    departmentId: 'dept-content-studio',
+    async run() {
+      const db = getDb();
+      const needing = db.contentPieces.needsCapability();
+      const total = db.contentPieces.all().length;
+      return {
+        ok: true,
+        summary:
+          total === 0
+            ? 'No content pieces yet — use the chat tool produceContent to draft one.'
+            : `${total} content piece(s) tracked · ${needing.length} waiting on a Capability Registry decision.`,
+        data: { total, needsCapability: needing },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'produceContent',
+          description:
+            'Produce one piece of content from a brief: a social_post or carousel is written directly; every other kind (ad_creative, product_demo_video, motion_content, short_video, image, mockup, landing_page_creative, voiceover, animation, 3d_web_interactive) checks the Capability Registry for a real tool and runs discovery if none is active — it never fabricates media. Optionally link it to a Project Registry project.',
+          parameters: z.object({
+            kind: z.enum([
+              'social_post', 'carousel', 'ad_creative', 'product_demo_video', 'motion_content',
+              'short_video', 'image', 'mockup', 'landing_page_creative', 'voiceover', 'animation', '3d_web_interactive',
+            ]),
+            brief: z.string().describe('what the content should say/show'),
+            projectId: z.string().nullable().optional().describe('optional Project Registry project id to link this to'),
+          }),
+          execute: async (args) => {
+            const { produceContentPiece } = await import('@/lib/content-studio');
+            const { discoverCapabilityLive } = await import('@/lib/capability-discovery');
+            const { chat } = await import('@/lib/connectors/llm');
+            const kind = args.kind as any;
+            const brief = typeof args.brief === 'string' ? args.brief : '';
+            const projectId = typeof args.projectId === 'string' ? args.projectId : null;
+            return produceContentPiece(
+              getDb(),
+              { kind, brief, projectId },
+              { chat, discover: discoverCapabilityLive },
+            );
+          },
+        },
+        {
+          name: 'listContentPieces',
+          description: 'List every content piece ever produced or attempted, optionally filtered to a project.',
+          parameters: z.object({ projectId: z.string().nullable().optional() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : null;
+            return projectId ? getDb().contentPieces.byProjectId(projectId) : getDb().contentPieces.all();
+          },
+        },
+      ];
+    },
+  },
   // ── Idea Lab ──────────────────────────────────────────────────────────────
   {
     id: 'idea-lab-agent',

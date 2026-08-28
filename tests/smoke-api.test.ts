@@ -35,6 +35,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'conductor/context', load: () => import('@/app/api/conductor/context/route'), url: 'http://localhost/api/conductor/context?path=/agents' },
   { route: 'connections', load: () => import('@/app/api/connections/route'), url: 'http://localhost/api/connections' },
   { route: 'contacts/tags', load: () => import('@/app/api/contacts/tags/route'), url: 'http://localhost/api/contacts/tags' },
+  { route: 'content-pieces', load: () => import('@/app/api/content-pieces/route'), url: 'http://localhost/api/content-pieces' },
   { route: 'departments', load: () => import('@/app/api/departments/route'), url: 'http://localhost/api/departments' },
   { route: 'funnel', load: () => import('@/app/api/funnel/route'), url: 'http://localhost/api/funnel' },
   { route: 'funnel/lead-message', load: () => import('@/app/api/funnel/lead-message/route'), url: 'http://localhost/api/funnel/lead-message?name=Smoke%20Test%20Lead' },
