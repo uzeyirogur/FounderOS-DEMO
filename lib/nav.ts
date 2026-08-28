@@ -47,6 +47,11 @@ export const NAV_OPERATE: NavItem[] = [
   { href: '/work', label: 'My Tasks', icon: ListChecks },
 ];
 
+// Pages that exist but are reached via drill-down from their parent
+// section rather than the primary sidebar (e.g. /content/lead-magnets
+// from /content, /social/beehiiv from /social) are intentionally NOT
+// duplicated here — the parent page links to them directly.
+
 // The agent workforce: the roster and the org chart that maps how they report.
 export const NAV_AGENTS: NavItem[] = [
   { href: '/agents', label: 'Agents', icon: Users },
