@@ -1062,3 +1062,25 @@ export type PersonalTaskPriority = z.infer<typeof PersonalTaskPrioritySchema>;
 export type PersonalTaskStatus = z.infer<typeof PersonalTaskStatusSchema>;
 export type PersonalTask = z.infer<typeof PersonalTaskSchema>;
 
+// ── Personal Ops — recurring routines/habits, distinct from Work Assistant's
+// one-off tasks and never a Project Registry project. Completions are a
+// separate append-only log so streak history survives edits to the routine.
+export const RoutineFrequencySchema = z.enum(['daily', 'weekdays', 'weekly', 'monthly']);
+export const RoutineSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  frequency: RoutineFrequencySchema,
+  active: z.boolean().default(true),
+  createdAt: z.string().min(1),
+});
+export type RoutineFrequency = z.infer<typeof RoutineFrequencySchema>;
+export type Routine = z.infer<typeof RoutineSchema>;
+
+export const RoutineCompletionSchema = z.object({
+  id: z.string().min(1),
+  routineId: z.string().min(1),
+  completedOn: z.string().min(1), // YYYY-MM-DD, local calendar day — one entry per day
+  completedAt: z.string().min(1), // full ISO timestamp of the actual check-in
+});
+export type RoutineCompletion = z.infer<typeof RoutineCompletionSchema>;
+

@@ -46,6 +46,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'publish-plans', load: () => import('@/app/api/publish-plans/route'), url: 'http://localhost/api/publish-plans' },
   { route: 'outbound-messages', load: () => import('@/app/api/outbound-messages/route'), url: 'http://localhost/api/outbound-messages' },
   { route: 'personal-tasks', load: () => import('@/app/api/personal-tasks/route'), url: 'http://localhost/api/personal-tasks' },
+  { route: 'routines', load: () => import('@/app/api/routines/route'), url: 'http://localhost/api/routines' },
   { route: 'life/map', load: () => import('@/app/api/life/map/route'), url: 'http://localhost/api/life/map' },
   { route: 'metrics', load: () => import('@/app/api/metrics/route'), url: 'http://localhost/api/metrics' },
   { route: 'projects', load: () => import('@/app/api/projects/route'), url: 'http://localhost/api/projects' },

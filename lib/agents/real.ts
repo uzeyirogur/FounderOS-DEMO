@@ -1070,6 +1070,81 @@ export const realAgents: RuntimeAgent[] = [
     },
   },
 
+  // ── Personal Ops ─────────────────────────────────────────────────────────
+  {
+    id: 'personal-ops',
+    name: 'Personal Ops',
+    description:
+      "Tracks Alex's recurring routines/habits (not one-off tasks, not a project) — daily/weekly/monthly cadence with an honest streak computed from an append-only completion log.",
+    departmentId: 'dept-personal',
+    async run() {
+      const { currentStreak } = await import('@/lib/personal-ops');
+      const db = getDb();
+      const active = db.routines.active();
+      const summaries = active.map((r) => {
+        const completions = db.routineCompletions.forRoutine(r.id).map((c) => c.completedOn);
+        const streak = currentStreak(completions, new Date().toISOString().slice(0, 10));
+        return { ...r, streak };
+      });
+      return {
+        ok: true,
+        summary:
+          summaries.length === 0
+            ? 'No active routines yet — use the chat tool addRoutine to create one.'
+            : summaries.map((r) => `${r.title}: ${r.streak}-day streak`).join(' · '),
+        data: { routines: summaries },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'addRoutine',
+          description: 'Adds a recurring routine/habit. Never a one-off task and never a Project Registry project.',
+          parameters: z.object({
+            title: z.string(),
+            frequency: z.enum(['daily', 'weekdays', 'weekly', 'monthly']),
+          }),
+          execute: async (args) => {
+            const title = typeof args.title === 'string' ? args.title : '';
+            const frequency = args.frequency as 'daily' | 'weekdays' | 'weekly' | 'monthly';
+            const routine = { id: randomUUID(), title, frequency, active: true, createdAt: new Date().toISOString() };
+            getDb().routines.insert(routine);
+            return routine;
+          },
+        },
+        {
+          name: 'checkIn',
+          description:
+            "Logs today's check-in for a routine. Append-only and idempotent — checking in twice on the same day never duplicates the streak entry.",
+          parameters: z.object({ routineId: z.string() }),
+          execute: async (args) => {
+            const routineId = typeof args.routineId === 'string' ? args.routineId : '';
+            const today = new Date().toISOString().slice(0, 10);
+            getDb().routineCompletions.insert({ id: randomUUID(), routineId, completedOn: today, completedAt: new Date().toISOString() });
+            const { currentStreak } = await import('@/lib/personal-ops');
+            const completions = getDb().routineCompletions.forRoutine(routineId).map((c) => c.completedOn);
+            return { routineId, completedOn: today, streak: currentStreak(completions, today) };
+          },
+        },
+        {
+          name: 'listRoutines',
+          description: 'Lists every routine, or only the active ones, each with its current streak.',
+          parameters: z.object({ onlyActive: z.boolean().nullable().optional() }),
+          execute: async (args) => {
+            const { currentStreak } = await import('@/lib/personal-ops');
+            const db = getDb();
+            const rows = args.onlyActive ? db.routines.active() : db.routines.all();
+            const today = new Date().toISOString().slice(0, 10);
+            return rows.map((r) => ({
+              ...r,
+              streak: currentStreak(db.routineCompletions.forRoutine(r.id).map((c) => c.completedOn), today),
+            }));
+          },
+        },
+      ];
+    },
+  },
+
   // ── Idea Lab ──────────────────────────────────────────────────────────────
   {
     id: 'idea-lab-agent',

@@ -613,6 +613,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Personal Ops: recurring routines/habits, separate from one-off tasks ──
+  {
+    id: 'personal-ops',
+    departmentId: 'dept-personal',
+    name: 'Personal Ops',
+    role: 'Recurring Routines & Habits',
+    status: 'active',
+    tier: 'lead',
+    description:
+      "Tracks Alex's recurring routines/habits (not one-off tasks, not a project) — daily/weekly/monthly cadence with an honest streak computed from an append-only completion log.",
+    model: 'routine repo + pure streak logic (no LLM)',
+    tools: ['routines'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Idea Lab: scored idea generation ──────────────────────────────────────
   {
     id: 'idea-lab-agent',
@@ -1383,6 +1398,18 @@ const sopTasks: SopTask[] = [
       'Add a task when asked, with an honest default priority (normal)',
       'Mark a task done only when explicitly told it is done',
       'Never create or imply a Project Registry entry for a personal task',
+    ],
+  },
+  {
+    id: 'sop-personal-ops', departmentId: 'dept-personal', assigneeKind: 'agent', assigneeId: 'personal-ops',
+    title: "Track Alex's recurring routines honestly",
+    summary: 'Daily/weekly/monthly habits with a real streak — never a one-off task, never a project.',
+    steps: [
+      'List active routines and each one\'s current streak from the completion log',
+      'Log a check-in as append-only — never overwrite or backdate a prior entry',
+      'Never log the same calendar day twice for one routine (idempotent check-in)',
+      'Compute streak purely from the completion log — no separate counter to drift',
+      'A missed day breaks the streak; do not soften or round the number',
     ],
   },
 ];

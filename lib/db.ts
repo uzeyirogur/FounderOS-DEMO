@@ -27,6 +27,8 @@ import {
   ProjectSchema,
   PublishPlanSchema,
   RoadmapItemSchema,
+  RoutineSchema,
+  RoutineCompletionSchema,
   SocialAccountSchema,
   SocialSnapshotSchema,
   EmailListSnapshotSchema,
@@ -69,6 +71,8 @@ import {
   type Project,
   type ProjectLifecycleState,
   type PublishPlan,
+  type Routine,
+  type RoutineCompletion,
   type RoadmapItem,
   type SocialAccount,
   type SocialPlatform,
@@ -483,6 +487,20 @@ CREATE TABLE IF NOT EXISTS personal_tasks (
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL,
   completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS routines (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS routine_completions (
+  id TEXT PRIMARY KEY,
+  routine_id TEXT NOT NULL,
+  completed_on TEXT NOT NULL,
+  completed_at TEXT NOT NULL,
+  UNIQUE(routine_id, completed_on)
 );
 `;
 
@@ -1897,6 +1915,72 @@ export function openDb(path: string) {
     },
   };
 
+  function rowToRoutine(r: any): Routine {
+    return RoutineSchema.parse({
+      id: r.id,
+      title: r.title,
+      frequency: r.frequency,
+      active: Boolean(r.active),
+      createdAt: r.created_at,
+    });
+  }
+
+  const routines = {
+    all(): Routine[] {
+      return (db.prepare('SELECT * FROM routines ORDER BY created_at DESC').all() as any[]).map(rowToRoutine);
+    },
+    byId(id: string): Routine | null {
+      const r = db.prepare('SELECT * FROM routines WHERE id = ?').get(id) as any;
+      return r ? rowToRoutine(r) : null;
+    },
+    active(): Routine[] {
+      return (db.prepare('SELECT * FROM routines WHERE active = 1 ORDER BY created_at').all() as any[]).map(rowToRoutine);
+    },
+    insert(r: Routine): void {
+      const parsed = RoutineSchema.parse(r);
+      db.prepare('INSERT OR REPLACE INTO routines (id, title, frequency, active, created_at) VALUES (?, ?, ?, ?, ?)').run(
+        parsed.id,
+        parsed.title,
+        parsed.frequency,
+        parsed.active ? 1 : 0,
+        parsed.createdAt,
+      );
+    },
+    setActive(id: string, active: boolean): void {
+      db.prepare('UPDATE routines SET active = ? WHERE id = ?').run(active ? 1 : 0, id);
+    },
+    remove(id: string): void {
+      db.prepare('DELETE FROM routines WHERE id = ?').run(id);
+      db.prepare('DELETE FROM routine_completions WHERE routine_id = ?').run(id);
+    },
+  };
+
+  function rowToRoutineCompletion(r: any): RoutineCompletion {
+    return RoutineCompletionSchema.parse({
+      id: r.id,
+      routineId: r.routine_id,
+      completedOn: r.completed_on,
+      completedAt: r.completed_at,
+    });
+  }
+
+  const routineCompletions = {
+    forRoutine(routineId: string): RoutineCompletion[] {
+      return (
+        db.prepare('SELECT * FROM routine_completions WHERE routine_id = ? ORDER BY completed_on DESC').all(routineId) as any[]
+      ).map(rowToRoutineCompletion);
+    },
+    /** Append-only, but idempotent per calendar day — the UNIQUE(routine_id,
+     *  completed_on) constraint means checking in twice on the same day
+     *  never creates a duplicate streak entry. */
+    insert(c: RoutineCompletion): void {
+      const parsed = RoutineCompletionSchema.parse(c);
+      db.prepare(
+        'INSERT OR IGNORE INTO routine_completions (id, routine_id, completed_on, completed_at) VALUES (?, ?, ?, ?)',
+      ).run(parsed.id, parsed.routineId, parsed.completedOn, parsed.completedAt);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -2074,6 +2158,8 @@ export function openDb(path: string) {
     publishPlans,
     outboundMessages,
     personalTasks,
+    routines,
+    routineCompletions,
     sopTasks,
     workflows,
     skills,
