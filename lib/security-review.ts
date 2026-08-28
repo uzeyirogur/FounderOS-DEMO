@@ -78,6 +78,85 @@ export function scanForSecrets(files: SourceFile[]): SecretFinding[] {
   return findings;
 }
 
+// ── Code pattern checks ───────────────────────────────────────────────────
+// Free/local, regex-based checks beyond secrets and dependency audit:
+// dangerous env exposure, unsafe API routes, obvious injection patterns,
+// permissive CORS. Same discipline as secret scanning — a finding is
+// path + line + pattern name only, never the matched snippet, so a
+// report can never itself leak something sensitive.
+export type CodeFinding = { path: string; line: number; pattern: string };
+
+interface LinePattern {
+  name: string;
+  test: (line: string) => boolean;
+}
+
+const LINE_PATTERNS: LinePattern[] = [
+  {
+    name: 'wildcard-cors',
+    test: (l) => /Access-Control-Allow-Origin['"]?\s*[,:]\s*['"]\*['"]/.test(l),
+  },
+  {
+    // string concatenation feeding a SQL-shaped call — real parameterized
+    // queries (?, $1, :name placeholders) are never flagged.
+    name: 'sql-string-concat',
+    test: (l) => /(SELECT|INSERT|UPDATE|DELETE)\b[^"'`]*["'`]\s*\+/i.test(l) || /\+\s*["'`][^"'`]*\b(SELECT|INSERT|UPDATE|DELETE)\b/i.test(l),
+  },
+  {
+    name: 'eval-usage',
+    test: (l) => /\beval\s*\(/.test(l) || /new\s+Function\s*\(/.test(l),
+  },
+  {
+    name: 'dangerously-set-inner-html',
+    // Only flag when the __html value isn't an obviously-static literal —
+    // a hardcoded string is not a real XSS vector.
+    test: (l) => /dangerouslySetInnerHTML/.test(l) && !/__html:\s*['"`]/.test(l),
+  },
+  {
+    name: 'hardcoded-env-fallback',
+    // process.env.X || '<looks like a real secret>' — the fallback value
+    // itself becomes a shipped default credential.
+    test: (l) => /process\.env\.\w+\s*\|\|\s*['"][A-Za-z0-9_\-]{12,}['"]/.test(l),
+  },
+];
+
+const HTTP_METHOD_EXPORT = /export\s+(async\s+)?function\s+(POST|PUT|PATCH|DELETE)\b/;
+const AUTH_HINT = /\b(session|getServerSession|auth\(|requireAuth|authorize|permissionLevel|authorizedAgentIds|apiKey|Authorization)\b/i;
+
+/**
+ * A Next.js route file that exports a mutating handler (POST/PUT/PATCH/
+ * DELETE) with no visible session/auth/permission reference anywhere in
+ * the same file. This is a heuristic, not a guarantee — auth enforced in
+ * a shared middleware won't be visible here — so it is reported as a
+ * finding to review, not an automatic fail.
+ */
+function findUnauthenticatedMutatingRoutes(file: SourceFile): CodeFinding[] {
+  if (!/[\\/]api[\\/].*route\.tsx?$/.test(file.path.replace(/\\/g, '/'))) return [];
+  const lines = file.content.split('\n');
+  const findings: CodeFinding[] = [];
+  const hasAuthHint = AUTH_HINT.test(file.content);
+  lines.forEach((line, idx) => {
+    if (HTTP_METHOD_EXPORT.test(line) && !hasAuthHint) {
+      findings.push({ path: file.path, line: idx + 1, pattern: 'unauthenticated-mutating-route' });
+    }
+  });
+  return findings;
+}
+
+export function scanForCodePatterns(files: SourceFile[]): CodeFinding[] {
+  const findings: CodeFinding[] = [];
+  for (const file of files) {
+    const lines = file.content.split('\n');
+    lines.forEach((lineText, idx) => {
+      for (const p of LINE_PATTERNS) {
+        if (p.test(lineText)) findings.push({ path: file.path, line: idx + 1, pattern: p.name });
+      }
+    });
+    findings.push(...findUnauthenticatedMutatingRoutes(file));
+  }
+  return findings;
+}
+
 // ── Real filesystem + npm audit wiring ───────────────────────────────────
 
 import fs from 'node:fs';

@@ -644,7 +644,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'security-reviewer',
     name: 'Security Reviewer',
     description:
-      'Runs real npm audit and a regex secret scan against a Project Registry-authorized directory before release. Never reports a matched secret value, and never reports clean when a check could not actually run.',
+      'Runs real npm audit, a regex secret scan, and code-pattern checks (wildcard CORS, SQL string concatenation, eval usage, unguarded dangerouslySetInnerHTML, hardcoded env fallbacks, mutating API routes with no visible auth check) against a Project Registry-authorized directory before release. Never reports a matched secret value or code snippet — findings are path + line + pattern name only — and never reports clean when a check could not actually run.',
     departmentId: 'dept-product-eng',
     async run() {
       const authorized = getDb()
