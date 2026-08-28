@@ -42,13 +42,13 @@ export function aggregateStatus(db: Db): ConductorStatus {
 // and good enough for "which department does this belong to". An agent id
 // this build doesn't actually run is never returned; unmatched intent goes
 // to the Conductor itself rather than guessing.
-const INTENT_RULES: Array<{ agentId: string; keywords: RegExp }> = [
+export const INTENT_RULES: Array<{ agentId: string; keywords: RegExp }> = [
   { agentId: 'qa-ui-review', keywords: /\b(test|typecheck|build|qa|bug|regression)\b/i },
   { agentId: 'security-reviewer', keywords: /\b(security|secret|vulnerab\w*|audit|exploit|injection|cors)\b/i },
-  { agentId: 'ui-ux-review', keywords: /\b(ui|ux|screen|accessib\w*|design|layout|responsive)\b/i },
+  { agentId: 'ui-ux-reviewer', keywords: /\b(ui|ux|screen|accessib\w*|design|layout|responsive)\b/i },
   { agentId: 'social-content-studio', keywords: /\b(video|creative|carousel|ad creative|content piece|motion|mockup|landing page visual)\b/i },
   { agentId: 'ad-creative-research', keywords: /\b(ad trend|competitor messaging|creative research|hook)\b/i },
-  { agentId: 'product-research', keywords: /\b(research|competitor landscape|market)\b/i },
+  { agentId: 'product-competitor-research', keywords: /\b(research|competitor landscape|market)\b/i },
   { agentId: 'growth-marketing', keywords: /\b(icp|positioning|funnel|seo|acquisition|pricing hypothesis)\b/i },
   { agentId: 'social-publishing', keywords: /\b(publish|schedule post|distribute)\b/i },
   { agentId: 'claude-code-orchestrator', keywords: /\b(implement|refactor|write code|fix the code|pull request)\b/i },

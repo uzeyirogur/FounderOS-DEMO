@@ -1,22 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { openDb } from '@/lib/db';
-import { classifyIntent, delegateTask, startTask, completeTask, failTask, retryTask } from '@/lib/conductor';
+import { classifyIntent, delegateTask, startTask, completeTask, failTask, retryTask, INTENT_RULES } from '@/lib/conductor';
+import { realAgents } from '@/lib/agents/real';
 
 describe('classifyIntent', () => {
+  it('every rule targets an agent id that actually exists in realAgents — no larp routing', () => {
+    const runtimeIds = new Set(realAgents.map((a) => a.id));
+    for (const rule of INTENT_RULES) {
+      expect(runtimeIds.has(rule.agentId)).toBe(true);
+    }
+  });
+
   it('routes a QA-shaped goal to qa-ui-review', () => {
     expect(classifyIntent('Run the tests and typecheck before we ship')).toBe('qa-ui-review');
   });
   it('routes a security-shaped goal to security-reviewer', () => {
     expect(classifyIntent('Scan for leaked secrets and vulnerable dependencies')).toBe('security-reviewer');
   });
-  it('routes a UI-shaped goal to ui-ux-review', () => {
-    expect(classifyIntent('Review the new signup screen for accessibility issues')).toBe('ui-ux-review');
+  it('routes a UI-shaped goal to ui-ux-reviewer', () => {
+    expect(classifyIntent('Review the new signup screen for accessibility issues')).toBe('ui-ux-reviewer');
   });
   it('routes a content-shaped goal to social-content-studio', () => {
     expect(classifyIntent('Create a short-form video ad creative for the launch')).toBe('social-content-studio');
   });
-  it('routes a research-shaped goal to product-research', () => {
-    expect(classifyIntent('Research our competitor landscape and positioning')).toBe('product-research');
+  it('routes a research-shaped goal to product-competitor-research', () => {
+    expect(classifyIntent('Research our competitor landscape and positioning')).toBe('product-competitor-research');
   });
   it('falls back to conductor itself when nothing matches', () => {
     expect(classifyIntent('asdkjaslkdj random gibberish')).toBe('conductor');
