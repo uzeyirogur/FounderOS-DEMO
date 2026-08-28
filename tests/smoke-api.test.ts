@@ -38,6 +38,8 @@ const ROUTES: RouteEntry[] = [
   { route: 'funnel', load: () => import('@/app/api/funnel/route'), url: 'http://localhost/api/funnel' },
   { route: 'funnel/lead-message', load: () => import('@/app/api/funnel/lead-message/route'), url: 'http://localhost/api/funnel/lead-message?name=Smoke%20Test%20Lead' },
   { route: 'keys', load: () => import('@/app/api/keys/route'), url: 'http://localhost/api/keys' },
+  { route: 'lifecycle-approvals', load: () => import('@/app/api/lifecycle-approvals/route'), url: 'http://localhost/api/lifecycle-approvals' },
+  { route: 'projects/[id]/lifecycle', load: () => import('@/app/api/projects/[id]/lifecycle/route'), url: 'http://localhost/api/projects/anka-tivaro/lifecycle', params: { id: 'anka-tivaro' } },
   { route: 'life/map', load: () => import('@/app/api/life/map/route'), url: 'http://localhost/api/life/map' },
   { route: 'metrics', load: () => import('@/app/api/metrics/route'), url: 'http://localhost/api/metrics' },
   { route: 'projects', load: () => import('@/app/api/projects/route'), url: 'http://localhost/api/projects' },

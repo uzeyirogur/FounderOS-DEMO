@@ -44,6 +44,7 @@ const PAGES: PageEntry[] = [
   { file: 'reference/page.tsx', load: () => import('@/app/reference/page') },
   { file: 'personas/page.tsx', load: () => import('@/app/personas/page') },
   { file: 'projects/page.tsx', load: () => import('@/app/projects/page') },
+  { file: 'projects/[id]/page.tsx', load: () => import('@/app/projects/[id]/page'), props: { params: { id: 'anka-tivaro' } } },
   { file: 'ideas/page.tsx', load: () => import('@/app/ideas/page') },
   { file: 'notifications/page.tsx', load: () => import('@/app/notifications/page') },
 ];

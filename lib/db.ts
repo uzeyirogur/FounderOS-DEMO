@@ -12,9 +12,12 @@ import {
   DepartmentSchema,
   DomainSchema,
   IdeaSchema,
+  LifecycleApprovalSchema,
+  LifecycleTaskSchema,
   MetricSchema,
   NotificationSchema,
   PersonaSchema,
+  ProjectLifecycleStateSchema,
   PhaseSchema,
   ProjectSchema,
   RoadmapItemSchema,
@@ -46,11 +49,14 @@ import {
   type Department,
   type Domain,
   type Idea,
+  type LifecycleApproval,
+  type LifecycleTask,
   type Metric,
   type Notification,
   type Persona,
   type Phase,
   type Project,
+  type ProjectLifecycleState,
   type RoadmapItem,
   type SocialAccount,
   type SocialPlatform,
@@ -363,6 +369,36 @@ CREATE TABLE IF NOT EXISTS notifications (
   decided_at TEXT,
   decided_by TEXT,
   response_text TEXT
+);
+CREATE TABLE IF NOT EXISTS project_lifecycle_state (
+  project_id TEXT PRIMARY KEY,
+  current_phase TEXT NOT NULL DEFAULT 'idea',
+  history TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS lifecycle_tasks (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  phase TEXT NOT NULL,
+  title TEXT NOT NULL,
+  responsible_agent_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  blocked_reason TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS lifecycle_approvals (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  phase TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  requested_by_agent_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  decided_at TEXT,
+  decided_by TEXT,
+  notes TEXT
 );
 `;
 
@@ -1279,6 +1315,139 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Project Lifecycle Orchestrator ─────────────────────────────────────
+  function rowToLifecycleState(r: any): ProjectLifecycleState {
+    return ProjectLifecycleStateSchema.parse({
+      projectId: r.project_id,
+      currentPhase: r.current_phase,
+      history: JSON.parse(r.history),
+      updatedAt: r.updated_at,
+    });
+  }
+
+  const lifecycleState = {
+    all(): ProjectLifecycleState[] {
+      return db.prepare('SELECT * FROM project_lifecycle_state').all().map((r: any) => rowToLifecycleState(r));
+    },
+    byProjectId(projectId: string): ProjectLifecycleState | null {
+      const r = db.prepare('SELECT * FROM project_lifecycle_state WHERE project_id = ?').get(projectId) as any;
+      return r ? rowToLifecycleState(r) : null;
+    },
+    upsert(s: ProjectLifecycleState): void {
+      const parsed = ProjectLifecycleStateSchema.parse(s);
+      db.prepare(
+        'INSERT OR REPLACE INTO project_lifecycle_state (project_id, current_phase, history, updated_at) VALUES (?, ?, ?, ?)',
+      ).run(parsed.projectId, parsed.currentPhase, JSON.stringify(parsed.history), parsed.updatedAt);
+    },
+    remove(projectId: string): boolean {
+      return db.prepare('DELETE FROM project_lifecycle_state WHERE project_id = ?').run(projectId).changes > 0;
+    },
+  };
+
+  function rowToLifecycleTask(r: any): LifecycleTask {
+    return LifecycleTaskSchema.parse({
+      id: r.id,
+      projectId: r.project_id,
+      phase: r.phase,
+      title: r.title,
+      responsibleAgentId: r.responsible_agent_id,
+      status: r.status,
+      blockedReason: r.blocked_reason ?? null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    });
+  }
+
+  const lifecycleTasks = {
+    byProjectId(projectId: string): LifecycleTask[] {
+      return (
+        db.prepare('SELECT * FROM lifecycle_tasks WHERE project_id = ? ORDER BY created_at').all(projectId) as any[]
+      ).map(rowToLifecycleTask);
+    },
+    insert(t: LifecycleTask): void {
+      const parsed = LifecycleTaskSchema.parse(t);
+      db.prepare(
+        'INSERT OR REPLACE INTO lifecycle_tasks (id, project_id, phase, title, responsible_agent_id, status, blocked_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.phase,
+        parsed.title,
+        parsed.responsibleAgentId,
+        parsed.status,
+        parsed.blockedReason,
+        parsed.createdAt,
+        parsed.updatedAt,
+      );
+    },
+    updateStatus(id: string, status: LifecycleTask['status'], blockedReason: string | null): void {
+      db.prepare('UPDATE lifecycle_tasks SET status = ?, blocked_reason = ?, updated_at = ? WHERE id = ?').run(
+        status,
+        blockedReason,
+        new Date().toISOString(),
+        id,
+      );
+    },
+  };
+
+  function rowToLifecycleApproval(r: any): LifecycleApproval {
+    return LifecycleApprovalSchema.parse({
+      id: r.id,
+      projectId: r.project_id,
+      phase: r.phase,
+      title: r.title,
+      description: r.description,
+      requestedByAgentId: r.requested_by_agent_id,
+      status: r.status,
+      createdAt: r.created_at,
+      decidedAt: r.decided_at ?? null,
+      decidedBy: r.decided_by ?? null,
+      notes: r.notes ?? null,
+    });
+  }
+
+  const lifecycleApprovals = {
+    byProjectId(projectId: string): LifecycleApproval[] {
+      return (
+        db
+          .prepare('SELECT * FROM lifecycle_approvals WHERE project_id = ? ORDER BY created_at DESC')
+          .all(projectId) as any[]
+      ).map(rowToLifecycleApproval);
+    },
+    pending(): LifecycleApproval[] {
+      return (
+        db.prepare("SELECT * FROM lifecycle_approvals WHERE status = 'pending' ORDER BY created_at").all() as any[]
+      ).map(rowToLifecycleApproval);
+    },
+    insert(a: LifecycleApproval): void {
+      const parsed = LifecycleApprovalSchema.parse(a);
+      db.prepare(
+        'INSERT OR REPLACE INTO lifecycle_approvals (id, project_id, phase, title, description, requested_by_agent_id, status, created_at, decided_at, decided_by, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.phase,
+        parsed.title,
+        parsed.description,
+        parsed.requestedByAgentId,
+        parsed.status,
+        parsed.createdAt,
+        parsed.decidedAt,
+        parsed.decidedBy,
+        parsed.notes,
+      );
+    },
+    decide(id: string, status: 'approved' | 'rejected', decidedBy: string, notes: string | null): void {
+      db.prepare(
+        'UPDATE lifecycle_approvals SET status = ?, decided_at = ?, decided_by = ?, notes = ? WHERE id = ?',
+      ).run(status, new Date().toISOString(), decidedBy, notes, id);
+    },
+    byId(id: string): LifecycleApproval | null {
+      const r = db.prepare('SELECT * FROM lifecycle_approvals WHERE id = ?').get(id) as any;
+      return r ? rowToLifecycleApproval(r) : null;
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1447,6 +1616,9 @@ export function openDb(path: string) {
     projects,
     ideas,
     notifications,
+    lifecycleState,
+    lifecycleTasks,
+    lifecycleApprovals,
     sopTasks,
     workflows,
     skills,

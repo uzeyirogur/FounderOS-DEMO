@@ -65,7 +65,9 @@ export function ProjectsTable({
             return (
               <tr key={p.id} className="group border-b border-os-border last:border-b-0 hover:bg-os-surface2">
                 <td className="px-4 py-3 align-top">
-                  <div className="text-[13px] font-semibold text-os-text">{p.name}</div>
+                  <a href={`/projects/${encodeURIComponent(p.id)}`} className="text-[13px] font-semibold text-os-text hover:text-os-accent hover:underline">
+                    {p.name}
+                  </a>
                   <div className="mt-1 max-w-[320px] truncate font-mono text-[10px] text-os-dim">{p.pathOrUrl}</div>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 align-top">

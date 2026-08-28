@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PROJECT_LIFECYCLE_PHASES } from '@/lib/project-lifecycle';
 
 export const AgentStatusSchema = z.enum(['active', 'idle', 'training', 'planned']);
 export const AgentTierSchema = z.enum(['lead', 'specialist', 'worker']);
@@ -730,3 +731,72 @@ export type NotificationKind = z.infer<typeof NotificationKindSchema>;
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 export type NotificationChannel = z.infer<typeof NotificationChannelSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
+
+// ── Project Lifecycle Orchestrator ───────────────────────────────────────────
+// Runs the standard, project-agnostic lifecycle (see lib/project-lifecycle.ts)
+// over any Project Registry entry. Three tables:
+//   - ProjectLifecycleState: one row per project, "what phase is it in now"
+//   - LifecycleTask: the work items inside a phase (who, what, status)
+//   - LifecycleApproval: gates that need an explicit yes/no from the operator
+//     before the project can advance past them (e.g. deployment_approval)
+// Nothing here names a specific project or hardcodes phase content — a
+// project's lifecycle row is created on demand the first time it is looked
+// at, defaulting to phase 'idea'.
+export const ProjectLifecyclePhaseSchema = z.enum(PROJECT_LIFECYCLE_PHASES);
+
+export const ProjectLifecycleHistoryEntrySchema = z.object({
+  phase: ProjectLifecyclePhaseSchema,
+  enteredAt: z.string().min(1),
+});
+
+export const ProjectLifecycleStateSchema = z.object({
+  /** Same value as the Project Registry's project id — 1:1 relationship. */
+  projectId: z.string().min(1),
+  currentPhase: ProjectLifecyclePhaseSchema.default('idea'),
+  /** Append-only phase history; current entry's enteredAt == when the
+   *  project entered currentPhase. Never rewritten, only appended to. */
+  history: z.array(ProjectLifecycleHistoryEntrySchema).default([]),
+  updatedAt: z.string().min(1),
+});
+
+export const LifecycleTaskStatusSchema = z.enum(['open', 'doing', 'done', 'blocked']);
+
+export const LifecycleTaskSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  phase: ProjectLifecyclePhaseSchema,
+  title: z.string().min(1),
+  /** RuntimeAgent id responsible for this task. Defaults come from
+   *  PHASE_RESPONSIBLE_AGENT but a task may override it. */
+  responsibleAgentId: z.string().min(1),
+  status: LifecycleTaskStatusSchema.default('open'),
+  /** Set only when status is 'blocked' — why progress stopped. */
+  blockedReason: z.string().nullable().default(null),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
+
+export const LifecycleApprovalStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+
+export const LifecycleApprovalSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  phase: ProjectLifecyclePhaseSchema,
+  title: z.string().min(1),
+  description: z.string().default(''),
+  requestedByAgentId: z.string().min(1),
+  status: LifecycleApprovalStatusSchema.default('pending'),
+  createdAt: z.string().min(1),
+  decidedAt: z.string().min(1).nullable().default(null),
+  decidedBy: z.string().min(1).nullable().default(null),
+  notes: z.string().nullable().default(null),
+});
+
+export type ProjectLifecyclePhaseValue = z.infer<typeof ProjectLifecyclePhaseSchema>;
+export type ProjectLifecycleHistoryEntry = z.infer<typeof ProjectLifecycleHistoryEntrySchema>;
+export type ProjectLifecycleState = z.infer<typeof ProjectLifecycleStateSchema>;
+export type LifecycleTaskStatus = z.infer<typeof LifecycleTaskStatusSchema>;
+export type LifecycleTask = z.infer<typeof LifecycleTaskSchema>;
+export type LifecycleApprovalStatus = z.infer<typeof LifecycleApprovalStatusSchema>;
+export type LifecycleApproval = z.infer<typeof LifecycleApprovalSchema>;
+
