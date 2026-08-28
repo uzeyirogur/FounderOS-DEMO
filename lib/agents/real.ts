@@ -620,7 +620,7 @@ export const realAgents: RuntimeAgent[] = [
         {
           name: 'runReview',
           description:
-            'Runs the REAL npm test/typecheck/build scripts in a Project Registry-authorized project directory and parses the true output. Refuses any project not both active and explicitly authorizing this agent. A script missing from the target is reported honestly as not_configured — never silently skipped as a pass.',
+            'Runs the REAL test/typecheck/build commands for whatever stack the target project actually is (Node/npm, .NET/dotnet, or Python/pytest — auto-detected from real manifest files, never hardcoded) in a Project Registry-authorized project directory, and parses the true output. Refuses any project not both active and explicitly authorizing this agent. A missing script/toolchain is reported honestly as not_configured — never silently skipped as a pass.',
           parameters: z.object({ projectId: z.string() }),
           execute: async (args) => {
             const projectId = typeof args.projectId === 'string' ? args.projectId : '';

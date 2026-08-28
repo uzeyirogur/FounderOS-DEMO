@@ -1,4 +1,5 @@
 import { parseVitestJsonSummary, parseTypecheckOutput, type VitestSummary, type TypecheckSummary } from '@/lib/qa-review';
+import { detectProjectStack, type ProjectStackReport } from '@/lib/project-bootstrap';
 
 export type ExecFn = (
   cmd: string,
@@ -13,15 +14,64 @@ export interface QaReport {
   ok: boolean;
 }
 
-/**
- * Runs REAL npm scripts (test, typecheck, build) in a Project Registry-
- * authorized directory and parses the REAL output through lib/qa-review.ts's
- * existing parsers — never re-implements test/typecheck logic. execFn's
- * first call reads the target's own package.json scripts (so a project
- * without a given script is reported honestly as not_configured, never
- * silently skipped as a pass). Every subsequent call runs one real script.
- */
-export async function runQaReview(execFn: ExecFn, projectDir: string): Promise<QaReport> {
+/** Very small test-summary shape for non-Vitest runners (dotnet test,
+ *  pytest) — real pass/fail counts, not a re-implementation of either
+ *  tool's own reporting. Matches VitestSummary's real shape exactly so
+ *  callers never need runner-specific branching to read report.test. */
+function summaryFromCounts(failed: number, total: number): VitestSummary {
+  return { total, passed: total - failed, failed, failedFiles: [] };
+}
+
+async function runDotnetPipeline(execFn: ExecFn, projectDir: string): Promise<QaReport> {
+  let build: { ok: boolean; detail: string };
+  try {
+    const { stdout } = await execFn('dotnet', ['build'], { cwd: projectDir });
+    build = { ok: true, detail: stdout.slice(-500) };
+  } catch (err) {
+    build = { ok: false, detail: err instanceof Error ? err.message : String(err) };
+  }
+
+  let test: VitestSummary | null = null;
+  if (build.ok) {
+    try {
+      const { stdout } = await execFn('dotnet', ['test'], { cwd: projectDir });
+      const failedMatch = stdout.match(/Failed:\s*(\d+)/i);
+      const totalMatch = stdout.match(/Total:\s*(\d+)/i);
+      const failed = failedMatch ? Number(failedMatch[1]) : /failed/i.test(stdout) ? 1 : 0;
+      const total = totalMatch ? Number(totalMatch[1]) : 0;
+      test = summaryFromCounts(failed, total);
+    } catch {
+      // The test COMMAND itself failed to execute — report as one real
+      // failure rather than a silent null (which downstream reads as "no
+      // tests were configured", a false honest-empty).
+      test = summaryFromCounts(1, 1);
+    }
+  }
+
+  const ok = build.ok && (test === null || test.failed === 0);
+  return { test, typecheck: null, build, ok };
+}
+
+async function runPytestPipeline(execFn: ExecFn, projectDir: string): Promise<QaReport> {
+  let test: VitestSummary;
+  try {
+    const { stdout } = await execFn('python', ['-m', 'pytest'], { cwd: projectDir });
+    const failedMatch = stdout.match(/(\d+)\s+failed/i);
+    const passedMatch = stdout.match(/(\d+)\s+passed/i);
+    const failed = failedMatch ? Number(failedMatch[1]) : 0;
+    const passed = passedMatch ? Number(passedMatch[1]) : 0;
+    test = summaryFromCounts(failed, failed + passed);
+  } catch {
+    test = summaryFromCounts(1, 1);
+  }
+  // This detector has no generic "build" concept for a bare Python project —
+  // reporting a fabricated pass would violate the no-fake-success rule.
+  const build = { ok: false, detail: 'not_configured — no build step is defined for a Python project by this detector' };
+  const ok = test.failed === 0;
+  return { test, typecheck: null, build, ok };
+}
+
+async function runNodePipeline(execFn: ExecFn, projectDir: string): Promise<QaReport> {
   const pkgResult = await execFn('npm', ['pkg', 'get', 'scripts'], { cwd: projectDir });
   const scripts = pkgResult.scripts ?? {};
 
@@ -74,9 +124,37 @@ export async function runQaReview(execFn: ExecFn, projectDir: string): Promise<Q
 }
 
 /**
- * runQaReview wired to a real child_process invocation of npm. Honest
- * not_configured detail baked into runQaReview itself when a script is
- * missing; this wrapper only supplies the real process execution.
+ * Runs REAL commands for whatever stack the project actually is, in a
+ * Project Registry-authorized directory, and parses REAL output — never
+ * re-implements test/typecheck logic and never hardcodes npm for a project
+ * that isn't Node. `stack` should come from lib/project-bootstrap.ts's
+ * detectProjectStack() (real manifest inspection); when omitted, this
+ * falls back to the original Node/npm-only behavior for back-compat with
+ * existing call sites that haven't been updated to pass a stack yet.
+ */
+export async function runQaReview(execFn: ExecFn, projectDir: string, stack?: ProjectStackReport): Promise<QaReport> {
+  const languages = stack?.languages ?? ['TypeScript/JavaScript'];
+
+  if (languages.includes('.NET / C#')) return runDotnetPipeline(execFn, projectDir);
+  if (languages.includes('Python') && !languages.includes('TypeScript/JavaScript')) return runPytestPipeline(execFn, projectDir);
+  if (languages.includes('TypeScript/JavaScript')) return runNodePipeline(execFn, projectDir);
+
+  // No recognizable manifest at all — never guess a toolchain, report
+  // honestly instead of running (and failing) an arbitrary command.
+  return {
+    test: null,
+    typecheck: null,
+    build: { ok: false, detail: 'not_configured — no recognizable project manifest (package.json, .csproj, requirements.txt, ...) found' },
+    ok: false,
+  };
+}
+
+/**
+ * runQaReview wired to a real child_process invocation, with the stack
+ * auto-detected from the real filesystem via detectProjectStack(). Honest
+ * not_configured detail baked into runQaReview itself when a stack or
+ * script is missing; this wrapper only supplies real process execution
+ * and real stack detection.
  */
 export async function runQaReviewLive(projectDir: string): Promise<QaReport> {
   const { execFile } = await import('node:child_process');
@@ -104,5 +182,6 @@ export async function runQaReviewLive(projectDir: string): Promise<QaReport> {
       });
     });
 
-  return runQaReview(execFn, projectDir);
+  const stack = detectProjectStack(projectDir);
+  return runQaReview(execFn, projectDir, stack);
 }
