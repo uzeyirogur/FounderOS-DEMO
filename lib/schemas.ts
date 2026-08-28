@@ -1044,3 +1044,21 @@ export type OutboundChannel = z.infer<typeof OutboundChannelSchema>;
 export type OutboundStatus = z.infer<typeof OutboundStatusSchema>;
 export type OutboundMessage = z.infer<typeof OutboundMessageSchema>;
 
+// ── Work Assistant — Alex's own task list, deliberately separate from the
+// Project Registry (agentTasks are AGENT work items on a project) and from
+// Personal Ops (recurring routines/habits, not one-off tasks).
+export const PersonalTaskPrioritySchema = z.enum(['low', 'normal', 'high']);
+export const PersonalTaskStatusSchema = z.enum(['open', 'done']);
+export const PersonalTaskSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  dueAt: z.string().min(1).nullable().default(null),
+  priority: PersonalTaskPrioritySchema.default('normal'),
+  status: PersonalTaskStatusSchema.default('open'),
+  createdAt: z.string().min(1),
+  completedAt: z.string().min(1).nullable().default(null),
+});
+export type PersonalTaskPriority = z.infer<typeof PersonalTaskPrioritySchema>;
+export type PersonalTaskStatus = z.infer<typeof PersonalTaskStatusSchema>;
+export type PersonalTask = z.infer<typeof PersonalTaskSchema>;
+

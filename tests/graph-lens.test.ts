@@ -32,8 +32,8 @@ describe('graph lenses — Alex taxonomy (2026-07-12)', () => {
 
   test('entity lenses match by node kind against the real seeded graph', () => {
     expect(lensNodeSet('ent-people', ctx).size).toBe(5);
-    expect(lensNodeSet('ent-subagents', ctx).size).toBe(43);
-    expect(lensNodeSet('ent-departments', ctx).size).toBe(13);
+    expect(lensNodeSet('ent-subagents', ctx).size).toBe(44);
+    expect(lensNodeSet('ent-departments', ctx).size).toBe(14);
     expect(lensNodeSet('ent-sops', ctx).size).toBeGreaterThan(20);
     expect(lensNodeSet('ent-tools', ctx).size).toBeGreaterThan(20);
   });

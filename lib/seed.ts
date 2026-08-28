@@ -56,6 +56,7 @@ const departments: Department[] = [
   { id: 'dept-idea-lab', name: 'Idea Lab', slug: 'idea-lab', tagline: 'New ideas, scored transparently.', color: GRAY.dim, order: 11 },
   { id: 'dept-usage-cost', name: 'Usage & Cost Monitor', slug: 'usage-cost', tagline: 'Claude/API usage and spend, tracked honestly.', color: GRAY.mid, order: 12 },
   { id: 'dept-exec-reporting', name: 'Executive Reporter', slug: 'executive-reporting', tagline: 'Every agent, one daily/weekly digest.', color: GRAY.white, order: 13 },
+  { id: 'dept-personal', name: 'Personal', slug: 'personal', tagline: 'Work Assistant + Personal Ops — outside any project.', color: GRAY.mid, order: 14 },
 ];
 
 // The roster IS the runtime — every row here maps 1:1 to a RuntimeAgent in
@@ -594,6 +595,21 @@ const agents: Agent[] = [
       'Runs real npm audit and a regex secret scan against a Project Registry-authorized directory before release. Never reports the matched secret value, and never reports clean when a check could not actually run.',
     model: 'npm audit --json + regex secret scan (no LLM)',
     tools: ['npm-audit', 'fs-scan'],
+    parentId: null,
+    instance: 'builtin',
+  },
+  // ── Work Assistant: personal task list, separate from Project Registry ──
+  {
+    id: 'work-assistant',
+    departmentId: 'dept-personal',
+    name: 'Work Assistant',
+    role: 'Personal Task Tracking',
+    status: 'active',
+    tier: 'lead',
+    description:
+      "Alex's own task list — deliberately not tied to any Project Registry project or its lifecycle. Surfaces open tasks by priority and due date alongside the real upcoming calendar (CalDAV).",
+    model: 'personal task repo + calendarStatus (no LLM)',
+    tools: ['personal-tasks', 'calendar'],
     parentId: null,
     instance: 'builtin',
   },
@@ -1353,6 +1369,20 @@ const sopTasks: SopTask[] = [
       'Approve scope changes before work starts',
       'Review account health scores with Client Success monthly',
       'Sign off renewals and hand pricing changes to Sales',
+    ],
+  },
+
+  // PERSONAL
+  {
+    id: 'sop-work-assistant', departmentId: 'dept-personal', assigneeKind: 'agent', assigneeId: 'work-assistant',
+    title: "Keep Alex's own task list current",
+    summary: 'Open tasks by priority and due date, alongside the real upcoming calendar. Never tied to a project.',
+    steps: [
+      'List open personal tasks sorted by priority then due date',
+      'Surface the real upcoming calendar window (CalDAV) alongside them',
+      'Add a task when asked, with an honest default priority (normal)',
+      'Mark a task done only when explicitly told it is done',
+      'Never create or imply a Project Registry entry for a personal task',
     ],
   },
 ];

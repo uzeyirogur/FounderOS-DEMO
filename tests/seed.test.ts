@@ -44,7 +44,7 @@ describe('seedDatabase', () => {
     }
   });
 
-  test('the thirteen operating pillars, in order', () => {
+  test('the fourteen operating pillars, in order', () => {
     db = openDb(':memory:');
     seedDatabase(db);
     expect(db.departments.all().map((d) => d.name)).toEqual([
@@ -61,6 +61,7 @@ describe('seedDatabase', () => {
       'Idea Lab',
       'Usage & Cost Monitor',
       'Executive Reporter',
+      'Personal',
     ]);
   });
 

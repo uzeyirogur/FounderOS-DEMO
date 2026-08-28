@@ -17,6 +17,7 @@ import { ankaAdminStatus, fetchAnkaBranches, fetchAnkaSports } from '@/lib/conne
 import { githubStatus } from '@/lib/connectors/github';
 import { webSearchStatus } from '@/lib/connectors/web-search';
 import { anthropicUsageStatus } from '@/lib/connectors/anthropic-usage';
+import { calendarStatus } from '@/lib/connectors/gcal';
 import { detectProjectStack } from '@/lib/project-bootstrap';
 import { buildExecutiveReport } from '@/lib/agents/executive-report';
 import { scoreIdea } from '@/lib/ideas';
@@ -1000,6 +1001,75 @@ export const realAgents: RuntimeAgent[] = [
       ];
     },
   },
+
+  // ── Work Assistant ───────────────────────────────────────────────────────
+  {
+    id: 'work-assistant',
+    name: 'Work Assistant',
+    description:
+      "Alex's own task list — deliberately not tied to any Project Registry project or its lifecycle. Surfaces open tasks by priority and due date alongside the real upcoming calendar (CalDAV).",
+    departmentId: 'dept-personal',
+    async run() {
+      const open = getDb().personalTasks.open();
+      const calendar = await calendarStatus();
+      return {
+        ok: true,
+        summary:
+          open.length === 0
+            ? `No open personal tasks · calendar: ${calendar.detail}`
+            : `${open.length} open task(s), top: "${open[0].title}" (${open[0].priority}) · calendar: ${calendar.detail}`,
+        data: { open, calendar },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'addTask',
+          description: "Adds a task to Alex's personal task list. Never tied to a Project Registry project.",
+          parameters: z.object({
+            title: z.string(),
+            dueAt: z.string().nullable().optional(),
+            priority: z.enum(['low', 'normal', 'high']).nullable().optional(),
+          }),
+          execute: async (args) => {
+            const title = typeof args.title === 'string' ? args.title : '';
+            const dueAt = typeof args.dueAt === 'string' ? args.dueAt : null;
+            const priority = args.priority === 'low' || args.priority === 'high' ? args.priority : 'normal';
+            const task = {
+              id: randomUUID(),
+              title,
+              dueAt,
+              priority: priority as 'low' | 'normal' | 'high',
+              status: 'open' as const,
+              createdAt: new Date().toISOString(),
+              completedAt: null,
+            };
+            getDb().personalTasks.insert(task);
+            return task;
+          },
+        },
+        {
+          name: 'completeTask',
+          description: 'Marks a personal task done. Only call this when explicitly told the task is done.',
+          parameters: z.object({ taskId: z.string() }),
+          execute: async (args) => {
+            const taskId = typeof args.taskId === 'string' ? args.taskId : '';
+            getDb().personalTasks.complete(taskId);
+            return getDb().personalTasks.byId(taskId);
+          },
+        },
+        {
+          name: 'listTasks',
+          description: 'Lists every personal task, or only the open ones.',
+          parameters: z.object({ onlyOpen: z.boolean().nullable().optional() }),
+          execute: async (args) => {
+            return args.onlyOpen ? getDb().personalTasks.open() : getDb().personalTasks.all();
+          },
+        },
+      ];
+    },
+  },
+
   // ── Idea Lab ──────────────────────────────────────────────────────────────
   {
     id: 'idea-lab-agent',

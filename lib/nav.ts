@@ -44,6 +44,7 @@ export const NAV_OPERATE: NavItem[] = [
   { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/publish-plans', label: 'Publish Plans', icon: Send },
   { href: '/outbound', label: 'Outbound Messages', icon: Mail },
+  { href: '/work', label: 'My Tasks', icon: ListChecks },
 ];
 
 // The agent workforce: the roster and the org chart that maps how they report.

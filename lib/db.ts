@@ -21,6 +21,7 @@ import {
   NotificationSchema,
   OutboundMessageSchema,
   PersonaSchema,
+  PersonalTaskSchema,
   ProjectLifecycleStateSchema,
   PhaseSchema,
   ProjectSchema,
@@ -63,6 +64,7 @@ import {
   type Notification,
   type OutboundMessage,
   type Persona,
+  type PersonalTask,
   type Phase,
   type Project,
   type ProjectLifecycleState,
@@ -472,6 +474,15 @@ CREATE TABLE IF NOT EXISTS outbound_messages (
   decided_by TEXT,
   sent_at TEXT,
   failure_reason TEXT
+);
+CREATE TABLE IF NOT EXISTS personal_tasks (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  due_at TEXT,
+  priority TEXT NOT NULL DEFAULT 'normal',
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL,
+  completed_at TEXT
 );
 `;
 
@@ -1837,6 +1848,55 @@ export function openDb(path: string) {
     },
   };
 
+  function rowToPersonalTask(r: any): PersonalTask {
+    return PersonalTaskSchema.parse({
+      id: r.id,
+      title: r.title,
+      dueAt: r.due_at ?? null,
+      priority: r.priority,
+      status: r.status,
+      createdAt: r.created_at,
+      completedAt: r.completed_at ?? null,
+    });
+  }
+
+  const PRIORITY_RANK: Record<string, number> = { high: 0, normal: 1, low: 2 };
+
+  const personalTasks = {
+    all(): PersonalTask[] {
+      return (db.prepare('SELECT * FROM personal_tasks ORDER BY created_at DESC').all() as any[]).map(rowToPersonalTask);
+    },
+    byId(id: string): PersonalTask | null {
+      const r = db.prepare('SELECT * FROM personal_tasks WHERE id = ?').get(id) as any;
+      return r ? rowToPersonalTask(r) : null;
+    },
+    /** Open tasks, highest priority first, then earliest due date (nulls last). */
+    open(): PersonalTask[] {
+      const rows = (db.prepare("SELECT * FROM personal_tasks WHERE status = 'open'").all() as any[]).map(rowToPersonalTask);
+      return rows.sort((a, b) => {
+        const pr = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+        if (pr !== 0) return pr;
+        if (a.dueAt === b.dueAt) return 0;
+        if (a.dueAt === null) return 1;
+        if (b.dueAt === null) return -1;
+        return a.dueAt.localeCompare(b.dueAt);
+      });
+    },
+    insert(t: PersonalTask): void {
+      const parsed = PersonalTaskSchema.parse(t);
+      db.prepare(
+        `INSERT OR REPLACE INTO personal_tasks (id, title, due_at, priority, status, created_at, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(parsed.id, parsed.title, parsed.dueAt, parsed.priority, parsed.status, parsed.createdAt, parsed.completedAt);
+    },
+    complete(id: string): void {
+      db.prepare("UPDATE personal_tasks SET status = 'done', completed_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+    },
+    remove(id: string): void {
+      db.prepare('DELETE FROM personal_tasks WHERE id = ?').run(id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -2013,6 +2073,7 @@ export function openDb(path: string) {
     growthBriefs,
     publishPlans,
     outboundMessages,
+    personalTasks,
     sopTasks,
     workflows,
     skills,
