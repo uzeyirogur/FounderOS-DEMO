@@ -36,7 +36,7 @@ export function parseVitestJsonSummary(raw: string): VitestSummary | null {
   return { total: body.numTotalTests, passed: body.numPassedTests, failed: body.numFailedTests, failedFiles };
 }
 
-export type TypecheckSummary = { errorCount: number; ok: boolean };
+export type TypecheckSummary = { errorCount: number; ok: boolean; executionFailed?: boolean; detail?: string };
 
 const TS_ERROR_LINE = /error TS\d+:/;
 

@@ -726,15 +726,45 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'qa-ui-review',
     name: 'QA & UI/UX Review',
-    description: "Digest of this repo's own test/typecheck output — parsed, never re-implemented.",
+    description:
+      "Runs a Project Registry-authorized directory's own real npm test/typecheck/build scripts and parses the true output — never re-implements test logic, never reports ok without a real check having actually run.",
     departmentId: 'dept-product-eng',
     async run() {
+      const authorized = getDb()
+        .projects.all()
+        .filter((p) => p.status === 'active' && p.authorizedAgentIds.includes('qa-ui-review'));
       return {
         ok: true,
         summary:
-          'Run `npm test -- --reporter=json` and `npm run typecheck`, then paste the output into chat with this agent — ' +
-          'it parses real vitest/tsc output (lib/qa-review.ts) rather than guessing pass/fail.',
+          authorized.length === 0
+            ? 'No active project authorizes this agent yet — grant access from /projects, then use the runReview chat tool.'
+            : `${authorized.length} project(s) authorized for QA review · use the runReview chat tool to run one.`,
+        data: { authorized: authorized.map((p) => ({ id: p.id, name: p.name, pathOrUrl: p.pathOrUrl })) },
       };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'runReview',
+          description:
+            'Runs the REAL npm test/typecheck/build scripts in a Project Registry-authorized project directory and parses the true output. Refuses any project not both active and explicitly authorizing this agent. A script missing from the target is reported honestly as not_configured — never silently skipped as a pass.',
+          parameters: z.object({ projectId: z.string() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const project = getDb().projects.byId(projectId);
+            if (!project) return { ok: false, reason: 'project not found' };
+            if (project.status !== 'active') return { ok: false, reason: `project is not active (status: ${project.status})` };
+            if (!project.authorizedAgentIds.includes('qa-ui-review')) {
+              return { ok: false, reason: 'qa-ui-review is not authorized on this project — grant access from /projects first' };
+            }
+            if (project.kind !== 'local') {
+              return { ok: false, reason: 'only local projects can be reviewed on this machine today' };
+            }
+            const { runQaReviewLive } = await import('@/lib/qa-review-orchestrator');
+            return runQaReviewLive(project.pathOrUrl);
+          },
+        },
+      ];
     },
   },
   {
