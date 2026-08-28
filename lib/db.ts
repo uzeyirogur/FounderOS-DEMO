@@ -9,6 +9,7 @@ import {
   BroadcastReplySchema,
   BroadcastSchema,
   CapabilityProviderSchema,
+  ClaudeCodeRunSchema,
   ContactTagSchema,
   ContentPieceSchema,
   CreativeBriefSchema,
@@ -57,6 +58,7 @@ import {
   type Broadcast,
   type BroadcastReply,
   type CapabilityProvider,
+  type ClaudeCodeRun,
   type ContactTag,
   type ContentPiece,
   type CreativeBrief,
@@ -542,6 +544,20 @@ CREATE TABLE IF NOT EXISTS delegated_tasks (
   finished_at TEXT,
   result_summary TEXT,
   failure_reason TEXT
+);
+CREATE TABLE IF NOT EXISTS claude_code_runs (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  project_dir TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  permission_level TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'queued',
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  finished_at TEXT,
+  result_summary TEXT,
+  error TEXT,
+  total_cost_usd REAL
 );
 `;
 
@@ -1894,6 +1910,71 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Claude Code Orchestrator run queue ────────────────────────────────────
+  function rowToClaudeCodeRun(r: any): ClaudeCodeRun {
+    return ClaudeCodeRunSchema.parse({
+      id: r.id,
+      projectId: r.project_id,
+      projectDir: r.project_dir,
+      prompt: r.prompt,
+      permissionLevel: r.permission_level,
+      status: r.status,
+      createdAt: r.created_at,
+      startedAt: r.started_at,
+      finishedAt: r.finished_at,
+      resultSummary: r.result_summary,
+      error: r.error,
+      totalCostUsd: r.total_cost_usd,
+    });
+  }
+
+  const claudeCodeRuns = {
+    all(): ClaudeCodeRun[] {
+      return (db.prepare('SELECT * FROM claude_code_runs ORDER BY created_at DESC').all() as any[]).map(rowToClaudeCodeRun);
+    },
+    byId(id: string): ClaudeCodeRun | null {
+      const r = db.prepare('SELECT * FROM claude_code_runs WHERE id = ?').get(id) as any;
+      return r ? rowToClaudeCodeRun(r) : null;
+    },
+    byProjectId(projectId: string): ClaudeCodeRun[] {
+      return (
+        db.prepare('SELECT * FROM claude_code_runs WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as any[]
+      ).map(rowToClaudeCodeRun);
+    },
+    insert(r: ClaudeCodeRun): void {
+      const parsed = ClaudeCodeRunSchema.parse(r);
+      db.prepare(
+        `INSERT OR REPLACE INTO claude_code_runs
+         (id, project_id, project_dir, prompt, permission_level, status, created_at, started_at, finished_at, result_summary, error, total_cost_usd)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.projectDir,
+        parsed.prompt,
+        parsed.permissionLevel,
+        parsed.status,
+        parsed.createdAt,
+        parsed.startedAt,
+        parsed.finishedAt,
+        parsed.resultSummary,
+        parsed.error,
+        parsed.totalCostUsd,
+      );
+    },
+    update(
+      id: string,
+      patch: Partial<Pick<ClaudeCodeRun, 'status' | 'startedAt' | 'finishedAt' | 'resultSummary' | 'error' | 'totalCostUsd'>>,
+    ): void {
+      const current = claudeCodeRuns.byId(id);
+      if (!current) return;
+      const next = ClaudeCodeRunSchema.parse({ ...current, ...patch });
+      db.prepare(
+        'UPDATE claude_code_runs SET status = ?, started_at = ?, finished_at = ?, result_summary = ?, error = ?, total_cost_usd = ? WHERE id = ?',
+      ).run(next.status, next.startedAt, next.finishedAt, next.resultSummary, next.error, next.totalCostUsd, id);
+    },
+  };
+
   // ── Growth & Marketing ───────────────────────────────────────────────────
   function rowToGrowthBrief(r: any): GrowthBrief {
     return GrowthBriefSchema.parse({
@@ -2360,6 +2441,7 @@ export function openDb(path: string) {
     contentPieces,
     creativeBriefs,
     delegatedTasks,
+    claudeCodeRuns,
     growthBriefs,
     publishPlans,
     outboundMessages,

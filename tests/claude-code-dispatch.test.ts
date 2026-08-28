@@ -50,6 +50,7 @@ describe('dispatchClaudeCode', () => {
       expect.objectContaining({ cwd: '/tmp/proj' }),
     );
     if (!result.ok) throw new Error('expected dispatchClaudeCode to succeed');
+    if (result.dryRun) throw new Error('expected a real result, not a dry run');
     expect(result.result).toBe('Fixed the bug.');
     expect(result.sessionId).toBe('s1');
   });

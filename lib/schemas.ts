@@ -854,6 +854,31 @@ export type DelegatedTaskPriority = z.infer<typeof DelegatedTaskPrioritySchema>;
 export type DelegatedTaskApprovalRequirement = z.infer<typeof DelegatedTaskApprovalRequirementSchema>;
 export type DelegatedTask = z.infer<typeof DelegatedTaskSchema>;
 
+// ── Claude Code Orchestrator run queue ───────────────────────────────────
+// A real, persisted queue for `claude -p` dispatches — never fire-and-forget.
+// full_with_approval-tier work starts 'awaiting_approval' and cannot be
+// executed until an operator approves it; auto_safe_write/read_only work
+// is immediately 'queued' and runnable. Every attempt (success or failure)
+// is recorded — a paid call's outcome is never silently dropped.
+export const ClaudeCodeRunStatusSchema = z.enum(['queued', 'awaiting_approval', 'running', 'done', 'failed']);
+export const ClaudeCodeRunSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  projectDir: z.string().min(1),
+  prompt: z.string().min(1),
+  permissionLevel: z.enum(['read_only', 'auto_safe_write', 'full_with_approval']),
+  status: ClaudeCodeRunStatusSchema.default('queued'),
+  createdAt: z.string().min(1),
+  startedAt: z.string().min(1).nullable().default(null),
+  finishedAt: z.string().min(1).nullable().default(null),
+  resultSummary: z.string().nullable().default(null),
+  error: z.string().nullable().default(null),
+  totalCostUsd: z.number().nullable().default(null),
+});
+export type ClaudeCodeRunStatus = z.infer<typeof ClaudeCodeRunStatusSchema>;
+export type ClaudeCodeRun = z.infer<typeof ClaudeCodeRunSchema>;
+
+
 
 // ── Capability / Tool Registry ───────────────────────────────────────────────
 // The shared infrastructure every agent consults before saying "I can't do

@@ -10,11 +10,31 @@ export interface DispatchClaudeCodeInput {
   projectDir: string;
   prompt: string;
   permissionLevel: ProjectPermissionLevel;
+  /** When true, never calls execFn — returns the exact command that WOULD
+   *  run (prompt + allowed tools) so a plan can be reviewed with zero cost
+   *  before a real, paid `claude -p` call is authorized. */
+  dryRun?: boolean;
 }
 
 export type DispatchResult =
-  | { ok: true; result: string; sessionId: string; numTurns: number; totalCostUsd: number }
+  | { ok: true; result: string; sessionId: string; numTurns: number; totalCostUsd: number; dryRun?: false }
+  | { ok: true; dryRun: true; result: string; allowedTools: string[] }
   | { ok: false; reason: string };
+
+/**
+ * Wraps a raw goal with real project context — stack detection and current
+ * lifecycle phase, when known — so a dispatched Claude Code run isn't
+ * flying blind. Every context line is real data passed in by the caller;
+ * this never invents a stack, phase, or placeholder value. Missing context
+ * is simply omitted, not filled with "unknown"/"n/a".
+ */
+export function buildDispatchPrompt(input: { goal: string; stackNote?: string; lifecyclePhase?: string }): string {
+  const lines = [input.goal];
+  if (input.stackNote) lines.push(`Project stack: ${input.stackNote}`);
+  if (input.lifecyclePhase) lines.push(`Current lifecycle phase: ${input.lifecyclePhase}`);
+  lines.push('Never run git push, git merge, or any command that publishes/deploys — that always needs a separate human approval.');
+  return lines.join('\n\n');
+}
 
 /**
  * Maps a Project Registry permission level to a real Claude Code
@@ -60,6 +80,16 @@ export function allowedToolsForPermission(level: ProjectPermissionLevel): string
  */
 export async function dispatchClaudeCode(execFn: ExecFn, input: DispatchClaudeCodeInput): Promise<DispatchResult> {
   const allowedTools = allowedToolsForPermission(input.permissionLevel);
+
+  if (input.dryRun) {
+    return {
+      ok: true,
+      dryRun: true,
+      result: `[DRY RUN — no real dispatch made] claude -p "${input.prompt}" --allowedTools ${allowedTools.join(',')} (cwd: ${input.projectDir})`,
+      allowedTools,
+    };
+  }
+
   try {
     const { stdout } = await execFn(
       'claude',

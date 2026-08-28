@@ -549,7 +549,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'claude-code-orchestrator',
     name: 'Claude Code Orchestrator',
     description:
-      "Dispatches real coding work to the `claude` CLI against the Project Registry's authorized targets, gated by each project's permissionLevel. Never pushes, force-pushes, or merges — that stays under the operator's explicit approval regardless of permission level.",
+      "Dispatches real coding work to the `claude` CLI against the Project Registry's authorized targets, gated by each project's permissionLevel. Queuing a run (via the API or the project page panel) builds a real prompt with real project/stack/lifecycle context and costs nothing; a separate, explicit execute step is the only one that spends money. A full_with_approval-tier project's run queues as awaiting_approval and needs an explicit approve before it can run. Never pushes, force-pushes, or merges — that stays under the operator's explicit approval regardless of permission level.",
     departmentId: 'dept-product-eng',
     async run() {
       const projects = getDb().projects.all();
@@ -575,11 +575,11 @@ export const realAgents: RuntimeAgent[] = [
         {
           name: 'dispatchCoding',
           description:
-            'Dispatches a REAL coding task to the `claude` CLI against a Project Registry-authorized local project directory. Refuses any project not both active and explicitly authorizing this agent. Tool access is limited by the project\'s permissionLevel — read_only gets NO write/bash tools at all; every level is blocked from git push/merge/force, unconditionally. Reports the true result from claude, never a fabricated success.',
-          parameters: z.object({ projectId: z.string(), prompt: z.string() }),
+            "Queues a REAL coding task for the `claude` CLI against a Project Registry-authorized local project directory — this call itself is FREE and never spends money; it only builds a real prompt and creates a queued run. Refuses any project not both active and explicitly authorizing this agent. A full_with_approval-tier project's run queues as awaiting_approval, requiring a separate operator approval before it can run. Actually executing a queued run (the one paid step) is a deliberate separate action, never triggered automatically from this tool.",
+          parameters: z.object({ projectId: z.string(), goal: z.string() }),
           execute: async (args) => {
             const projectId = typeof args.projectId === 'string' ? args.projectId : '';
-            const prompt = typeof args.prompt === 'string' ? args.prompt : '';
+            const goal = typeof args.goal === 'string' ? args.goal : '';
             const project = getDb().projects.byId(projectId);
             if (!project) return { ok: false, reason: 'project not found' };
             if (project.status !== 'active') return { ok: false, reason: `project is not active (status: ${project.status})` };
@@ -589,8 +589,27 @@ export const realAgents: RuntimeAgent[] = [
             if (project.kind !== 'local') {
               return { ok: false, reason: 'only local projects can be dispatched to on this machine today' };
             }
-            const { dispatchClaudeCodeLive } = await import('@/lib/claude-code-dispatch');
-            return dispatchClaudeCodeLive({ projectDir: project.pathOrUrl, prompt, permissionLevel: project.permissionLevel });
+            const { queueClaudeCodeRun } = await import('@/lib/claude-code-queue');
+            const { buildDispatchPrompt } = await import('@/lib/claude-code-dispatch');
+            const { detectProjectStack } = await import('@/lib/project-bootstrap');
+            const { getOrCreateLifecycleState } = await import('@/lib/project-lifecycle-orchestrator');
+            const stack = detectProjectStack(project.pathOrUrl);
+            const lifecycle = getOrCreateLifecycleState(getDb(), project.id);
+            const prompt = buildDispatchPrompt({ goal, stackNote: stack.note, lifecyclePhase: lifecycle.currentPhase });
+            const run = queueClaudeCodeRun(getDb(), {
+              projectId: project.id,
+              projectDir: project.pathOrUrl,
+              prompt,
+              permissionLevel: project.permissionLevel,
+            });
+            return {
+              ok: true,
+              run,
+              note:
+                run.status === 'awaiting_approval'
+                  ? 'Queued as awaiting_approval — this project requires an explicit operator approval before it can run.'
+                  : 'Queued and free so far — a separate explicit execute step (from the project page) is required before any real, paid claude call is made.',
+            };
           },
         },
       ];
