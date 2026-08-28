@@ -1243,7 +1243,8 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'executive-reporter',
     name: 'Executive Reporter',
-    description: 'Turns raw agent_runs into a plain-language daily/weekly digest — no LLM required.',
+    description:
+      'Turns raw agent_runs into a plain-language daily/weekly digest — no LLM required. Also builds the real "overnight report" (completed/failed delegated tasks, pending lifecycle approvals, credential/approval-blocked capabilities, every project\'s lifecycle phase) via the overnightReport chat tool.',
     departmentId: 'dept-tech',
     async run() {
       const report = buildExecutiveReport(getDb(), { windowHours: 24 });
@@ -1263,6 +1264,21 @@ export const realAgents: RuntimeAgent[] = [
         summary: `Last 24h: ${report24.summary} · Last 7d: ${report168.summary}`,
         data: { day: report24, week: report168 },
       };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'overnightReport',
+          description:
+            'Builds the real overnight report: completed and failed delegated tasks, pending lifecycle approvals, capabilities awaiting credential/approval, and every project\'s current lifecycle phase — all from real DB rows, no invented commentary.',
+          parameters: z.object({}),
+          execute: async () => {
+            const { buildOvernightReport } = await import('@/lib/agents/overnight-report');
+            const report = buildOvernightReport(getDb());
+            return { ok: true, markdown: report.toMarkdown(), report };
+          },
+        },
+      ];
     },
   },
 ];
