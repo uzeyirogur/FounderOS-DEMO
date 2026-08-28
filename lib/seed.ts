@@ -2,6 +2,7 @@ import type { FounderDb } from '@/lib/db';
 import { PERSONAS } from '@/lib/personas-seed';
 import type {
   Agent,
+  AgentCron,
   AgentTask,
   Department,
   Domain,
@@ -1890,6 +1891,67 @@ const skills: Omit<Skill, 'markdown'>[] = [
   { id: 'skill-attribution', name: 'Revenue attribution', category: 'Ops', description: 'Ties content and calls to closed revenue via Trakyo.', ownerAgentId: null, status: 'planned', tools: ['trakyo', 'ghl'], order: 11 },
 ];
 
+// ── Scheduler / Autonomy ──────────────────────────────────────────────────
+// A sane, spaced-out cron distribution — each targets a real runtime agent
+// (see lib/agents/real.ts). Deliberately conservative frequencies so no
+// agent gets hammered: cron syntax is UTC, 'minute hour day month weekday'.
+const agentCrons: AgentCron[] = [
+  {
+    id: 'cron-conductor-health',
+    agentId: 'conductor',
+    schedule: '*/30 * * * *',
+    description: 'System health / cross-system blocker check every 30 minutes.',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+  {
+    id: 'cron-executive-daily-report',
+    agentId: 'executive-reporter',
+    schedule: '0 7 * * *',
+    description: 'Daily digest at 07:00 UTC — what happened overnight.',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+  {
+    id: 'cron-ai-intelligence-scout',
+    agentId: 'ai-intelligence',
+    schedule: '0 3 * * *',
+    description: 'Nightly tool/capability discovery scout at 03:00 UTC.',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+  {
+    id: 'cron-conductor-lifecycle-review',
+    agentId: 'conductor',
+    schedule: '0 */4 * * *',
+    description: 'Project lifecycle review every 4 hours — pending approvals and blocked phases.',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+  {
+    id: 'cron-anka-operations-check',
+    agentId: 'anka-operations',
+    schedule: '0 */6 * * *',
+    description: 'ANKA+/TIVARO backend connectivity check every 6 hours (read-only).',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+  {
+    id: 'cron-capability-verification',
+    agentId: 'ai-intelligence',
+    schedule: '0 5 * * *',
+    description: 'Daily capability registry verification at 05:00 UTC — re-check installed/configured status.',
+    enabled: true,
+    createdAt: '2026-08-28T00:00:00.000Z',
+    lastRunAt: null,
+  },
+];
+
 export function seedDatabase(db: FounderDb): void {
   // INSERT OR REPLACE in every repo makes re-seeding idempotent by id.
   for (const d of departments) db.departments.insert(d);
@@ -1929,4 +1991,5 @@ export function seedDatabase(db: FounderDb): void {
   for (const p of socialPosts) db.socialPosts.enqueue(p);
   for (const c of funnelContacts) db.funnel.insertContact(c);
   for (const t of funnelTouches) db.funnel.insertTouch(t);
+  for (const c of agentCrons) db.agentCrons.insert(c);
 }
