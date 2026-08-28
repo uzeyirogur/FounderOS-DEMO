@@ -41,18 +41,18 @@ export const PHASE_RESPONSIBLE_AGENT: Record<ProjectLifecyclePhase, string> = {
   idea: 'idea-lab-agent',
   research: 'product-competitor-research',
   validation: 'product-competitor-research',
-  product_planning: 'chief-of-staff',
+  product_planning: 'conductor',
   technical_planning: 'claude-code-orchestrator',
   implementation: 'claude-code-orchestrator',
-  qa: 'qa-bug-hunter',
+  qa: 'qa-ui-review',
   security: 'security-reviewer',
   ui_ux: 'ui-ux-reviewer',
-  launch_readiness: 'chief-of-staff',
-  deployment_approval: 'chief-of-staff',
+  launch_readiness: 'conductor',
+  deployment_approval: 'conductor',
   growth: 'growth-marketing',
   social: 'social-content-studio',
   monitoring: 'usage-cost-monitor',
-  iteration: 'chief-of-staff',
+  iteration: 'conductor',
   reporting: 'executive-reporter',
 };
 
@@ -77,3 +77,37 @@ export function isFirstPhase(phase: ProjectLifecyclePhase): boolean {
 export function isLastPhase(phase: ProjectLifecyclePhase): boolean {
   return phaseIndex(phase) === PROJECT_LIFECYCLE_PHASES.length - 1;
 }
+
+/**
+ * The kind of REAL evidence required to leave a phase — not a label an
+ * agent can self-report as "done". null means the phase has nothing
+ * objectively checkable yet (idea/research/validation/planning phases
+ * are judgment calls, not measurements). A phase requiring evidence
+ * cannot advance without a matching LifecycleEvidence row recorded
+ * against it — see lib/project-lifecycle-orchestrator.ts's advancePhase().
+ */
+export type PhaseEvidenceKind =
+  | 'build_test'
+  | 'qa_report'
+  | 'security_report'
+  | 'ui_ux_report'
+  | 'launch_checklist';
+
+export const PHASE_EXIT_EVIDENCE: Record<ProjectLifecyclePhase, PhaseEvidenceKind | null> = {
+  idea: null,
+  research: null,
+  validation: null,
+  product_planning: null,
+  technical_planning: null,
+  implementation: 'build_test',
+  qa: 'qa_report',
+  security: 'security_report',
+  ui_ux: 'ui_ux_report',
+  launch_readiness: 'launch_checklist',
+  deployment_approval: null,
+  growth: null,
+  social: null,
+  monitoring: null,
+  iteration: null,
+  reporting: null,
+};

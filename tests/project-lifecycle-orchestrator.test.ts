@@ -3,6 +3,7 @@ import { openDb } from '@/lib/db';
 import {
   getOrCreateLifecycleState,
   advancePhase,
+  recordEvidence,
   projectLifecycleSummary,
 } from '@/lib/project-lifecycle-orchestrator';
 
@@ -12,6 +13,8 @@ import {
  *  - advancing INTO 'deployment_approval' requires an approval row to exist,
  *    and advancing OUT of it requires that approval to be 'approved'
  *  - advancing appends to history, never rewrites it
+ *  - evidence-gated phases (see project-lifecycle-evidence-gate.test.ts for
+ *    the dedicated suite) require a passing evidence row to leave
  */
 describe('project-lifecycle-orchestrator', () => {
   let db: ReturnType<typeof openDb>;
@@ -33,9 +36,9 @@ describe('project-lifecycle-orchestrator', () => {
     expect(again.history).toHaveLength(1);
   });
 
-  it('advancePhase moves to the next phase and appends history', () => {
+  it('advancePhase moves to the next phase and appends history (idea has no evidence requirement)', () => {
     getOrCreateLifecycleState(db, 'proj-b');
-    const result = advancePhase(db, 'proj-b', 'chief-of-staff');
+    const result = advancePhase(db, 'proj-b', 'conductor');
     expect(result.ok).toBe(true);
     expect(result.state?.currentPhase).toBe('research');
     expect(result.state?.history).toHaveLength(2);
@@ -48,19 +51,27 @@ describe('project-lifecycle-orchestrator', () => {
       history: [{ phase: 'reporting', enteredAt: new Date().toISOString() }],
       updatedAt: new Date().toISOString(),
     });
-    const result = advancePhase(db, 'proj-c', 'chief-of-staff');
+    const result = advancePhase(db, 'proj-c', 'conductor');
     if (result.ok) throw new Error('expected advancePhase to fail');
     expect(result.reason).toMatch(/last phase/i);
   });
 
-  it('advancing FROM launch_readiness INTO deployment_approval auto-creates a pending approval', () => {
+  it('advancing FROM launch_readiness INTO deployment_approval auto-creates a pending approval (once its checklist evidence passes)', () => {
     db.lifecycleState.upsert({
       projectId: 'proj-d',
       currentPhase: 'launch_readiness',
       history: [{ phase: 'launch_readiness', enteredAt: new Date().toISOString() }],
       updatedAt: new Date().toISOString(),
     });
-    const result = advancePhase(db, 'proj-d', 'chief-of-staff');
+    recordEvidence(db, {
+      projectId: 'proj-d',
+      phase: 'launch_readiness',
+      kind: 'launch_checklist',
+      ok: true,
+      summary: 'checklist complete',
+      recordedByAgentId: 'conductor',
+    });
+    const result = advancePhase(db, 'proj-d', 'conductor');
     expect(result.ok).toBe(true);
     expect(result.state?.currentPhase).toBe('deployment_approval');
     const approvals = db.lifecycleApprovals.byProjectId('proj-d');
@@ -81,19 +92,19 @@ describe('project-lifecycle-orchestrator', () => {
       phase: 'deployment_approval',
       title: 'Ship it',
       description: '',
-      requestedByAgentId: 'chief-of-staff',
+      requestedByAgentId: 'conductor',
       status: 'pending',
       createdAt: new Date().toISOString(),
       decidedAt: null,
       decidedBy: null,
       notes: null,
     });
-    const blocked = advancePhase(db, 'proj-e', 'chief-of-staff');
+    const blocked = advancePhase(db, 'proj-e', 'conductor');
     if (blocked.ok) throw new Error('expected advancePhase to be blocked');
     expect(blocked.reason).toMatch(/approval/i);
 
     db.lifecycleApprovals.decide('appr-e', 'approved', 'local-ui', null);
-    const allowed = advancePhase(db, 'proj-e', 'chief-of-staff');
+    const allowed = advancePhase(db, 'proj-e', 'conductor');
     expect(allowed.ok).toBe(true);
     expect(allowed.state?.currentPhase).toBe('growth');
   });

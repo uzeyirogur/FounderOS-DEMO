@@ -800,6 +800,28 @@ export type LifecycleTask = z.infer<typeof LifecycleTaskSchema>;
 export type LifecycleApprovalStatus = z.infer<typeof LifecycleApprovalStatusSchema>;
 export type LifecycleApproval = z.infer<typeof LifecycleApprovalSchema>;
 
+// ── Lifecycle Evidence (phase exit gating) ───────────────────────────────
+// A phase requiring evidence (see lib/project-lifecycle.ts's
+// PHASE_EXIT_EVIDENCE) cannot advance on an agent's say-so alone — it needs
+// a real, recorded evidence row: a real test/build run, a real QA/security/
+// UI-UX report, or a real launch checklist. `ok` defaults to false — a row
+// is never treated as a pass unless something explicitly marked it so.
+export const LifecycleEvidenceKindSchema = z.enum([
+  'build_test', 'qa_report', 'security_report', 'ui_ux_report', 'launch_checklist',
+]);
+export const LifecycleEvidenceSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  phase: ProjectLifecyclePhaseSchema,
+  kind: LifecycleEvidenceKindSchema,
+  ok: z.boolean().default(false),
+  summary: z.string().min(1),
+  recordedByAgentId: z.string().min(1),
+  recordedAt: z.string().min(1),
+});
+export type LifecycleEvidenceKind = z.infer<typeof LifecycleEvidenceKindSchema>;
+export type LifecycleEvidence = z.infer<typeof LifecycleEvidenceSchema>;
+
 // ── Delegated Task (Chief of Staff / Conductor v2 work-item domain) ─────────
 // Every piece of work the Conductor hands to another agent is a real,
 // persisted row — never an in-memory decision that evaporates after one chat

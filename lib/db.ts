@@ -18,6 +18,7 @@ import {
   GrowthBriefSchema,
   IdeaSchema,
   LifecycleApprovalSchema,
+  LifecycleEvidenceSchema,
   LifecycleTaskSchema,
   MetricSchema,
   NotificationSchema,
@@ -65,6 +66,7 @@ import {
   type GrowthBrief,
   type Idea,
   type LifecycleApproval,
+  type LifecycleEvidence,
   type LifecycleTask,
   type Metric,
   type Notification,
@@ -419,6 +421,16 @@ CREATE TABLE IF NOT EXISTS lifecycle_approvals (
   decided_at TEXT,
   decided_by TEXT,
   notes TEXT
+);
+CREATE TABLE IF NOT EXISTS lifecycle_evidence (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  phase TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  ok INTEGER NOT NULL DEFAULT 0,
+  summary TEXT NOT NULL,
+  recorded_by_agent_id TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS capabilities (
   id TEXT PRIMARY KEY,
@@ -1579,6 +1591,53 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Lifecycle Evidence (phase exit gating) ────────────────────────────────
+  function rowToLifecycleEvidence(r: any): LifecycleEvidence {
+    return LifecycleEvidenceSchema.parse({
+      id: r.id,
+      projectId: r.project_id,
+      phase: r.phase,
+      kind: r.kind,
+      ok: Boolean(r.ok),
+      summary: r.summary,
+      recordedByAgentId: r.recorded_by_agent_id,
+      recordedAt: r.recorded_at,
+    });
+  }
+
+  const lifecycleEvidence = {
+    byProjectId(projectId: string): LifecycleEvidence[] {
+      return (
+        db.prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? ORDER BY recorded_at DESC').all(projectId) as any[]
+      ).map(rowToLifecycleEvidence);
+    },
+    /** Every evidence row for one project's one phase — a phase may be
+     *  attempted more than once (e.g. a failing build_test then a passing
+     *  one after a fix), so this returns all of them, newest first. */
+    byProjectPhase(projectId: string, phase: string): LifecycleEvidence[] {
+      return (
+        db
+          .prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? AND phase = ? ORDER BY recorded_at DESC')
+          .all(projectId, phase) as any[]
+      ).map(rowToLifecycleEvidence);
+    },
+    insert(e: LifecycleEvidence): void {
+      const parsed = LifecycleEvidenceSchema.parse(e);
+      db.prepare(
+        'INSERT OR REPLACE INTO lifecycle_evidence (id, project_id, phase, kind, ok, summary, recorded_by_agent_id, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.projectId,
+        parsed.phase,
+        parsed.kind,
+        parsed.ok ? 1 : 0,
+        parsed.summary,
+        parsed.recordedByAgentId,
+        parsed.recordedAt,
+      );
+    },
+  };
+
   // ── Capability / Tool Registry ──────────────────────────────────────────
   function rowToCapability(r: any): CapabilityProvider {
     return CapabilityProviderSchema.parse({
@@ -2296,6 +2355,7 @@ export function openDb(path: string) {
     lifecycleState,
     lifecycleTasks,
     lifecycleApprovals,
+    lifecycleEvidence,
     capabilities,
     contentPieces,
     creativeBriefs,

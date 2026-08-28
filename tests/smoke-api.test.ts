@@ -46,6 +46,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'keys', load: () => import('@/app/api/keys/route'), url: 'http://localhost/api/keys' },
   { route: 'lifecycle-approvals', load: () => import('@/app/api/lifecycle-approvals/route'), url: 'http://localhost/api/lifecycle-approvals' },
   { route: 'projects/[id]/lifecycle', load: () => import('@/app/api/projects/[id]/lifecycle/route'), url: 'http://localhost/api/projects/anka-tivaro/lifecycle', params: { id: 'anka-tivaro' } },
+  { route: 'projects/[id]/lifecycle/evidence', load: () => import('@/app/api/projects/[id]/lifecycle/evidence/route'), url: 'http://localhost/api/projects/anka-tivaro/lifecycle/evidence', params: { id: 'anka-tivaro' } },
   { route: 'publish-plans', load: () => import('@/app/api/publish-plans/route'), url: 'http://localhost/api/publish-plans' },
   { route: 'outbound-messages', load: () => import('@/app/api/outbound-messages/route'), url: 'http://localhost/api/outbound-messages' },
   { route: 'personal-tasks', load: () => import('@/app/api/personal-tasks/route'), url: 'http://localhost/api/personal-tasks' },

@@ -6,7 +6,7 @@ import { advancePhase } from '@/lib/project-lifecycle-orchestrator';
 export const dynamic = 'force-dynamic';
 
 const AdvanceSchema = z.object({
-  requestedByAgentId: z.string().min(1).default('chief-of-staff'),
+  requestedByAgentId: z.string().min(1).default('conductor'),
 });
 
 /**

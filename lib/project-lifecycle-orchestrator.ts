@@ -2,11 +2,13 @@ import { randomUUID } from 'node:crypto';
 import type { openDb } from '@/lib/db';
 import {
   PHASE_RESPONSIBLE_AGENT,
+  PHASE_EXIT_EVIDENCE,
   nextPhase,
   isLastPhase,
   type ProjectLifecyclePhase,
+  type PhaseEvidenceKind,
 } from '@/lib/project-lifecycle';
-import type { LifecycleApproval, LifecycleTask, ProjectLifecycleState } from '@/lib/schemas';
+import type { LifecycleApproval, LifecycleEvidence, LifecycleTask, ProjectLifecycleState } from '@/lib/schemas';
 
 type Db = ReturnType<typeof openDb>;
 
@@ -14,6 +16,45 @@ type Db = ReturnType<typeof openDb>;
  *  Deliberately a short, explicit list rather than "any phase can gate" —
  *  today only the phase whose entire purpose is a go/no-go decision gates. */
 const APPROVAL_GATED_PHASES = new Set<ProjectLifecyclePhase>(['deployment_approval']);
+
+/**
+ * Records a real evidence row for a phase — a real build/test run, a real
+ * QA/security/UI-UX report, or a real launch checklist. Refuses a kind
+ * that doesn't match what PHASE_EXIT_EVIDENCE requires for that phase,
+ * so an agent can't manufacture a "pass" of the wrong shape.
+ */
+export function recordEvidence(
+  db: Db,
+  input: { projectId: string; phase: ProjectLifecyclePhase; kind: PhaseEvidenceKind; ok: boolean; summary: string; recordedByAgentId: string },
+): LifecycleEvidence {
+  const expectedKind = PHASE_EXIT_EVIDENCE[input.phase];
+  if (expectedKind !== input.kind) {
+    throw new Error(`recordEvidence: phase '${input.phase}' expects evidence kind '${expectedKind}', got '${input.kind}'`);
+  }
+  const evidence: LifecycleEvidence = {
+    id: randomUUID(),
+    projectId: input.projectId,
+    phase: input.phase,
+    kind: input.kind,
+    ok: input.ok,
+    summary: input.summary,
+    recordedByAgentId: input.recordedByAgentId,
+    recordedAt: new Date().toISOString(),
+  };
+  db.lifecycleEvidence.insert(evidence);
+  return evidence;
+}
+
+/** True when a phase either has no evidence requirement, or has at least
+ *  one recorded evidence row for it whose `ok` is true. The most recent
+ *  attempt is what counts — a later pass overrides an earlier failure,
+ *  so a fixed build doesn't stay permanently blocked by its first try. */
+function evidenceSatisfied(db: Db, projectId: string, phase: ProjectLifecyclePhase): boolean {
+  const required = PHASE_EXIT_EVIDENCE[phase];
+  if (!required) return true;
+  const rows = db.lifecycleEvidence.byProjectPhase(projectId, phase);
+  return rows.length > 0 && rows[0].ok === true; // byProjectPhase orders newest first
+}
 
 /** Returns the project's lifecycle row, creating it at phase 'idea' with a
  *  one-entry history on first access. Idempotent: a second call for the same
@@ -39,6 +80,10 @@ export type AdvanceResult =
 /**
  * Moves a project one step forward in the standard lifecycle.
  *  - refuses past the last phase ('reporting')
+ *  - refuses to LEAVE a phase with an evidence requirement (implementation/
+ *    qa/security/ui_ux/launch_readiness) unless the most recent recorded
+ *    evidence for that phase is ok — a phase is not "done" because an
+ *    agent said so
  *  - refuses to LEAVE an approval-gated phase unless its approval row is
  *    'approved' (there may be more than one gated approval historically;
  *    only the most recent counts)
@@ -50,6 +95,15 @@ export function advancePhase(db: Db, projectId: string, requestedByAgentId: stri
 
   if (isLastPhase(state.currentPhase)) {
     return { ok: false, reason: `Project is already at the last phase (${state.currentPhase}).`, state };
+  }
+
+  if (!evidenceSatisfied(db, projectId, state.currentPhase)) {
+    const kind = PHASE_EXIT_EVIDENCE[state.currentPhase];
+    return {
+      ok: false,
+      reason: `Cannot leave '${state.currentPhase}' — no passing '${kind}' evidence has been recorded for this phase yet.`,
+      state,
+    };
   }
 
   if (APPROVAL_GATED_PHASES.has(state.currentPhase)) {
