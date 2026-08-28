@@ -5,6 +5,7 @@ import { Badge } from '@/components/terminal';
 import { ProjectLifecycleWidget } from '@/components/ProjectLifecycleWidget';
 import { GrowthResearchPanel } from '@/components/GrowthResearchPanel';
 import { CreativeResearchPanel } from '@/components/CreativeResearchPanel';
+import { ClaudeCodeDispatchPanel } from '@/components/ClaudeCodeDispatchPanel';
 import { projectLifecycleSummary } from '@/lib/project-lifecycle-orchestrator';
 
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,14 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       <div className="mt-4">
         <CreativeResearchPanel projectId={project.id} briefs={creativeBriefs} />
       </div>
+      {project.kind === 'local' && (
+        <div className="mt-4">
+          <ClaudeCodeDispatchPanel
+            projectId={project.id}
+            authorized={project.status === 'active' && project.authorizedAgentIds.includes('claude-code-orchestrator')}
+          />
+        </div>
+      )}
     </div>
   );
 }

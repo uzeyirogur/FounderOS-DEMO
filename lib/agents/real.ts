@@ -676,7 +676,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'claude-code-orchestrator',
     name: 'Claude Code Orchestrator',
     description:
-      "Dispatches coding work against the Project Registry's authorized targets, gated by each project's permissionLevel.",
+      "Dispatches real coding work to the `claude` CLI against the Project Registry's authorized targets, gated by each project's permissionLevel. Never pushes, force-pushes, or merges — that stays under the operator's explicit approval regardless of permission level.",
     departmentId: 'dept-product-eng',
     async run() {
       const projects = getDb().projects.all();
@@ -696,6 +696,31 @@ export const realAgents: RuntimeAgent[] = [
                 .join(' · ')}`,
         data: { active: active.length, authorized: authorized.length, byLevel },
       };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'dispatchCoding',
+          description:
+            'Dispatches a REAL coding task to the `claude` CLI against a Project Registry-authorized local project directory. Refuses any project not both active and explicitly authorizing this agent. Tool access is limited by the project\'s permissionLevel — read_only gets NO write/bash tools at all; every level is blocked from git push/merge/force, unconditionally. Reports the true result from claude, never a fabricated success.',
+          parameters: z.object({ projectId: z.string(), prompt: z.string() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const prompt = typeof args.prompt === 'string' ? args.prompt : '';
+            const project = getDb().projects.byId(projectId);
+            if (!project) return { ok: false, reason: 'project not found' };
+            if (project.status !== 'active') return { ok: false, reason: `project is not active (status: ${project.status})` };
+            if (!project.authorizedAgentIds.includes('claude-code-orchestrator')) {
+              return { ok: false, reason: 'claude-code-orchestrator is not authorized on this project — grant access from /projects first' };
+            }
+            if (project.kind !== 'local') {
+              return { ok: false, reason: 'only local projects can be dispatched to on this machine today' };
+            }
+            const { dispatchClaudeCodeLive } = await import('@/lib/claude-code-dispatch');
+            return dispatchClaudeCodeLive({ projectDir: project.pathOrUrl, prompt, permissionLevel: project.permissionLevel });
+          },
+        },
+      ];
     },
   },
   {
