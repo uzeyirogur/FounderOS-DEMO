@@ -645,6 +645,50 @@ export const realAgents: RuntimeAgent[] = [
     },
   },
   {
+    id: 'security-reviewer',
+    name: 'Security Reviewer',
+    description:
+      'Runs real npm audit and a regex secret scan against a Project Registry-authorized directory before release. Never reports a matched secret value, and never reports clean when a check could not actually run.',
+    departmentId: 'dept-product-eng',
+    async run() {
+      const authorized = getDb()
+        .projects.all()
+        .filter((p) => p.status === 'active' && p.authorizedAgentIds.includes('security-reviewer'));
+      return {
+        ok: true,
+        summary:
+          authorized.length === 0
+            ? 'No active project authorizes this agent yet — grant access from /projects, then use the runReview chat tool.'
+            : `${authorized.length} project(s) authorized for security review · use the runReview chat tool to audit one.`,
+        data: { authorized: authorized.map((p) => ({ id: p.id, name: p.name, pathOrUrl: p.pathOrUrl })) },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'runReview',
+          description:
+            'Runs a REAL npm audit + secret scan against a Project Registry-authorized project directory. Refuses any project not both active and explicitly authorizing this agent. Reports the true result — an unreadable audit is a fail, never reported clean, and a matched secret value is NEVER included in the output.',
+          parameters: z.object({ projectId: z.string() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const project = getDb().projects.byId(projectId);
+            if (!project) return { ok: false, reason: 'project not found' };
+            if (project.status !== 'active') return { ok: false, reason: `project is not active (status: ${project.status})` };
+            if (!project.authorizedAgentIds.includes('security-reviewer')) {
+              return { ok: false, reason: 'security-reviewer is not authorized on this project — grant access from /projects first' };
+            }
+            if (project.kind !== 'local') {
+              return { ok: false, reason: 'only local projects can be scanned on this machine today' };
+            }
+            const { runSecurityReview } = await import('@/lib/security-review-orchestrator');
+            return runSecurityReview(project.pathOrUrl);
+          },
+        },
+      ];
+    },
+  },
+  {
     id: 'product-competitor-research',
     name: 'Product & Competitor Research',
     description: 'Web research via Brave Search for competitor moves and market context.',

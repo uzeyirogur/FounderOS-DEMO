@@ -582,6 +582,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Security Reviewer: real npm audit + secret scan against a registered project ──
+  {
+    id: 'security-reviewer',
+    departmentId: 'dept-product-eng',
+    name: 'Security Reviewer',
+    role: 'Dependency & Secret Audit',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Runs real npm audit and a regex secret scan against a Project Registry-authorized directory before release. Never reports the matched secret value, and never reports clean when a check could not actually run.',
+    model: 'npm audit --json + regex secret scan (no LLM)',
+    tools: ['npm-audit', 'fs-scan'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Idea Lab: scored idea generation ──────────────────────────────────────
   {
     id: 'idea-lab-agent',
@@ -848,6 +863,19 @@ const sopTasks: SopTask[] = [
   },
 
   // PRODUCT & ENGINEERING
+  {
+    id: 'sop-security-reviewer', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'security-reviewer',
+    title: 'Audit a Project Registry-authorized directory before release',
+    summary: 'Runs real npm audit and a regex secret scan against a project; treats an unreadable check as a fail, never as clean.',
+    steps: [
+      'Confirm the target project is registered and authorizes this agent',
+      'Run npm audit --json in the project directory and parse the real output',
+      'Walk the project source tree (skipping node_modules/.git/.next) and regex-scan for committed secrets',
+      'Never include a matched secret value in the report — file, line, and pattern name only',
+      'If npm audit could not run at all, report that honestly rather than reporting clean',
+      'Flag high/critical vulnerabilities and any secret finding as blockers before deployment approval',
+    ],
+  },
   {
     id: 'sop-claude-code-orchestrator', departmentId: 'dept-product-eng', assigneeKind: 'agent', assigneeId: 'claude-code-orchestrator',
     title: 'Dispatch coding work at the authorized permission level',
