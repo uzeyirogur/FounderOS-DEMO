@@ -1020,3 +1020,27 @@ export type PublishPlanStatus = z.infer<typeof PublishPlanStatusSchema>;
 export type PlatformAdaptation = z.infer<typeof PlatformAdaptationSchema>;
 export type PublishPlan = z.infer<typeof PublishPlanSchema>;
 
+// ── Communications — outbound message to a real person, approval-gated ──────
+// Mirrors PublishPlan's drafted -> pending_approval -> approved/rejected ->
+// sent/failed shape: an agent may draft a reply to a real inbox or WhatsApp
+// contact, but sending is always gated on an explicit human decision, per
+// the Approval Policy.
+export const OutboundChannelSchema = z.enum(['email', 'whatsapp']);
+export const OutboundStatusSchema = z.enum(['drafted', 'pending_approval', 'approved', 'rejected', 'sent', 'failed']);
+export const OutboundMessageSchema = z.object({
+  id: z.string().min(1),
+  channel: OutboundChannelSchema,
+  to: z.string().min(1),
+  subject: z.string().nullable().default(null),
+  body: z.string().min(1),
+  status: OutboundStatusSchema.default('drafted'),
+  createdAt: z.string().min(1),
+  decidedAt: z.string().min(1).nullable().default(null),
+  decidedBy: z.string().min(1).nullable().default(null),
+  sentAt: z.string().min(1).nullable().default(null),
+  failureReason: z.string().nullable().default(null),
+});
+export type OutboundChannel = z.infer<typeof OutboundChannelSchema>;
+export type OutboundStatus = z.infer<typeof OutboundStatusSchema>;
+export type OutboundMessage = z.infer<typeof OutboundMessageSchema>;
+

@@ -173,16 +173,61 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'comms-agent',
     name: 'Comms Agent',
-    description: 'Aggregates the Gmail/WhatsApp/Slack workers that feed the unified /comms view.',
+    description: 'Aggregates the Gmail/WhatsApp/Slack workers that feed the unified /comms view. Can draft real replies, gated on explicit approval before anything is sent.',
     departmentId: 'dept-comms',
     async run() {
       const [gmail, whatsapp, slack] = await Promise.all([gmailRun(), whatsappRun(), slackRun()]);
       const live = [gmail, whatsapp, slack].filter((r) => r.ok).length;
+      const pending = getDb().outboundMessages.pending().length;
       return {
         ok: live > 0,
-        summary: `${live}/3 channels live → /comms · Gmail ${label(gmail)} · WhatsApp ${label(whatsapp)} · Slack ${label(slack)}`,
-        data: { gmail, whatsapp, slack },
+        summary: `${live}/3 channels live → /comms · Gmail ${label(gmail)} · WhatsApp ${label(whatsapp)} · Slack ${label(slack)}${
+          pending > 0 ? ` · ${pending} outbound message(s) awaiting approval` : ''
+        }`,
+        data: { gmail, whatsapp, slack, pendingOutbound: pending },
       };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'draftReply',
+          description:
+            'Drafts a reply to a real email or WhatsApp contact. Always starts pending_approval — never sends on its own. Per the Approval Policy, a real message to a real person needs an explicit yes first.',
+          parameters: z.object({
+            channel: z.enum(['email', 'whatsapp']),
+            to: z.string(),
+            subject: z.string().nullable().optional(),
+            body: z.string(),
+          }),
+          execute: async (args) => {
+            const { draftOutboundMessage } = await import('@/lib/communications');
+            const channel = args.channel === 'whatsapp' ? 'whatsapp' : 'email';
+            const to = typeof args.to === 'string' ? args.to : '';
+            const subject = typeof args.subject === 'string' ? args.subject : null;
+            const body = typeof args.body === 'string' ? args.body : '';
+            return draftOutboundMessage(getDb(), { channel, to, subject, body });
+          },
+        },
+        {
+          name: 'attemptSend',
+          description:
+            'Attempts to actually send an APPROVED outbound message via the real channel connector. Refuses anything not already approved. Reports the true outcome — never fakes success.',
+          parameters: z.object({ messageId: z.string() }),
+          execute: async (args) => {
+            const { attemptSendLive } = await import('@/lib/communications');
+            const messageId = typeof args.messageId === 'string' ? args.messageId : '';
+            return attemptSendLive(getDb(), messageId);
+          },
+        },
+        {
+          name: 'listOutboundMessages',
+          description: 'List every drafted outbound message, or only ones awaiting approval.',
+          parameters: z.object({ onlyPending: z.boolean().nullable().optional() }),
+          execute: async (args) => {
+            return args.onlyPending ? getDb().outboundMessages.pending() : getDb().outboundMessages.all();
+          },
+        },
+      ];
     },
   },
   { id: 'gmail-worker', name: 'Gmail Worker', description: 'Unread counts and recent mail from up to four IMAP inboxes.', departmentId: 'dept-comms', run: gmailRun },

@@ -19,6 +19,7 @@ import {
   LifecycleTaskSchema,
   MetricSchema,
   NotificationSchema,
+  OutboundMessageSchema,
   PersonaSchema,
   ProjectLifecycleStateSchema,
   PhaseSchema,
@@ -60,6 +61,7 @@ import {
   type LifecycleTask,
   type Metric,
   type Notification,
+  type OutboundMessage,
   type Persona,
   type Phase,
   type Project,
@@ -456,6 +458,19 @@ CREATE TABLE IF NOT EXISTS publish_plans (
   decided_at TEXT,
   decided_by TEXT,
   published_at TEXT,
+  failure_reason TEXT
+);
+CREATE TABLE IF NOT EXISTS outbound_messages (
+  id TEXT PRIMARY KEY,
+  channel TEXT NOT NULL,
+  recipient TEXT NOT NULL,
+  subject TEXT,
+  body TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'drafted',
+  created_at TEXT NOT NULL,
+  decided_at TEXT,
+  decided_by TEXT,
+  sent_at TEXT,
   failure_reason TEXT
 );
 `;
@@ -1755,6 +1770,73 @@ export function openDb(path: string) {
     },
   };
 
+  function rowToOutboundMessage(r: any): OutboundMessage {
+    return OutboundMessageSchema.parse({
+      id: r.id,
+      channel: r.channel,
+      to: r.recipient,
+      subject: r.subject ?? null,
+      body: r.body,
+      status: r.status,
+      createdAt: r.created_at,
+      decidedAt: r.decided_at ?? null,
+      decidedBy: r.decided_by ?? null,
+      sentAt: r.sent_at ?? null,
+      failureReason: r.failure_reason ?? null,
+    });
+  }
+
+  const outboundMessages = {
+    all(): OutboundMessage[] {
+      return (db.prepare('SELECT * FROM outbound_messages ORDER BY created_at DESC').all() as any[]).map(rowToOutboundMessage);
+    },
+    byId(id: string): OutboundMessage | null {
+      const r = db.prepare('SELECT * FROM outbound_messages WHERE id = ?').get(id) as any;
+      return r ? rowToOutboundMessage(r) : null;
+    },
+    pending(): OutboundMessage[] {
+      return (
+        db.prepare("SELECT * FROM outbound_messages WHERE status = 'pending_approval' ORDER BY created_at").all() as any[]
+      ).map(rowToOutboundMessage);
+    },
+    insert(m: OutboundMessage): void {
+      const parsed = OutboundMessageSchema.parse(m);
+      db.prepare(
+        `INSERT OR REPLACE INTO outbound_messages
+         (id, channel, recipient, subject, body, status, created_at, decided_at, decided_by, sent_at, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id,
+        parsed.channel,
+        parsed.to,
+        parsed.subject,
+        parsed.body,
+        parsed.status,
+        parsed.createdAt,
+        parsed.decidedAt,
+        parsed.decidedBy,
+        parsed.sentAt,
+        parsed.failureReason,
+      );
+    },
+    /** The ONE path that can approve/reject — a real send never happens
+     *  without this first, same contract as publishPlans.decide(). */
+    decide(id: string, status: 'approved' | 'rejected', decidedBy: string): void {
+      db.prepare('UPDATE outbound_messages SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?').run(
+        status,
+        new Date().toISOString(),
+        decidedBy,
+        id,
+      );
+    },
+    markSent(id: string): void {
+      db.prepare("UPDATE outbound_messages SET status = 'sent', sent_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+    },
+    markFailed(id: string, reason: string): void {
+      db.prepare("UPDATE outbound_messages SET status = 'failed', failure_reason = ? WHERE id = ?").run(reason, id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1930,6 +2012,7 @@ export function openDb(path: string) {
     contentPieces,
     growthBriefs,
     publishPlans,
+    outboundMessages,
     sopTasks,
     workflows,
     skills,
