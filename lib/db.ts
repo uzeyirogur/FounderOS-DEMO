@@ -13,6 +13,7 @@ import {
   ContentPieceSchema,
   DepartmentSchema,
   DomainSchema,
+  GrowthBriefSchema,
   IdeaSchema,
   LifecycleApprovalSchema,
   LifecycleTaskSchema,
@@ -52,6 +53,7 @@ import {
   type ContentPiece,
   type Department,
   type Domain,
+  type GrowthBrief,
   type Idea,
   type LifecycleApproval,
   type LifecycleTask,
@@ -431,6 +433,15 @@ CREATE TABLE IF NOT EXISTS content_pieces (
   required_capability TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS growth_briefs (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  focus TEXT NOT NULL,
+  query TEXT NOT NULL,
+  findings TEXT NOT NULL,
+  sources TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL
 );
 `;
 
@@ -1621,6 +1632,43 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Growth & Marketing ───────────────────────────────────────────────────
+  function rowToGrowthBrief(r: any): GrowthBrief {
+    return GrowthBriefSchema.parse({
+      id: r.id,
+      projectId: r.project_id,
+      focus: r.focus,
+      query: r.query,
+      findings: r.findings,
+      sources: JSON.parse(r.sources),
+      createdAt: r.created_at,
+    });
+  }
+
+  const growthBriefs = {
+    all(): GrowthBrief[] {
+      return (db.prepare('SELECT * FROM growth_briefs ORDER BY created_at DESC').all() as any[]).map(rowToGrowthBrief);
+    },
+    byProjectId(projectId: string): GrowthBrief[] {
+      return (
+        db.prepare('SELECT * FROM growth_briefs WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as any[]
+      ).map(rowToGrowthBrief);
+    },
+    byFocus(projectId: string, focus: string): GrowthBrief[] {
+      return (
+        db
+          .prepare('SELECT * FROM growth_briefs WHERE project_id = ? AND focus = ? ORDER BY created_at DESC')
+          .all(projectId, focus) as any[]
+      ).map(rowToGrowthBrief);
+    },
+    insert(g: GrowthBrief): void {
+      const parsed = GrowthBriefSchema.parse(g);
+      db.prepare(
+        'INSERT OR REPLACE INTO growth_briefs (id, project_id, focus, query, findings, sources, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(parsed.id, parsed.projectId, parsed.focus, parsed.query, parsed.findings, JSON.stringify(parsed.sources), parsed.createdAt);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1794,6 +1842,7 @@ export function openDb(path: string) {
     lifecycleApprovals,
     capabilities,
     contentPieces,
+    growthBriefs,
     sopTasks,
     workflows,
     skills,

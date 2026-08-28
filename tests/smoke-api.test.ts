@@ -39,6 +39,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'departments', load: () => import('@/app/api/departments/route'), url: 'http://localhost/api/departments' },
   { route: 'funnel', load: () => import('@/app/api/funnel/route'), url: 'http://localhost/api/funnel' },
   { route: 'funnel/lead-message', load: () => import('@/app/api/funnel/lead-message/route'), url: 'http://localhost/api/funnel/lead-message?name=Smoke%20Test%20Lead' },
+  { route: 'growth-briefs', load: () => import('@/app/api/growth-briefs/route'), url: 'http://localhost/api/growth-briefs' },
   { route: 'keys', load: () => import('@/app/api/keys/route'), url: 'http://localhost/api/keys' },
   { route: 'lifecycle-approvals', load: () => import('@/app/api/lifecycle-approvals/route'), url: 'http://localhost/api/lifecycle-approvals' },
   { route: 'projects/[id]/lifecycle', load: () => import('@/app/api/projects/[id]/lifecycle/route'), url: 'http://localhost/api/projects/anka-tivaro/lifecycle', params: { id: 'anka-tivaro' } },

@@ -3,6 +3,7 @@ import { getDb } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/terminal';
 import { ProjectLifecycleWidget } from '@/components/ProjectLifecycleWidget';
+import { GrowthResearchPanel } from '@/components/GrowthResearchPanel';
 import { projectLifecycleSummary } from '@/lib/project-lifecycle-orchestrator';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
   const summary = projectLifecycleSummary(db, params.id);
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
+  const growthBriefs = db.growthBriefs.byProjectId(params.id);
 
   return (
     <div>
@@ -31,6 +33,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         {project.purpose || 'No purpose set.'} <span className="text-os-dim">— {project.pathOrUrl}</span>
       </p>
       <ProjectLifecycleWidget projectId={project.id} agentNames={agentNames} initial={summary} />
+      <div className="mt-4">
+        <GrowthResearchPanel projectId={project.id} briefs={growthBriefs} />
+      </div>
     </div>
   );
 }

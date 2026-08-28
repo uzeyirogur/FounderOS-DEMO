@@ -942,3 +942,40 @@ export const ContentPieceSchema = z.object({
 export type ContentPieceStatus = z.infer<typeof ContentPieceStatusSchema>;
 export type ContentPiece = z.infer<typeof ContentPieceSchema>;
 
+// ── Growth & Marketing ───────────────────────────────────────────────────────
+// A project-agnostic research brief covering exactly the areas the spec
+// calls for. Always tied to a real Project Registry project — Growth &
+// Marketing has no opinion in the abstract, it researches a specific
+// project's audience/positioning/competitors/channels/etc.
+export const GrowthFocusSchema = z.enum([
+  'target_audience',
+  'positioning',
+  'competitor',
+  'channel',
+  'acquisition',
+  'seo',
+  'campaign',
+  'funnel',
+  'landing_page',
+  'conversion',
+]);
+
+export const GrowthSourceSchema = z.object({
+  title: z.string().min(1),
+  url: z.string().min(1),
+});
+
+export const GrowthBriefSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  focus: GrowthFocusSchema,
+  query: z.string().min(1),
+  findings: z.string().min(1),
+  sources: z.array(GrowthSourceSchema).default([]),
+  createdAt: z.string().min(1),
+});
+
+export type GrowthFocus = z.infer<typeof GrowthFocusSchema>;
+export type GrowthSource = z.infer<typeof GrowthSourceSchema>;
+export type GrowthBrief = z.infer<typeof GrowthBriefSchema>;
+

@@ -552,6 +552,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Growth & Marketing: real project research ────────────────────────────
+  {
+    id: 'growth-marketing',
+    departmentId: 'dept-content-studio',
+    name: 'Growth & Marketing',
+    role: 'Audience, Positioning, Channel & Funnel Research',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Researches target audience, positioning, competitors, channels, acquisition, SEO, campaigns, funnels, landing pages, and conversion for a real Project Registry project via live web search — never an invented opinion.',
+    model: 'brave search api',
+    tools: ['web-search'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Idea Lab: scored idea generation ──────────────────────────────────────
   {
     id: 'idea-lab-agent',
@@ -960,6 +975,18 @@ const sopTasks: SopTask[] = [
   },
 
   // CONTENT STUDIO
+  {
+    id: 'sop-growth-marketing', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'growth-marketing',
+    title: 'Research a growth focus area for a real project',
+    summary: 'Target audience, positioning, competitor, channel, acquisition, SEO, campaign, funnel, landing page, or conversion — always tied to a Project Registry project.',
+    steps: [
+      'Read which project and which focus area (e.g. competitor, SEO, funnel) the brief is for',
+      'Run a real web search for the query — never answer from memory alone',
+      'Digest the real results into findings; keep every source URL for audit',
+      'Save the brief to the Growth Briefs log, tied to the project',
+      'If the search itself fails (e.g. no API key configured), report that honestly instead of a fabricated brief',
+    ],
+  },
   {
     id: 'sop-social-content-studio', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'social-content-studio',
     title: 'Produce a content piece, real tools only',

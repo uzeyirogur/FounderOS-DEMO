@@ -794,6 +794,60 @@ export const realAgents: RuntimeAgent[] = [
       ];
     },
   },
+
+  // ── Growth & Marketing ──────────────────────────────────────────────────
+  {
+    id: 'growth-marketing',
+    name: 'Growth & Marketing',
+    description:
+      'Researches target audience, positioning, competitors, channels, acquisition, SEO, campaigns, funnels, landing pages, and conversion for a real Project Registry project via live web search — never an invented opinion.',
+    departmentId: 'dept-content-studio',
+    async run() {
+      const total = getDb().growthBriefs.all().length;
+      return {
+        ok: true,
+        summary:
+          total === 0
+            ? 'No growth briefs yet — use the chat tool researchGrowth to run one.'
+            : `${total} growth brief(s) on file.`,
+        data: { total },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'researchGrowth',
+          description:
+            'Research one growth focus area (target_audience, positioning, competitor, channel, acquisition, seo, campaign, funnel, landing_page, conversion) for a real Project Registry project via live web search. Persists a brief with real sources; never invents findings.',
+          parameters: z.object({
+            projectId: z.string().describe('Project Registry project id this research is for'),
+            focus: z.enum([
+              'target_audience', 'positioning', 'competitor', 'channel', 'acquisition',
+              'seo', 'campaign', 'funnel', 'landing_page', 'conversion',
+            ]),
+            query: z.string().describe('the web search query to run'),
+          }),
+          execute: async (args) => {
+            const { runGrowthResearchLive } = await import('@/lib/growth-marketing');
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const focus = args.focus as any;
+            const query = typeof args.query === 'string' ? args.query : '';
+            return runGrowthResearchLive(getDb(), { projectId, focus, query });
+          },
+        },
+        {
+          name: 'listGrowthBriefs',
+          description: 'List every growth brief for a project, optionally filtered to one focus area.',
+          parameters: z.object({ projectId: z.string(), focus: z.string().nullable().optional() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const focus = typeof args.focus === 'string' ? args.focus : null;
+            return focus ? getDb().growthBriefs.byFocus(projectId, focus) : getDb().growthBriefs.byProjectId(projectId);
+          },
+        },
+      ];
+    },
+  },
   // ── Idea Lab ──────────────────────────────────────────────────────────────
   {
     id: 'idea-lab-agent',
