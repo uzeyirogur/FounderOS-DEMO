@@ -21,8 +21,42 @@ import { detectProjectStack } from '@/lib/project-bootstrap';
 import { buildExecutiveReport } from '@/lib/agents/executive-report';
 import { scoreIdea } from '@/lib/ideas';
 import { getDb } from '@/lib/data';
+import { randomUUID } from 'node:crypto';
 import type { LlmToolSpec } from '@/lib/connectors/llm';
 import type { AgentRunResult, RuntimeAgent } from '@/lib/agents/runtime';
+
+/**
+ * Queues a channel-agnostic notification (see lib/schemas.ts NotificationSchema
+ * and docs/WHATSAPP_CHANNEL_ARCHITECTURE.md). Agents call this to hand off
+ * something worth telling — or asking — Alex; a delivery worker for whichever
+ * channel is actually configured (WhatsApp today: architecture-only, no
+ * account connected) picks up pending rows independently. Never awaited by
+ * run() callers beyond the insert — queueing must never block or fail an
+ * agent's own work.
+ */
+function queueNotification(opts: {
+  kind: 'daily_report' | 'alert' | 'approval_request';
+  agentId: string;
+  title: string;
+  body: string;
+  channel?: 'whatsapp' | 'local';
+}): void {
+  getDb().notifications.insert({
+    id: randomUUID(),
+    kind: opts.kind,
+    agentId: opts.agentId,
+    title: opts.title,
+    body: opts.body,
+    requiresApproval: opts.kind === 'approval_request',
+    status: 'pending',
+    channel: opts.channel ?? 'whatsapp',
+    createdAt: new Date().toISOString(),
+    sentAt: null,
+    decidedAt: null,
+    decidedBy: null,
+    responseText: null,
+  });
+}
 
 /**
  * The real agent roster. Every run() does actual work against a live system —
@@ -709,6 +743,12 @@ export const realAgents: RuntimeAgent[] = [
     departmentId: 'dept-tech',
     async run() {
       const report = buildExecutiveReport(getDb(), { windowHours: 24 });
+      queueNotification({
+        kind: 'daily_report',
+        agentId: 'executive-reporter',
+        title: 'Daily digest',
+        body: report.summary,
+      });
       return { ok: report.failedRuns === 0, summary: report.summary, data: report };
     },
     async respond() {

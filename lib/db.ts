@@ -13,6 +13,7 @@ import {
   DomainSchema,
   IdeaSchema,
   MetricSchema,
+  NotificationSchema,
   PersonaSchema,
   PhaseSchema,
   ProjectSchema,
@@ -46,6 +47,7 @@ import {
   type Domain,
   type Idea,
   type Metric,
+  type Notification,
   type Persona,
   type Phase,
   type Project,
@@ -346,6 +348,21 @@ CREATE TABLE IF NOT EXISTS ideas (
   project_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  requires_approval INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  channel TEXT NOT NULL DEFAULT 'local',
+  created_at TEXT NOT NULL,
+  sent_at TEXT,
+  decided_at TEXT,
+  decided_by TEXT,
+  response_text TEXT
 );
 `;
 
@@ -1190,6 +1207,78 @@ export function openDb(path: string) {
     },
   };
 
+  function rowToNotification(r: any): Notification {
+    return NotificationSchema.parse({
+      id: r.id,
+      kind: r.kind,
+      agentId: r.agent_id,
+      title: r.title,
+      body: r.body,
+      requiresApproval: Boolean(r.requires_approval),
+      status: r.status,
+      channel: r.channel,
+      createdAt: r.created_at,
+      sentAt: r.sent_at ?? null,
+      decidedAt: r.decided_at ?? null,
+      decidedBy: r.decided_by ?? null,
+      responseText: r.response_text ?? null,
+    });
+  }
+
+  const notifications = {
+    all(): Notification[] {
+      return db
+        .prepare('SELECT * FROM notifications ORDER BY created_at DESC')
+        .all()
+        .map((r: any) => rowToNotification(r));
+    },
+    pending(): Notification[] {
+      return db
+        .prepare("SELECT * FROM notifications WHERE status = 'pending' ORDER BY created_at ASC")
+        .all()
+        .map((r: any) => rowToNotification(r));
+    },
+    byId(id: string): Notification | null {
+      const r = db.prepare('SELECT * FROM notifications WHERE id = ?').get(id) as any;
+      return r ? rowToNotification(r) : null;
+    },
+    insert(n: Notification): void {
+      const parsed = NotificationSchema.parse(n);
+      db.prepare(
+        'INSERT OR REPLACE INTO notifications (id, kind, agent_id, title, body, requires_approval, status, channel, created_at, sent_at, decided_at, decided_by, response_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(
+        parsed.id,
+        parsed.kind,
+        parsed.agentId,
+        parsed.title,
+        parsed.body,
+        parsed.requiresApproval ? 1 : 0,
+        parsed.status,
+        parsed.channel,
+        parsed.createdAt,
+        parsed.sentAt,
+        parsed.decidedAt,
+        parsed.decidedBy,
+        parsed.responseText,
+      );
+    },
+    markSent(id: string): void {
+      db.prepare("UPDATE notifications SET status = 'sent', sent_at = ? WHERE id = ?").run(
+        new Date().toISOString(),
+        id,
+      );
+    },
+    /** Records a decision on an approval_request row. Never called for
+     *  daily_report/alert kinds by any route — see the architecture doc:
+     *  a decision must be traceable to who made it (decidedBy), and the raw
+     *  reply text is kept for audit even though only the status is acted on. */
+    decide(id: string, status: 'approved' | 'rejected', decidedBy: string, responseText: string | null): void {
+      db.prepare(
+        'UPDATE notifications SET status = ?, decided_at = ?, decided_by = ?, response_text = ? WHERE id = ?',
+      ).run(status, new Date().toISOString(), decidedBy, responseText, id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1357,6 +1446,7 @@ export function openDb(path: string) {
     leadMagnets,
     projects,
     ideas,
+    notifications,
     sopTasks,
     workflows,
     skills,

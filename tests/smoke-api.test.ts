@@ -42,6 +42,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'metrics', load: () => import('@/app/api/metrics/route'), url: 'http://localhost/api/metrics' },
   { route: 'projects', load: () => import('@/app/api/projects/route'), url: 'http://localhost/api/projects' },
   { route: 'ideas', load: () => import('@/app/api/ideas/route'), url: 'http://localhost/api/ideas' },
+  { route: 'notifications', load: () => import('@/app/api/notifications/route'), url: 'http://localhost/api/notifications' },
   { route: 'roadmap', load: () => import('@/app/api/roadmap/route'), url: 'http://localhost/api/roadmap' },
   { route: 'scheduler/tick', load: () => import('@/app/api/scheduler/tick/route'), url: 'http://localhost/api/scheduler/tick' },
   { route: 'social', load: () => import('@/app/api/social/route'), url: 'http://localhost/api/social' },

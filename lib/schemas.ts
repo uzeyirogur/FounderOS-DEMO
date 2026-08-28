@@ -688,3 +688,45 @@ export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type SkillStatus = z.infer<typeof SkillStatusSchema>;
 export type Skill = z.infer<typeof SkillSchema>;
+
+// ── Notifications — channel-agnostic report/approval queue ──────────────────
+// Backs the reporting-and-approval channel (WhatsApp today, architecture-only:
+// see docs/WHATSAPP_CHANNEL_ARCHITECTURE.md). A row is a local, always-on
+// record of "an agent wants to tell Alex something" or "an agent needs Alex
+// to decide something" — independent of whether a delivery channel is wired
+// up yet. Every field an operator needs to safely approve or reject a
+// request is baked in: which agent, what it wants to do, and an explicit
+// requiresApproval flag so a report can never be silently treated as a
+// green light.
+export const NotificationKindSchema = z.enum(['daily_report', 'alert', 'approval_request']);
+export const NotificationStatusSchema = z.enum(['pending', 'sent', 'approved', 'rejected', 'failed']);
+export const NotificationChannelSchema = z.enum(['whatsapp', 'local']);
+export const NotificationSchema = z.object({
+  id: z.string().min(1),
+  kind: NotificationKindSchema,
+  agentId: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  /** True only for approval_request rows where a real action is gated on a
+   *  yes/no answer. daily_report/alert rows are always false — they inform,
+   *  they never grant anything by existing. */
+  requiresApproval: z.boolean().default(false),
+  status: NotificationStatusSchema.default('pending'),
+  channel: NotificationChannelSchema.default('local'),
+  createdAt: z.string().min(1),
+  /** When the delivery worker actually sent it over the channel. Null until then. */
+  sentAt: z.string().min(1).nullable().default(null),
+  /** When approved/rejected. Null for daily_report/alert (they cannot be decided). */
+  decidedAt: z.string().min(1).nullable().default(null),
+  /** Free text identifying who decided (e.g. a WhatsApp phone number, or 'local-ui').
+   *  Never a secret and never used for authorization by itself — see the
+   *  architecture doc's shared-secret note. */
+  decidedBy: z.string().min(1).nullable().default(null),
+  /** Raw reply text captured from the channel, kept for audit — not parsed
+   *  into anything more structured than the decision itself. */
+  responseText: z.string().nullable().default(null),
+});
+export type NotificationKind = z.infer<typeof NotificationKindSchema>;
+export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
+export type NotificationChannel = z.infer<typeof NotificationChannelSchema>;
+export type Notification = z.infer<typeof NotificationSchema>;

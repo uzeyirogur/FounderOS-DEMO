@@ -24,6 +24,7 @@ import {
   Layers,
   FolderGit2,
   Lightbulb,
+  Bell,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -37,6 +38,7 @@ export const NAV_OPERATE: NavItem[] = [
   { href: '/content', label: 'Content', icon: Clapperboard },
   { href: '/finances', label: 'Finances', icon: Wallet },
   { href: '/ideas', label: 'Idea Lab', icon: Lightbulb },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 
 // The agent workforce: the roster and the org chart that maps how they report.
