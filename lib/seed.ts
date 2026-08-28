@@ -568,6 +568,21 @@ const agents: Agent[] = [
     parentId: null,
     instance: 'builtin',
   },
+  // ── Ad / Creative Research: real competitor/format research ──────────────
+  {
+    id: 'ad-creative-research',
+    departmentId: 'dept-content-studio',
+    name: 'Ad / Creative Research',
+    role: 'Competitor Creative & Format Research',
+    status: 'active',
+    tier: 'lead',
+    description:
+      'Researches competitor ad creatives and current formats via live web search, then recommends which format (post, carousel, short video, static ad, landing page, demo video) fits a given platform/product type — producing a creative brief Social Content Studio can consume directly. Never invents a format recommendation without real sources.',
+    model: 'brave search api',
+    tools: ['web-search'],
+    parentId: null,
+    instance: 'builtin',
+  },
   // ── Social Publishing: real publish planning, approval-gated ────────────
   {
     id: 'social-publishing',
@@ -1100,6 +1115,19 @@ const sopTasks: SopTask[] = [
       'Digest the real results into findings; keep every source URL for audit',
       'Save the brief to the Growth Briefs log, tied to the project',
       'If the search itself fails (e.g. no API key configured), report that honestly instead of a fabricated brief',
+    ],
+  },
+  {
+    id: 'sop-ad-creative-research', departmentId: 'dept-content-studio', assigneeKind: 'agent', assigneeId: 'ad-creative-research',
+    title: 'Research competitor creatives and current formats for a real project',
+    summary: 'Feeds a real creative brief (format + recommendation + sources) straight to Social Content Studio.',
+    steps: [
+      'Read which project, which target platform/product type, and which candidate format the brief is for',
+      'Run a real web search for competitor creatives and current formats — never answer from memory alone',
+      'Recommend a format only when real sources back it; keep every source URL for audit',
+      'Save the brief to the Creative Briefs log, tied to the project',
+      'If the search itself fails (e.g. no API key configured), report that honestly instead of a fabricated recommendation',
+      'Hand the finished brief to Social Content Studio as its production input — never bypass the brief and guess',
     ],
   },
   {

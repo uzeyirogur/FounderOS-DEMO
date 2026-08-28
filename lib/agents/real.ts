@@ -983,6 +983,56 @@ export const realAgents: RuntimeAgent[] = [
     },
   },
 
+  // ── Ad / Creative Research ───────────────────────────────────────────────
+  {
+    id: 'ad-creative-research',
+    name: 'Ad / Creative Research',
+    description:
+      'Researches competitor ad creatives and current formats via live web search, then recommends which format fits a given platform/product type — producing a creative brief Social Content Studio can consume directly. Never invents a format recommendation without real sources.',
+    departmentId: 'dept-content-studio',
+    async run() {
+      const total = getDb().creativeBriefs.all().length;
+      return {
+        ok: true,
+        summary:
+          total === 0
+            ? 'No creative briefs yet — use the chat tool researchCreative to run one.'
+            : `${total} creative brief(s) on file.`,
+        data: { total },
+      };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'researchCreative',
+          description:
+            'Research competitor ad creatives and current formats for a real Project Registry project via live web search, and recommend one format (social_post, carousel, short_video, static_ad, landing_page, demo_video). Persists a brief with real sources; never invents a recommendation.',
+          parameters: z.object({
+            projectId: z.string().describe('Project Registry project id this research is for'),
+            format: z.enum(['social_post', 'carousel', 'short_video', 'static_ad', 'landing_page', 'demo_video']),
+            query: z.string().describe('the web search query to run'),
+          }),
+          execute: async (args) => {
+            const { runCreativeResearchLive } = await import('@/lib/ad-creative-research');
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            const format = args.format as any;
+            const query = typeof args.query === 'string' ? args.query : '';
+            return runCreativeResearchLive(getDb(), { projectId, format, query });
+          },
+        },
+        {
+          name: 'listCreativeBriefs',
+          description: 'List every creative brief for a project.',
+          parameters: z.object({ projectId: z.string() }),
+          execute: async (args) => {
+            const projectId = typeof args.projectId === 'string' ? args.projectId : '';
+            return getDb().creativeBriefs.byProjectId(projectId);
+          },
+        },
+      ];
+    },
+  },
+
   // ── Social Publishing ────────────────────────────────────────────────────
   {
     id: 'social-publishing',

@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/terminal';
 import { ProjectLifecycleWidget } from '@/components/ProjectLifecycleWidget';
 import { GrowthResearchPanel } from '@/components/GrowthResearchPanel';
+import { CreativeResearchPanel } from '@/components/CreativeResearchPanel';
 import { projectLifecycleSummary } from '@/lib/project-lifecycle-orchestrator';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const summary = projectLifecycleSummary(db, params.id);
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
   const growthBriefs = db.growthBriefs.byProjectId(params.id);
+  const creativeBriefs = db.creativeBriefs.byProjectId(params.id);
 
   return (
     <div>
@@ -35,6 +37,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       <ProjectLifecycleWidget projectId={project.id} agentNames={agentNames} initial={summary} />
       <div className="mt-4">
         <GrowthResearchPanel projectId={project.id} briefs={growthBriefs} />
+      </div>
+      <div className="mt-4">
+        <CreativeResearchPanel projectId={project.id} briefs={creativeBriefs} />
       </div>
     </div>
   );
