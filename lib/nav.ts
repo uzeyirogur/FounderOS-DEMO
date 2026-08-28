@@ -25,6 +25,7 @@ import {
   FolderGit2,
   Lightbulb,
   Bell,
+  Boxes,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -60,6 +61,7 @@ export const NAV_INTELLIGENCE: NavItem[] = [
 
 export const NAV_SYSTEM: NavItem[] = [
   { href: '/integrations', label: 'Connections', icon: Plug },
+  { href: '/capabilities', label: 'Capabilities', icon: Boxes },
   { href: '/projects', label: 'Projects', icon: FolderGit2 },
   { href: '/roadmap', label: 'Roadmap', icon: Map },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },

@@ -47,6 +47,7 @@ const PAGES: PageEntry[] = [
   { file: 'projects/[id]/page.tsx', load: () => import('@/app/projects/[id]/page'), props: { params: { id: 'anka-tivaro' } } },
   { file: 'ideas/page.tsx', load: () => import('@/app/ideas/page') },
   { file: 'notifications/page.tsx', load: () => import('@/app/notifications/page') },
+  { file: 'capabilities/page.tsx', load: () => import('@/app/capabilities/page') },
 ];
 
 function discoverPages(dir: string, base = ''): string[] {

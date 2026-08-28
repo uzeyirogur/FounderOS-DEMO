@@ -696,11 +696,41 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'ai-intelligence',
     name: 'AI Intelligence',
-    description: 'Watches GitHub for new AI tools, MCP servers, and SKILL.md patterns worth adopting.',
+    description:
+      'Watches GitHub for new AI tools, MCP servers, and SKILL.md patterns worth adopting; on request, discovers a specific missing capability (MCP server, API, CLI, SDK, hosted service, media-generation tool, etc.) via live web search and adds candidates to the Capability Registry for review — never activates a paid/credentialed option on its own.',
     departmentId: 'dept-ai-intelligence',
     async run() {
       const status = await githubStatus();
       return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'discoverCapability',
+          description:
+            "Look up whether the Capability Registry already has an active tool for a need (e.g. 'video-generation', 'carousel-design', '3d-web-animation'). If nothing active exists, search the web for current options and add them to the registry as candidates for review — never activates anything. Use this instead of saying 'I can't do that' when a task needs a capability the agent doesn't have.",
+          parameters: z.object({
+            capability: z.string().describe("short capability tag, e.g. 'video-generation'"),
+            searchQuery: z.string().describe('the web search query to run if no active provider exists'),
+          }),
+          execute: async (args) => {
+            const capability = typeof args.capability === 'string' ? args.capability : '';
+            const searchQuery = typeof args.searchQuery === 'string' ? args.searchQuery : capability;
+            const { discoverCapabilityLive } = await import('@/lib/capability-discovery');
+            const result = await discoverCapabilityLive(getDb(), capability, searchQuery);
+            return result;
+          },
+        },
+        {
+          name: 'listCapabilityCandidates',
+          description: 'List every Capability Registry row for a given capability tag (active + candidates), for comparison before a decision.',
+          parameters: z.object({ capability: z.string() }),
+          execute: async (args) => {
+            const capability = typeof args.capability === 'string' ? args.capability : '';
+            return getDb().capabilities.byCapability(capability);
+          },
+        },
+      ];
     },
   },
 

@@ -800,3 +800,77 @@ export type LifecycleTask = z.infer<typeof LifecycleTaskSchema>;
 export type LifecycleApprovalStatus = z.infer<typeof LifecycleApprovalStatusSchema>;
 export type LifecycleApproval = z.infer<typeof LifecycleApprovalSchema>;
 
+// ── Capability / Tool Registry ───────────────────────────────────────────────
+// The shared infrastructure every agent consults before saying "I can't do
+// this". A row is "some way to do a thing": an MCP server, an API, a CLI, an
+// SDK, a SKILL.md, a GitHub repo, a hosted AI service, a local model/tool,
+// browser automation, a media-generation service, a 3D/web animation
+// library, a design-automation tool. Nothing here is hardcoded to a specific
+// paid vendor — AI Intelligence discovers candidates at task time and adds
+// them here; a paid/credential-requiring candidate NEVER auto-activates
+// (approvedByUser starts false and only a human action flips it).
+export const CapabilityTypeSchema = z.enum([
+  'mcp_server',
+  'api',
+  'cli',
+  'sdk',
+  'skill',
+  'github_repo',
+  'hosted_service',
+  'local_model',
+  'browser_automation',
+  'media_generation',
+  'animation_library',
+  'design_tool',
+]);
+
+export const CapabilityCostModelSchema = z.enum(['free', 'freemium', 'paid', 'unknown']);
+
+/** candidate: AI Intelligence found it, nobody has decided anything yet.
+ *  available: known good option, not necessarily installed/configured.
+ *  active: installed, configured, and approved — an agent may actually use it.
+ *  rejected: the operator said no; kept for the record so it is not re-proposed
+ *  blindly (an agent may still re-surface it if the landscape changes). */
+export const CapabilityStatusSchema = z.enum(['candidate', 'available', 'active', 'rejected']);
+
+export const CapabilityProviderSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Free-text capability tag, e.g. 'web-search', 'video-generation',
+   *  'carousel-design' — matched against what a task needs, not an enum,
+   *  because new capability needs appear faster than any fixed list. */
+  capability: z.string().min(1),
+  type: CapabilityTypeSchema,
+  /** Where this actually lives: an MCP server name, a file path to a
+   *  connector, a CLI binary name, an npm package, a URL — free text because
+   *  the shape differs per type. Null until someone has actually pointed at
+   *  something (a bare candidate may not have this yet). */
+  connector: z.string().nullable().default(null),
+  authRequired: z.boolean().default(false),
+  costModel: CapabilityCostModelSchema.default('unknown'),
+  /** Human-readable free-tier terms, e.g. "2,000 queries/month free".
+   *  Null when there is no free tier or it has not been researched yet. */
+  freeTier: z.string().nullable().default(null),
+  status: CapabilityStatusSchema.default('candidate'),
+  installed: z.boolean().default(false),
+  configured: z.boolean().default(false),
+  /** The one flag that gates real use of anything paid or credentialed —
+   *  see the Approval Policy: an agent may research and compare candidates
+   *  freely, but nothing here may be activated without this being true, and
+   *  only a human sets it true. */
+  approvedByUser: z.boolean().default(false),
+  /** RuntimeAgent ids allowed to use this once active. Empty by default —
+   *  mirrors Project Registry's authorizedAgentIds contract: listing a
+   *  capability grants no agent access by itself. */
+  allowedAgents: z.array(z.string().min(1)).default([]),
+  notes: z.string().nullable().default(null),
+  /** When AI Intelligence last confirmed this row's info is current. Null
+   *  until a verification pass has run. */
+  lastVerifiedAt: z.string().min(1).nullable().default(null),
+});
+
+export type CapabilityType = z.infer<typeof CapabilityTypeSchema>;
+export type CapabilityCostModel = z.infer<typeof CapabilityCostModelSchema>;
+export type CapabilityStatus = z.infer<typeof CapabilityStatusSchema>;
+export type CapabilityProvider = z.infer<typeof CapabilityProviderSchema>;
+

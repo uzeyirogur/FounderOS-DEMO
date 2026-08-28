@@ -8,6 +8,7 @@ import {
   AgentTaskSchema,
   BroadcastReplySchema,
   BroadcastSchema,
+  CapabilityProviderSchema,
   ContactTagSchema,
   DepartmentSchema,
   DomainSchema,
@@ -45,6 +46,7 @@ import {
   type AgentTask,
   type Broadcast,
   type BroadcastReply,
+  type CapabilityProvider,
   type ContactTag,
   type Department,
   type Domain,
@@ -399,6 +401,23 @@ CREATE TABLE IF NOT EXISTS lifecycle_approvals (
   decided_at TEXT,
   decided_by TEXT,
   notes TEXT
+);
+CREATE TABLE IF NOT EXISTS capabilities (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  capability TEXT NOT NULL,
+  type TEXT NOT NULL,
+  connector TEXT,
+  auth_required INTEGER NOT NULL DEFAULT 0,
+  cost_model TEXT NOT NULL DEFAULT 'unknown',
+  free_tier TEXT,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  installed INTEGER NOT NULL DEFAULT 0,
+  configured INTEGER NOT NULL DEFAULT 0,
+  approved_by_user INTEGER NOT NULL DEFAULT 0,
+  allowed_agents TEXT NOT NULL DEFAULT '[]',
+  notes TEXT,
+  last_verified_at TEXT
 );
 `;
 
@@ -1448,6 +1467,91 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Capability / Tool Registry ──────────────────────────────────────────
+  function rowToCapability(r: any): CapabilityProvider {
+    return CapabilityProviderSchema.parse({
+      id: r.id,
+      name: r.name,
+      capability: r.capability,
+      type: r.type,
+      connector: r.connector ?? null,
+      authRequired: Boolean(r.auth_required),
+      costModel: r.cost_model,
+      freeTier: r.free_tier ?? null,
+      status: r.status,
+      installed: Boolean(r.installed),
+      configured: Boolean(r.configured),
+      approvedByUser: Boolean(r.approved_by_user),
+      allowedAgents: JSON.parse(r.allowed_agents),
+      notes: r.notes ?? null,
+      lastVerifiedAt: r.last_verified_at ?? null,
+    });
+  }
+
+  const capabilities = {
+    all(): CapabilityProvider[] {
+      return (db.prepare('SELECT * FROM capabilities ORDER BY capability, name').all() as any[]).map(rowToCapability);
+    },
+    byId(id: string): CapabilityProvider | null {
+      const r = db.prepare('SELECT * FROM capabilities WHERE id = ?').get(id) as any;
+      return r ? rowToCapability(r) : null;
+    },
+    byCapability(capability: string): CapabilityProvider[] {
+      return (
+        db.prepare('SELECT * FROM capabilities WHERE capability = ? ORDER BY name').all(capability) as any[]
+      ).map(rowToCapability);
+    },
+    /** Candidates that need a human decision before they can be used: a
+     *  paid cost model or an auth requirement, still in 'candidate' status.
+     *  Free, no-auth candidates do NOT show up here — they can move straight
+     *  to 'available' without asking anyone (see the Approval Policy). */
+    pendingApproval(): CapabilityProvider[] {
+      return (
+        db
+          .prepare(
+            "SELECT * FROM capabilities WHERE status = 'candidate' AND (cost_model = 'paid' OR auth_required = 1) ORDER BY name",
+          )
+          .all() as any[]
+      ).map(rowToCapability);
+    },
+    insert(c: CapabilityProvider): void {
+      const parsed = CapabilityProviderSchema.parse(c);
+      db.prepare(
+        `INSERT OR REPLACE INTO capabilities
+         (id, name, capability, type, connector, auth_required, cost_model, free_tier, status, installed, configured, approved_by_user, allowed_agents, notes, last_verified_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id,
+        parsed.name,
+        parsed.capability,
+        parsed.type,
+        parsed.connector,
+        parsed.authRequired ? 1 : 0,
+        parsed.costModel,
+        parsed.freeTier,
+        parsed.status,
+        parsed.installed ? 1 : 0,
+        parsed.configured ? 1 : 0,
+        parsed.approvedByUser ? 1 : 0,
+        JSON.stringify(parsed.allowedAgents),
+        parsed.notes,
+        parsed.lastVerifiedAt,
+      );
+    },
+    /** The ONE path that flips approvedByUser true. Only ever called from a
+     *  route the operator explicitly hit — never from agent code deciding
+     *  on its own. Moves status to 'active' since an approved capability is
+     *  immediately usable by its allowed agents. */
+    approve(id: string, allowedAgents: string[]): void {
+      db.prepare(
+        "UPDATE capabilities SET approved_by_user = 1, status = 'active', allowed_agents = ? WHERE id = ?",
+      ).run(JSON.stringify(allowedAgents), id);
+    },
+    reject(id: string, notes: string | null): void {
+      db.prepare("UPDATE capabilities SET status = 'rejected', notes = ? WHERE id = ?").run(notes, id);
+    },
+  };
+
   const sopTasks = {
     all(): SopTask[] {
       return db
@@ -1619,6 +1723,7 @@ export function openDb(path: string) {
     lifecycleState,
     lifecycleTasks,
     lifecycleApprovals,
+    capabilities,
     sopTasks,
     workflows,
     skills,
