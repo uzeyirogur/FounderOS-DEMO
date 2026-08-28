@@ -13,6 +13,7 @@ import { arcadsStatus } from '@/lib/connectors/arcads';
 import { whatsappStatus } from '@/lib/connectors/whatsapp';
 import { wisprStatus } from '@/lib/connectors/wispr';
 import { localStackStatus } from '@/lib/connectors/local-stack';
+import { aggregateStatus } from '@/lib/conductor';
 import { ankaAdminStatus, fetchAnkaBranches, fetchAnkaSports } from '@/lib/connectors/anka-admin';
 import { githubStatus } from '@/lib/connectors/github';
 import { webSearchStatus } from '@/lib/connectors/web-search';
@@ -158,15 +159,36 @@ export const realAgents: RuntimeAgent[] = [
   {
     id: 'conductor',
     name: 'Conductor',
-    description: 'Broadcast fan-out + instance host availability (Clawline gateway, Ollama, tmux) for future bindings.',
+    description:
+      'Chief of Staff / Conductor — the real cross-system view of what is blocked and waiting for a decision: pending lifecycle approvals, publish plans, outbound messages, capability candidates, and content stuck needing a capability. Every count is read live from the real repos, never invented or hardcoded to one project.',
     departmentId: 'dept-tech',
     async run() {
-      const stack = await localStackStatus();
+      const [stack, status] = await Promise.all([localStackStatus(), Promise.resolve(aggregateStatus(getDb()))]);
       return {
         ok: stack.state === 'connected',
-        summary: `Instance hosts on this machine: ${stack.detail} · all agents bound to builtin runtime until the dedicated host lands`,
-        data: stack.meta,
+        summary:
+          status.totalBlockers === 0
+            ? `All clear — nothing waiting on a decision. Instance hosts: ${stack.detail}`
+            : `${status.totalBlockers} item(s) waiting on you: ${status.pendingLifecycleApprovals} lifecycle approval(s) · ${status.pendingPublishPlans} publish plan(s) · ${status.pendingOutboundMessages} outbound message(s) · ${status.candidateCapabilities} capability candidate(s) · ${status.blockedContentPieces} content piece(s) needing a capability`,
+        data: { instanceHosts: stack.meta, status },
       };
+    },
+    chatTools(): LlmToolSpec[] {
+      return [
+        {
+          name: 'getStatus',
+          description:
+            'Returns the real, live cross-system status: every pending approval and blocker across every domain (lifecycle, publishing, outbound comms, capabilities, content production). Use this before answering any "what needs my attention" question.',
+          parameters: z.object({}),
+          execute: async () => aggregateStatus(getDb()),
+        },
+        {
+          name: 'listPendingLifecycleApprovals',
+          description: 'Lists every lifecycle approval currently pending a decision, across all projects.',
+          parameters: z.object({}),
+          execute: async () => getDb().lifecycleApprovals.pending(),
+        },
+      ];
     },
   },
 
