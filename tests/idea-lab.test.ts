@@ -16,6 +16,7 @@ describe('IdeaSchema', () => {
     effort: 2, // 1 = huge effort, 5 = trivial — higher is better (less effort)
     strategicFit: 5,
     status: 'new' as const,
+    projectId: null,
     createdAt: '2026-08-27T00:00:00.000Z',
     updatedAt: '2026-08-27T00:00:00.000Z',
   };
@@ -31,6 +32,16 @@ describe('IdeaSchema', () => {
 
   test('rejects an unknown status', () => {
     expect(() => IdeaSchema.parse({ ...valid, status: 'maybe' })).toThrow();
+  });
+
+  test('projectId defaults to null — an idea is not a project until promoted', () => {
+    const { projectId, ...withoutProjectId } = valid;
+    expect(IdeaSchema.parse(withoutProjectId).projectId).toBeNull();
+  });
+
+  test('accepts a projectId once the idea is linked to a registered project', () => {
+    const linked = { ...valid, projectId: 'is-ilan-radar' };
+    expect(IdeaSchema.parse(linked).projectId).toBe('is-ilan-radar');
   });
 });
 

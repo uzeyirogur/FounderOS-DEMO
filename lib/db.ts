@@ -343,6 +343,7 @@ CREATE TABLE IF NOT EXISTS ideas (
   effort INTEGER NOT NULL,
   strategic_fit INTEGER NOT NULL,
   status TEXT NOT NULL DEFAULT 'new',
+  project_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -430,6 +431,15 @@ function migrateAgentCronsTable(db: InstanceType<typeof Database>): void {
   if (!columns.has('last_run_at')) db.exec('ALTER TABLE agent_crons ADD COLUMN last_run_at TEXT');
 }
 
+/** ideas gained `project_id` when the idea -> project promotion seam landed;
+ *  older databases predate the column. */
+function migrateIdeasTable(db: InstanceType<typeof Database>): void {
+  const columns = new Set(
+    (db.prepare('PRAGMA table_info(ideas)').all() as { name: string }[]).map((c) => c.name),
+  );
+  if (!columns.has('project_id')) db.exec('ALTER TABLE ideas ADD COLUMN project_id TEXT');
+}
+
 export function openDb(path: string) {
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
@@ -439,6 +449,7 @@ export function openDb(path: string) {
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
   migrateAgentCronsTable(db);
+  migrateIdeasTable(db);
 
   const departments = {
     all(): Department[] {
@@ -1135,6 +1146,7 @@ export function openDb(path: string) {
             effort: r.effort,
             strategicFit: r.strategic_fit,
             status: r.status,
+            projectId: r.project_id ?? null,
             createdAt: r.created_at,
             updatedAt: r.updated_at,
           }),
@@ -1143,7 +1155,7 @@ export function openDb(path: string) {
     insert(i: Idea): void {
       const parsed = IdeaSchema.parse(i);
       db.prepare(
-        'INSERT OR REPLACE INTO ideas (id, title, description, market_size, effort, strategic_fit, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO ideas (id, title, description, market_size, effort, strategic_fit, status, project_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       ).run(
         parsed.id,
         parsed.title,
@@ -1152,6 +1164,7 @@ export function openDb(path: string) {
         parsed.effort,
         parsed.strategicFit,
         parsed.status,
+        parsed.projectId,
         parsed.createdAt,
         parsed.updatedAt,
       );
@@ -1167,6 +1180,7 @@ export function openDb(path: string) {
         effort: r.effort,
         strategicFit: r.strategic_fit,
         status: r.status,
+        projectId: r.project_id ?? null,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       });

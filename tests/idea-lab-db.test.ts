@@ -12,6 +12,7 @@ const made = (over: Partial<Parameters<FounderDb['ideas']['insert']>[0]> = {}) =
   effort: 2,
   strategicFit: 5,
   status: 'new' as const,
+  projectId: null,
   createdAt: '2026-08-27T00:00:00.000Z',
   updatedAt: '2026-08-27T00:00:00.000Z',
   ...over,

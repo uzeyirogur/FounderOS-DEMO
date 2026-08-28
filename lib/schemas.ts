@@ -471,6 +471,15 @@ export const IdeaSchema = z.object({
   /** 1 = off-strategy, 5 = directly compounds an existing project. */
   strategicFit: z.number().int().min(1).max(5),
   status: IdeaStatusSchema.default('new'),
+  /**
+   * Once an idea is worth pursuing it is promoted into a real Project
+   * Registry entry — this is the seam the standard lifecycle (idea → research
+   * → validation → planning → development → QA/security/UI review → launch →
+   * growth/marketing → monitoring → iteration → executive reporting) hangs
+   * off of. Null means "still just an idea, no project yet" — the default,
+   * and true for almost every idea most of the time.
+   */
+  projectId: z.string().min(1).nullable().default(null),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 });

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const parsed = CreateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const now = new Date().toISOString();
-  const idea = { ...parsed.data, id: randomUUID(), createdAt: now, updatedAt: now };
+  const idea = { ...parsed.data, id: randomUUID(), projectId: null, createdAt: now, updatedAt: now };
   getDb().ideas.insert(idea);
   return NextResponse.json({ idea, score: scoreIdea(idea) }, { status: 201 });
 }
