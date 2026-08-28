@@ -12,6 +12,7 @@ import {
   ContactTagSchema,
   ContentPieceSchema,
   CreativeBriefSchema,
+  DelegatedTaskSchema,
   DepartmentSchema,
   DomainSchema,
   GrowthBriefSchema,
@@ -58,6 +59,7 @@ import {
   type ContactTag,
   type ContentPiece,
   type CreativeBrief,
+  type DelegatedTask,
   type Department,
   type Domain,
   type GrowthBrief,
@@ -512,6 +514,22 @@ CREATE TABLE IF NOT EXISTS creative_briefs (
   recommendation TEXT NOT NULL,
   sources TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS delegated_tasks (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  project_id TEXT,
+  assigned_agent_id TEXT NOT NULL,
+  goal TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  priority TEXT NOT NULL DEFAULT 'normal',
+  dependencies TEXT NOT NULL DEFAULT '[]',
+  approval_requirement TEXT NOT NULL DEFAULT 'none',
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  finished_at TEXT,
+  result_summary TEXT,
+  failure_reason TEXT
 );
 `;
 
@@ -1732,6 +1750,91 @@ export function openDb(path: string) {
     },
   };
 
+  // ── Delegated Task (Conductor v2 work-item domain) ───────────────────────
+  function rowToDelegatedTask(r: any): DelegatedTask {
+    return DelegatedTaskSchema.parse({
+      id: r.id,
+      source: r.source,
+      projectId: r.project_id,
+      assignedAgentId: r.assigned_agent_id,
+      goal: r.goal,
+      status: r.status,
+      priority: r.priority,
+      dependencies: JSON.parse(r.dependencies),
+      approvalRequirement: r.approval_requirement,
+      createdAt: r.created_at,
+      startedAt: r.started_at,
+      finishedAt: r.finished_at,
+      resultSummary: r.result_summary,
+      failureReason: r.failure_reason,
+    });
+  }
+
+  const TERMINAL_TASK_STATUSES = new Set(['done', 'failed', 'cancelled']);
+
+  const delegatedTasks = {
+    all(): DelegatedTask[] {
+      return (db.prepare('SELECT * FROM delegated_tasks ORDER BY created_at DESC').all() as any[]).map(rowToDelegatedTask);
+    },
+    byId(id: string): DelegatedTask | null {
+      const r = db.prepare('SELECT * FROM delegated_tasks WHERE id = ?').get(id) as any;
+      return r ? rowToDelegatedTask(r) : null;
+    },
+    byProjectId(projectId: string): DelegatedTask[] {
+      return (
+        db.prepare('SELECT * FROM delegated_tasks WHERE project_id = ? ORDER BY created_at DESC').all(projectId) as any[]
+      ).map(rowToDelegatedTask);
+    },
+    byAgentId(agentId: string): DelegatedTask[] {
+      return (
+        db.prepare('SELECT * FROM delegated_tasks WHERE assigned_agent_id = ? ORDER BY created_at DESC').all(agentId) as any[]
+      ).map(rowToDelegatedTask);
+    },
+    /** Every task not yet in a terminal state (done/failed/cancelled) — the
+     *  Conductor's live worklist, across every project and the personal domain. */
+    pending(): DelegatedTask[] {
+      return (db.prepare('SELECT * FROM delegated_tasks ORDER BY created_at DESC').all() as any[])
+        .map(rowToDelegatedTask)
+        .filter((t) => !TERMINAL_TASK_STATUSES.has(t.status));
+    },
+    insert(t: DelegatedTask): void {
+      const parsed = DelegatedTaskSchema.parse(t);
+      db.prepare(
+        `INSERT OR REPLACE INTO delegated_tasks
+         (id, source, project_id, assigned_agent_id, goal, status, priority, dependencies, approval_requirement, created_at, started_at, finished_at, result_summary, failure_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id,
+        parsed.source,
+        parsed.projectId,
+        parsed.assignedAgentId,
+        parsed.goal,
+        parsed.status,
+        parsed.priority,
+        JSON.stringify(parsed.dependencies),
+        parsed.approvalRequirement,
+        parsed.createdAt,
+        parsed.startedAt,
+        parsed.finishedAt,
+        parsed.resultSummary,
+        parsed.failureReason,
+      );
+    },
+    /** Partial update of the mutable lifecycle fields — never touches
+     *  id/source/projectId/assignedAgentId/goal/dependencies/createdAt. */
+    updateStatus(
+      id: string,
+      patch: Partial<Pick<DelegatedTask, 'status' | 'startedAt' | 'finishedAt' | 'resultSummary' | 'failureReason' | 'approvalRequirement'>>,
+    ): void {
+      const current = delegatedTasks.byId(id);
+      if (!current) return;
+      const next = DelegatedTaskSchema.parse({ ...current, ...patch });
+      db.prepare(
+        `UPDATE delegated_tasks SET status = ?, started_at = ?, finished_at = ?, result_summary = ?, failure_reason = ?, approval_requirement = ? WHERE id = ?`,
+      ).run(next.status, next.startedAt, next.finishedAt, next.resultSummary, next.failureReason, next.approvalRequirement, id);
+    },
+  };
+
   // ── Growth & Marketing ───────────────────────────────────────────────────
   function rowToGrowthBrief(r: any): GrowthBrief {
     return GrowthBriefSchema.parse({
@@ -2196,6 +2299,7 @@ export function openDb(path: string) {
     capabilities,
     contentPieces,
     creativeBriefs,
+    delegatedTasks,
     growthBriefs,
     publishPlans,
     outboundMessages,

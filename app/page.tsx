@@ -178,6 +178,10 @@ export default async function HomePage() {
   // Ticker line items — newest agent runs, honest OK / FAIL.
   const ticker = recentRuns.slice(0, 8);
 
+  // Conductor v2's real work-item queue — what the Chief of Staff is
+  // actually dispatching right now, not a status label.
+  const dispatched = db.delegatedTasks.pending().slice(0, 6);
+
   return (
     <div>
       {/* self-contained marquee — no globals.css dependency */}
@@ -278,6 +282,32 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Conductor v2 dispatch queue — what the Chief of Staff is delegating right now */}
+      {dispatched.length > 0 && (
+        <section className="mb-[22px]">
+          <SectionHead label="Chief of Staff · dispatching" count={dispatched.length} />
+          <div className="flex flex-col gap-1.5">
+            {dispatched.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center gap-2.5 rounded-sm-t border border-os-border bg-os-surface px-3 py-2 font-mono text-[11px]"
+              >
+                <span
+                  className={`shrink-0 font-bold ${
+                    t.status === 'blocked' ? 'text-os-warn' : t.status === 'awaiting_approval' ? 'text-os-accent' : 'text-os-ok'
+                  }`}
+                >
+                  {t.status.toUpperCase()}
+                </span>
+                <span className="shrink-0 text-os-muted">{t.assignedAgentId}</span>
+                <span className="min-w-0 flex-1 truncate text-os-dim">{t.goal}</span>
+                {t.priority !== 'normal' && <span className="shrink-0 text-os-dim">[{t.priority}]</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Social media — combined audience over time (under Connections,
           above the agents / recent-runs row) */}

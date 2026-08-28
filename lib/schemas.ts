@@ -800,6 +800,39 @@ export type LifecycleTask = z.infer<typeof LifecycleTaskSchema>;
 export type LifecycleApprovalStatus = z.infer<typeof LifecycleApprovalStatusSchema>;
 export type LifecycleApproval = z.infer<typeof LifecycleApprovalSchema>;
 
+// ── Delegated Task (Chief of Staff / Conductor v2 work-item domain) ─────────
+// Every piece of work the Conductor hands to another agent is a real,
+// persisted row — never an in-memory decision that evaporates after one chat
+// turn. This is what lets the Conductor see blockers, dependencies, and
+// failed work across the whole system rather than just aggregating counts.
+export const DelegatedTaskStatusSchema = z.enum([
+  'pending', 'in_progress', 'blocked', 'awaiting_approval', 'done', 'failed', 'cancelled',
+]);
+export const DelegatedTaskPrioritySchema = z.enum(['low', 'normal', 'high', 'urgent']);
+export const DelegatedTaskApprovalRequirementSchema = z.enum(['none', 'requested', 'granted', 'denied']);
+
+export const DelegatedTaskSchema = z.object({
+  id: z.string().min(1),
+  source: z.string().min(1),
+  projectId: z.string().nullable().default(null),
+  assignedAgentId: z.string().min(1),
+  goal: z.string().min(1),
+  status: DelegatedTaskStatusSchema.default('pending'),
+  priority: DelegatedTaskPrioritySchema.default('normal'),
+  dependencies: z.array(z.string().min(1)).default([]),
+  approvalRequirement: DelegatedTaskApprovalRequirementSchema.default('none'),
+  createdAt: z.string().min(1),
+  startedAt: z.string().min(1).nullable().default(null),
+  finishedAt: z.string().min(1).nullable().default(null),
+  resultSummary: z.string().nullable().default(null),
+  failureReason: z.string().nullable().default(null),
+});
+export type DelegatedTaskStatus = z.infer<typeof DelegatedTaskStatusSchema>;
+export type DelegatedTaskPriority = z.infer<typeof DelegatedTaskPrioritySchema>;
+export type DelegatedTaskApprovalRequirement = z.infer<typeof DelegatedTaskApprovalRequirementSchema>;
+export type DelegatedTask = z.infer<typeof DelegatedTaskSchema>;
+
+
 // ── Capability / Tool Registry ───────────────────────────────────────────────
 // The shared infrastructure every agent consults before saying "I can't do
 // this". A row is "some way to do a thing": an MCP server, an API, a CLI, an

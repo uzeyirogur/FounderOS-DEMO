@@ -28,6 +28,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'brain/graph', load: () => import('@/app/api/brain/graph/route'), url: 'http://localhost/api/brain/graph' },
   { route: 'brain/overview', load: () => import('@/app/api/brain/overview/route'), url: 'http://localhost/api/brain/overview' },
   { route: 'conductor/status', load: () => import('@/app/api/conductor/status/route'), url: 'http://localhost/api/conductor/status' },
+  { route: 'conductor/tasks', load: () => import('@/app/api/conductor/tasks/route'), url: 'http://localhost/api/conductor/tasks' },
   { route: 'capabilities', load: () => import('@/app/api/capabilities/route'), url: 'http://localhost/api/capabilities' },
   { route: 'comms', load: () => import('@/app/api/comms/route'), url: 'http://localhost/api/comms' },
   { route: 'comms/email/attachment', load: () => import('@/app/api/comms/email/attachment/route'), url: 'http://localhost/api/comms/email/attachment?account=inbox-1&threadId=smoke&uid=1&part=1' },
