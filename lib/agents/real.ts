@@ -833,6 +833,17 @@ export const realAgents: RuntimeAgent[] = [
             return getDb().capabilities.byCapability(capability);
           },
         },
+        {
+          name: 'compareCapabilityCandidates',
+          description:
+            "Ranks the top 3 candidates for a capability tag on cost/free-tier, credential requirement, and automation suitability (MCP server/CLI score higher than a hosted service needing manual clicks) — every score traces to a real Capability Registry field, never invented data. Use this after discoverCapability to present a real comparison instead of just a list.",
+          parameters: z.object({ capability: z.string() }),
+          execute: async (args) => {
+            const capability = typeof args.capability === 'string' ? args.capability : '';
+            const { compareCandidates } = await import('@/lib/capability-comparison');
+            return compareCandidates(getDb().capabilities.byCapability(capability));
+          },
+        },
       ];
     },
   },
