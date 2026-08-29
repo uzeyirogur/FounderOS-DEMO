@@ -220,7 +220,13 @@ import { execFile } from 'node:child_process';
  */
 export function runNpmAuditLive(cwd: string): Promise<NpmAuditSummary | null> {
   return new Promise((resolve) => {
-    execFile('npm', ['audit', '--json'], { cwd, timeout: 60_000, maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
+    // shell: true is required on Windows — npm ships as npm.cmd, a shell
+    // shim, not a directly-executable binary, so execFile('npm', ...)
+    // without a shell resolves nothing and the callback fires with no
+    // stdout at all. That silently looked identical to "npm audit ran and
+    // found nothing" (both produce a null/empty parse) instead of "this
+    // command never actually ran" — found by a real (non-mocked) test.
+    execFile('npm', ['audit', '--json'], { cwd, timeout: 60_000, maxBuffer: 10 * 1024 * 1024, shell: true }, (_err, stdout) => {
       // npm audit exits non-zero when vulnerabilities are found — that is
       // expected and NOT a real error; parse stdout regardless of exit code.
       resolve(stdout ? parseNpmAuditJson(stdout) : null);

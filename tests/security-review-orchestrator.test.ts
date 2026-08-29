@@ -14,7 +14,8 @@ import { runNpmAuditLive } from '@/lib/security-review';
 /**
  * runSecurityReview(projectDir) runs BOTH real checks against a real
  * directory: npm audit (mocked here to avoid a slow real npm call in
- * unit tests — runNpmAuditLive itself is tested for real elsewhere) and
+ * unit tests — runNpmAuditLive itself is tested against a real child
+ * process in tests/security-review-npm-audit-live.test.ts) and
  * the secret scan (genuinely walks the temp dir on disk).
  */
 describe('runSecurityReview', () => {
