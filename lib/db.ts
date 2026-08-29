@@ -543,7 +543,8 @@ CREATE TABLE IF NOT EXISTS delegated_tasks (
   started_at TEXT,
   finished_at TEXT,
   result_summary TEXT,
-  failure_reason TEXT
+  failure_reason TEXT,
+  retry_count INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS claude_code_runs (
   id TEXT PRIMARY KEY,
@@ -577,6 +578,14 @@ function migrateClaudeCodeRunsTable(db: InstanceType<typeof Database>): void {
     (db.pragma('table_info(claude_code_runs)') as { name: string }[]).map((c) => c.name),
   );
   if (!columns.has('qa_report')) db.exec('ALTER TABLE claude_code_runs ADD COLUMN qa_report TEXT');
+}
+
+/** Databases created before the retry-cap tracking lack this column. */
+function migrateDelegatedTasksTable(db: InstanceType<typeof Database>): void {
+  const columns = new Set(
+    (db.pragma('table_info(delegated_tasks)') as { name: string }[]).map((c) => c.name),
+  );
+  if (!columns.has('retry_count')) db.exec('ALTER TABLE delegated_tasks ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0');
 }
 
 /** Databases created before the funnel-space build lack these columns. */
@@ -667,6 +676,7 @@ export function openDb(path: string) {
   db.exec(DDL);
   migrateAgentsTable(db);
   migrateClaudeCodeRunsTable(db);
+  migrateDelegatedTasksTable(db);
   migrateLeadMagnetsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
@@ -1857,6 +1867,7 @@ export function openDb(path: string) {
       finishedAt: r.finished_at,
       resultSummary: r.result_summary,
       failureReason: r.failure_reason,
+      retryCount: r.retry_count,
     });
   }
 
@@ -1891,8 +1902,8 @@ export function openDb(path: string) {
       const parsed = DelegatedTaskSchema.parse(t);
       db.prepare(
         `INSERT OR REPLACE INTO delegated_tasks
-         (id, source, project_id, assigned_agent_id, goal, status, priority, dependencies, approval_requirement, created_at, started_at, finished_at, result_summary, failure_reason)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, source, project_id, assigned_agent_id, goal, status, priority, dependencies, approval_requirement, created_at, started_at, finished_at, result_summary, failure_reason, retry_count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         parsed.id,
         parsed.source,
@@ -1908,6 +1919,7 @@ export function openDb(path: string) {
         parsed.finishedAt,
         parsed.resultSummary,
         parsed.failureReason,
+        parsed.retryCount,
       );
     },
     /** Partial update of the mutable lifecycle fields — never touches

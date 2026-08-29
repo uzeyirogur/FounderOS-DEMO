@@ -8,7 +8,7 @@ describe('db.delegatedTasks', () => {
       id: 't1', source: 'user', projectId: 'proj-1', assignedAgentId: 'qa-ui-review',
       goal: 'Run typecheck', status: 'pending', priority: 'high', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     const all = db.delegatedTasks.all();
     expect(all).toHaveLength(1);
@@ -23,7 +23,7 @@ describe('db.delegatedTasks', () => {
       id: 't1', source: 'conductor', projectId: null, assignedAgentId: 'work-assistant',
       goal: 'x', status: 'pending', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     expect(db.delegatedTasks.byId('t1')?.assignedAgentId).toBe('work-assistant');
     expect(db.delegatedTasks.byId('nope')).toBeNull();
@@ -36,13 +36,13 @@ describe('db.delegatedTasks', () => {
       id: 't1', source: 'user', projectId: 'proj-1', assignedAgentId: 'a',
       goal: 'x', status: 'pending', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     db.delegatedTasks.insert({
       id: 't2', source: 'user', projectId: null, assignedAgentId: 'a',
       goal: 'y', status: 'pending', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     expect(db.delegatedTasks.byProjectId('proj-1').map((t) => t.id)).toEqual(['t1']);
     db.close();
@@ -54,7 +54,7 @@ describe('db.delegatedTasks', () => {
       id: 't1', source: 'user', projectId: null, assignedAgentId: 'a',
       goal: 'x', status: 'pending', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     db.delegatedTasks.updateStatus('t1', { status: 'done', finishedAt: '2026-01-01T00:00:00.000Z', resultSummary: 'ok' });
     const task = db.delegatedTasks.byId('t1')!;
@@ -70,13 +70,13 @@ describe('db.delegatedTasks', () => {
       id: 't1', source: 'user', projectId: null, assignedAgentId: 'a',
       goal: 'x', status: 'pending', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     db.delegatedTasks.insert({
       id: 't2', source: 'user', projectId: null, assignedAgentId: 'a',
       goal: 'y', status: 'done', priority: 'normal', dependencies: [],
       approvalRequirement: 'none', createdAt: new Date().toISOString(), startedAt: null,
-      finishedAt: null, resultSummary: null, failureReason: null,
+      finishedAt: null, resultSummary: null, failureReason: null, retryCount: 0,
     });
     expect(db.delegatedTasks.pending().map((t) => t.id)).toEqual(['t1']);
     db.close();

@@ -848,6 +848,12 @@ export const DelegatedTaskSchema = z.object({
   finishedAt: z.string().min(1).nullable().default(null),
   resultSummary: z.string().nullable().default(null),
   failureReason: z.string().nullable().default(null),
+  // How many times THIS lineage (original + all its retries) has already
+  // been retried — 0 on the original task, incremented on each retryTask()
+  // call. Never lets a failing task get retried forever: retryTask()
+  // refuses past a hard cap so a stuck task surfaces as a real, visible
+  // blocker instead of looping silently.
+  retryCount: z.number().int().min(0).default(0),
 });
 export type DelegatedTaskStatus = z.infer<typeof DelegatedTaskStatusSchema>;
 export type DelegatedTaskPriority = z.infer<typeof DelegatedTaskPrioritySchema>;

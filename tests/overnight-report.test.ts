@@ -26,13 +26,13 @@ describe('buildOvernightReport', () => {
       id: 't1', source: 'user', projectId: 'proj-1', assignedAgentId: 'qa-ui-review', goal: 'run tests',
       status: 'done', priority: 'normal', dependencies: [], approvalRequirement: 'none',
       createdAt: new Date().toISOString(), startedAt: new Date().toISOString(), finishedAt: new Date().toISOString(),
-      resultSummary: 'all green', failureReason: null,
+      resultSummary: 'all green', failureReason: null, retryCount: 0,
     });
     db.delegatedTasks.insert({
       id: 't2', source: 'user', projectId: 'proj-1', assignedAgentId: 'security-reviewer', goal: 'scan',
       status: 'failed', priority: 'normal', dependencies: [], approvalRequirement: 'none',
       createdAt: new Date().toISOString(), startedAt: new Date().toISOString(), finishedAt: new Date().toISOString(),
-      resultSummary: null, failureReason: 'npm audit unreachable',
+      resultSummary: null, failureReason: 'npm audit unreachable', retryCount: 0,
     });
     const report = buildOvernightReport(db);
     expect(report.completedTasks).toHaveLength(1);

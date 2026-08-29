@@ -142,7 +142,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'conductor',
     name: 'Conductor',
     description:
-      'Chief of Staff / Conductor — the real cross-system view of what is blocked and waiting for a decision: pending lifecycle approvals, publish plans, outbound messages, capability candidates, and content stuck needing a capability. Every count is read live from the real repos, never invented or hardcoded to one project.',
+      'Chief of Staff / Conductor — the real cross-system view of what is blocked and waiting for a decision: pending lifecycle approvals, publish plans, outbound messages, capability candidates, and content stuck needing a capability. Every count is read live from the real repos, never invented or hardcoded to one project. Also owns the delegated-task work-item domain (queue/POST /api/conductor/tasks): routes by keyword-classified intent or an explicit agent id, refuses an explicit agent id that is not in the real runtime roster, refuses duplicate open work for the same project+agent+goal, tracks dependencies (a task with unmet dependencies starts blocked and auto-unblocks when they complete), and caps retries at 3 attempts per lineage so a flaky task surfaces as a visible failure instead of looping forever.',
     departmentId: 'dept-tech',
     async run() {
       const [stack, status] = await Promise.all([localStackStatus(), Promise.resolve(aggregateStatus(getDb()))]);

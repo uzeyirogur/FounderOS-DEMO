@@ -67,6 +67,27 @@ describe('delegateTask', () => {
     db.close();
   });
 
+  it('refuses an explicit assignedAgentId that is not a real runtime agent — cannot dispatch to a stub id', () => {
+    const db = openDb(':memory:');
+    const runtimeIds = new Set(realAgents.map((a) => a.id));
+    expect(() =>
+      delegateTask(db, { source: 'user', projectId: null, assignedAgentId: 'totally-made-up-agent', goal: 'do something' }, runtimeIds),
+    ).toThrow(/not a real|unknown agent/i);
+    db.close();
+  });
+
+  it('a classified (non-explicit) agent is always real by construction — the no-larp-routing test above guarantees this', () => {
+    // classifyIntent only ever returns an INTENT_RULES agentId or 'conductor',
+    // and the classifyIntent describe block above proves every INTENT_RULES
+    // entry is real; 'conductor' itself is always real. No separate runtime
+    // check is needed on the classified path.
+    const db = openDb(':memory:');
+    const runtimeIds = new Set(realAgents.map((a) => a.id));
+    const task = delegateTask(db, { source: 'user', projectId: null, goal: 'Run typecheck and tests' }, runtimeIds);
+    expect(runtimeIds.has(task.assignedAgentId)).toBe(true);
+    db.close();
+  });
+
   it('a task with unmet dependencies starts blocked, not pending', () => {
     const db = openDb(':memory:');
     const dep = delegateTask(db, { source: 'user', projectId: 'proj-1', goal: 'Run typecheck and tests' });
@@ -135,6 +156,31 @@ describe('retryTask', () => {
     const db = openDb(':memory:');
     const t = delegateTask(db, { source: 'user', projectId: 'proj-1', goal: 'Run typecheck and tests' });
     expect(() => retryTask(db, t.id)).toThrow();
+    db.close();
+  });
+
+  it('never produces infinite retries — a task retried past the cap is refused, not silently retried forever', () => {
+    const db = openDb(':memory:');
+    let current = delegateTask(db, { source: 'user', projectId: 'proj-1', goal: 'flaky thing' });
+    // Retry a chain of failures up to the cap.
+    for (let i = 0; i < 3; i++) {
+      failTask(db, current.id, `attempt ${i} failed`);
+      current = retryTask(db, current.id);
+    }
+    failTask(db, current.id, 'final failure');
+    expect(() => retryTask(db, current.id)).toThrow(/retry (limit|cap)/i);
+    db.close();
+  });
+
+  it('retryTask tracks how many times a task lineage has been retried', () => {
+    const db = openDb(':memory:');
+    const t = delegateTask(db, { source: 'user', projectId: 'proj-1', goal: 'flaky thing' });
+    failTask(db, t.id, 'fail 1');
+    const r1 = retryTask(db, t.id);
+    expect(r1.retryCount).toBe(1);
+    failTask(db, r1.id, 'fail 2');
+    const r2 = retryTask(db, r1.id);
+    expect(r2.retryCount).toBe(2);
     db.close();
   });
 });

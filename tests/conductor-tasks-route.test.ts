@@ -40,6 +40,18 @@ describe('POST /api/conductor/tasks', () => {
     const res = await createTask(new Request('http://x', { method: 'POST', body: JSON.stringify({}) }));
     expect(res.status).toBe(400);
   });
+
+  it('400s on an explicit assignedAgentId that is not a real runtime agent — the route enforces the roster gate, not just the lib function', async () => {
+    const res = await createTask(
+      new Request('http://x', {
+        method: 'POST',
+        body: JSON.stringify({ goal: 'do something', assignedAgentId: 'totally-made-up-agent' }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/not a real runtime agent/i);
+  });
 });
 
 describe('PATCH /api/conductor/tasks/[id]', () => {

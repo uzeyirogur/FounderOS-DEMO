@@ -81,9 +81,22 @@ export interface DelegateTaskInput {
  * exists for the same project + agent + goal, that existing task is returned
  * instead of a new row. This is the "no duplicate work" requirement — it's
  * enforced structurally by a lookup, not by asking an LLM to remember.
+ *
+ * knownAgentIds (optional — the caller passes realAgents' ids; conductor.ts
+ * itself never imports lib/agents/real.ts, which would be a circular import
+ * since real.ts already imports aggregateStatus from this module) gates an
+ * EXPLICIT assignedAgentId override against the actual runtime roster. A
+ * classified (non-explicit) agent never needs this check — classifyIntent
+ * only ever returns an INTENT_RULES agentId or 'conductor', and every
+ * INTENT_RULES entry is proven real by the no-larp-routing test. When
+ * knownAgentIds is omitted, no check runs — existing callers/tests that
+ * don't care about this guard are unaffected.
  */
-export function delegateTask(db: Db, input: DelegateTaskInput): DelegatedTask {
+export function delegateTask(db: Db, input: DelegateTaskInput, knownAgentIds?: Set<string>): DelegatedTask {
   const assignedAgentId = input.assignedAgentId ?? classifyIntent(input.goal);
+  if (input.assignedAgentId && knownAgentIds && !knownAgentIds.has(input.assignedAgentId)) {
+    throw new Error(`delegateTask: "${input.assignedAgentId}" is not a real runtime agent — refusing to dispatch to an unknown agent id`);
+  }
   const dependencies = input.dependencies ?? [];
 
   const scoped = input.projectId ? db.delegatedTasks.byProjectId(input.projectId) : db.delegatedTasks.all();
@@ -112,6 +125,7 @@ export function delegateTask(db: Db, input: DelegateTaskInput): DelegatedTask {
     finishedAt: null,
     resultSummary: null,
     failureReason: null,
+    retryCount: 0,
   };
   db.delegatedTasks.insert(task);
   return task;
@@ -144,12 +158,23 @@ export function failTask(db: Db, id: string, failureReason: string): void {
  * reassigned to a different agent. Refuses to retry a task that is still open
  * (pending/in_progress/blocked/awaiting_approval), since retrying live work
  * makes no sense and would itself create a duplicate.
+ *
+ * Hard-capped at MAX_RETRY_COUNT: retryCount is carried forward and
+ * incremented on each retry, and once it would exceed the cap, retryTask
+ * refuses instead of creating yet another attempt. A flaky task surfaces as
+ * a real, visible failed/blocked task past the cap — never an invisible,
+ * ever-repeating background loop.
  */
+const MAX_RETRY_COUNT = 3;
+
 export function retryTask(db: Db, id: string, opts?: { reassignTo?: string }): DelegatedTask {
   const original = db.delegatedTasks.byId(id);
   if (!original) throw new Error(`retryTask: no such task ${id}`);
   if (!TERMINAL_STATUSES.has(original.status)) {
     throw new Error(`retryTask: task ${id} is not terminal (status=${original.status})`);
+  }
+  if (original.retryCount >= MAX_RETRY_COUNT) {
+    throw new Error(`retryTask: task ${id} has already been retried ${original.retryCount} time(s) — retry cap (${MAX_RETRY_COUNT}) reached, refusing another attempt`);
   }
   const retried: DelegatedTask = {
     ...original,
@@ -161,6 +186,7 @@ export function retryTask(db: Db, id: string, opts?: { reassignTo?: string }): D
     finishedAt: null,
     resultSummary: null,
     failureReason: null,
+    retryCount: original.retryCount + 1,
   };
   db.delegatedTasks.insert(retried);
   return retried;
