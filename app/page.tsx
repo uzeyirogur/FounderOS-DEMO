@@ -16,6 +16,9 @@ import { HomeSocialGraph } from '@/components/HomeSocialGraph';
 import { Badge, Dot, Kbd, Label, SectionHead, Spark } from '@/components/terminal';
 import { runsPerDay, inboundPerDay, stateOfWorld, type Tone } from '@/lib/pulse-history';
 import type { ConnectorStatus } from '@/lib/connectors/types';
+import { projectLifecycleSummary } from '@/lib/project-lifecycle-orchestrator';
+import { aggregateStatus } from '@/lib/conductor';
+import { buildExecutiveReport } from '@/lib/agents/executive-report';
 
 export const dynamic = 'force-dynamic';
 
@@ -182,6 +185,17 @@ export default async function HomePage() {
   // actually dispatching right now, not a status label.
   const dispatched = db.delegatedTasks.pending().slice(0, 6);
 
+  // Command Center summary — item 9 of the V1 completion sprint plan: the
+  // first-glance view is system health (above), active projects +
+  // lifecycle, pending approvals, credential/tool needs, and the latest
+  // report. Every figure below is read from the same real repos the
+  // dedicated pages use — never a second, hand-maintained count.
+  const activeProjects = db.projects.all().filter((p) => p.status === 'active');
+  const projectLifecycles = activeProjects.map((p) => ({ project: p, lifecycle: projectLifecycleSummary(db, p.id) }));
+  const conductorStatus = aggregateStatus(db);
+  const latestReport = buildExecutiveReport(db, { windowHours: 24 });
+  const notConfiguredCapabilities = db.capabilities.all().filter((c) => c.status === 'candidate' && !c.configured);
+
   return (
     <div>
       {/* self-contained marquee — no globals.css dependency */}
@@ -242,6 +256,60 @@ export default async function HomePage() {
           valueClass="text-os-accent"
           foot={<HealthMeter value={health ?? null} />}
         />
+      </section>
+
+      {/* Command Center summary — active projects + lifecycle, pending
+          approvals, credential/tool needs, latest report. First-glance
+          view per the V1 completion sprint's UI requirement. */}
+      <section className="mb-[22px] grid grid-cols-2 gap-3 max-[1100px]:grid-cols-1">
+        <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
+          <SectionHead label="Active projects" count={activeProjects.length} link="All projects" href="/projects" />
+          {projectLifecycles.length === 0 ? (
+            <p className="text-[12px] text-os-dim">No active projects yet.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {projectLifecycles.map(({ project, lifecycle }) => (
+                <Link
+                  key={project.id}
+                  href={`/projects/${project.id}`}
+                  className="hoverable flex items-center gap-2.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-2 font-mono text-[11px]"
+                >
+                  <span className="shrink-0 font-semibold text-os-text">{project.name}</span>
+                  <span className="shrink-0 text-os-accent">{lifecycle.currentPhase}</span>
+                  <span className="min-w-0 flex-1 truncate text-os-dim">{lifecycle.nextAction}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
+          <SectionHead
+            label="Waiting on you"
+            count={conductorStatus.totalBlockers}
+            link="Approvals"
+            href="/notifications"
+          />
+          {conductorStatus.totalBlockers === 0 ? (
+            <p className="text-[12px] text-os-dim">All clear — nothing waiting on a decision.</p>
+          ) : (
+            <ul className="flex flex-col gap-1 font-mono text-[11px] text-os-muted">
+              {conductorStatus.pendingLifecycleApprovals > 0 && <li>{conductorStatus.pendingLifecycleApprovals} lifecycle approval(s)</li>}
+              {conductorStatus.pendingPublishPlans > 0 && <li>{conductorStatus.pendingPublishPlans} publish plan(s)</li>}
+              {conductorStatus.pendingOutboundMessages > 0 && <li>{conductorStatus.pendingOutboundMessages} outbound message(s)</li>}
+              {conductorStatus.candidateCapabilities > 0 && (
+                <li>
+                  {conductorStatus.candidateCapabilities} capability candidate(s)
+                  {notConfiguredCapabilities.length > 0 ? ` — needs credential/setup: ${notConfiguredCapabilities.slice(0, 3).map((c) => c.name).join(', ')}` : ''}
+                </li>
+              )}
+              {conductorStatus.blockedContentPieces > 0 && <li>{conductorStatus.blockedContentPieces} content piece(s) needing a capability</li>}
+            </ul>
+          )}
+          <div className="mt-3 border-t border-os-border pt-2 font-mono text-[10.5px] text-os-dim">
+            Latest report (24h): {latestReport.summary}
+          </div>
+        </div>
       </section>
 
       {/* Live ticker */}
