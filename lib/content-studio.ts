@@ -3,6 +3,7 @@ import type { openDb } from '@/lib/db';
 import { CONTENT_KIND_REQUIREMENT, type ContentKind, type ContentPiece } from '@/lib/schemas';
 import type { LlmChatResult } from '@/lib/connectors/llm';
 import type { DiscoverCapabilityResult } from '@/lib/capability-discovery';
+import { compareCandidates } from '@/lib/capability-comparison';
 
 type Db = ReturnType<typeof openDb>;
 
@@ -91,7 +92,51 @@ export async function produceContentPiece(
     return piece;
   }
 
-  await deps.discover(db, capability, `${input.kind.replace(/_/g, ' ')} generation tool for: ${input.brief}`);
+  const discovery = await deps.discover(db, capability, `${input.kind.replace(/_/g, ' ')} generation tool for: ${input.brief}`);
+
+  // Compare whatever discovery found (real callers persist candidates to
+  // the registry as part of discovery; this reads the result it actually
+  // returned so a test double doesn't need to fake DB writes to be
+  // exercised) and — only when the best option needs real money or a
+  // credential — queue a real approval_request so the operator sees what's
+  // needed, why, and whether a free alternative exists. A free, no-auth
+  // top candidate never blocks on approval (nothing to approve); an empty
+  // comparison (nothing discoverable) never queues an empty ask.
+  const ranked = compareCandidates(discovery.candidates);
+  const top = ranked[0];
+  if (top && (top.costModel === 'paid' || top.costModel === 'freemium' || top.authRequired)) {
+    const alternative = ranked.find((c) => c.costModel === 'free' && !c.authRequired && c.id !== top.id);
+    const lines = [
+      `Content Studio needs a "${capability}" tool to produce "${input.brief}".`,
+      `Top option: ${top.name} — ${top.costModel}${top.freeTier ? ` (free tier: ${top.freeTier})` : ''}${top.authRequired ? ', requires a credential' : ''}.`,
+      ranked.length > 1
+        ? `${ranked.length - 1} other option(s) considered: ${ranked
+            .slice(1)
+            .map((c) => `${c.name} (${c.costModel})`)
+            .join(', ')}.`
+        : 'No other options found in this discovery pass.',
+      alternative
+        ? `A free, no-credential alternative exists: ${alternative.name}.`
+        : 'No free/no-credential alternative was found — this needs a real spend or credential decision.',
+      `Review and approve at /capabilities before any paid/credentialed tool is used.`,
+    ];
+    db.notifications.insert({
+      id: randomUUID(),
+      kind: 'approval_request',
+      agentId: 'social-content-studio',
+      title: `Capability needed: ${capability}`,
+      body: lines.join(' '),
+      requiresApproval: true,
+      status: 'pending',
+      channel: 'local',
+      createdAt: now,
+      sentAt: null,
+      decidedAt: null,
+      decidedBy: null,
+      responseText: null,
+    });
+  }
+
   const piece: ContentPiece = {
     ...base,
     status: 'needs_capability',

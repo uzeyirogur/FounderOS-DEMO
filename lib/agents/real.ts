@@ -853,7 +853,7 @@ export const realAgents: RuntimeAgent[] = [
     id: 'social-content-studio',
     name: 'Social Content Studio',
     description:
-      'Produces the full content surface (posts, carousels, ad creative, product demo videos, motion content, images, mockups, landing-page creative, voiceover, animation, 3D/web interactive) — text-native kinds go straight through the LLM gateway; every media kind checks the Capability Registry for a real active tool first, and runs live discovery if nothing is active yet. Never fakes media it did not actually produce.',
+      'Produces the full content surface (posts, carousels, ad creative, product demo videos, motion content, images, mockups, landing-page creative, voiceover, animation, 3D/web interactive) — text-native kinds go straight through the LLM gateway; every media kind checks the Capability Registry for a real active tool first, runs live discovery if nothing is active yet, ranks discovered candidates via compareCandidates, and — only when the top pick needs real spend or a credential — queues a real approval_request naming what is needed, why, the options considered, and any free/no-credential alternative found. Never fakes media it did not actually produce, and never auto-activates a paid or credentialed tool.',
     departmentId: 'dept-content-studio',
     async run() {
       const db = getDb();
