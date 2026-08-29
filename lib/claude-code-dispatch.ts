@@ -121,23 +121,40 @@ export async function dispatchClaudeCode(execFn: ExecFn, input: DispatchClaudeCo
 
 /**
  * dispatchClaudeCode wired to a real child_process invocation of the
- * `claude` CLI. Honest not_configured when the binary is missing.
+ * `claude` CLI. Honest not_configured when the binary is missing. Hard
+ * 10-minute timeout so a stuck subprocess can never hang the orchestrator
+ * forever — execFile's own `timeout` option SIGTERMs the child and
+ * rejects; that rejection flows through the same honest-failure path as
+ * any other exec error (never silently swallowed, never reported as
+ * success). Real stderr is captured and folded into the failure reason
+ * when the process errors, since stdout alone often doesn't say why.
  */
+const CLAUDE_CODE_TIMEOUT_MS = 10 * 60 * 1000;
+
 export async function dispatchClaudeCodeLive(input: DispatchClaudeCodeInput): Promise<DispatchResult> {
   const { execFile } = await import('node:child_process');
   const execFn: ExecFn = (cmd, args, opts) =>
     new Promise((resolve, reject) => {
-      execFile(cmd, args, { cwd: opts.cwd, maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
-        if (error) {
-          reject(
-            error.message.includes('ENOENT')
-              ? new Error("claude CLI not found on PATH — install with 'npm install -g @anthropic-ai/claude-code' and run 'claude' once to authenticate")
-              : error,
-          );
-          return;
-        }
-        resolve({ stdout, stderr });
-      });
+      execFile(
+        cmd,
+        args,
+        { cwd: opts.cwd, maxBuffer: 1024 * 1024 * 20, timeout: CLAUDE_CODE_TIMEOUT_MS },
+        (error, stdout, stderr) => {
+          if (error) {
+            if (error.message.includes('ENOENT')) {
+              reject(new Error("claude CLI not found on PATH — install with 'npm install -g @anthropic-ai/claude-code' and run 'claude' once to authenticate"));
+              return;
+            }
+            if (error.killed && error.signal) {
+              reject(new Error(`claude CLI timed out after ${CLAUDE_CODE_TIMEOUT_MS / 1000}s and was killed (signal ${error.signal})`));
+              return;
+            }
+            reject(stderr ? new Error(`${error.message}\nstderr: ${stderr}`) : error);
+            return;
+          }
+          resolve({ stdout, stderr });
+        },
+      );
     });
   return dispatchClaudeCode(execFn, input);
 }

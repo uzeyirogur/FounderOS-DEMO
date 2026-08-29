@@ -34,6 +34,7 @@ export function queueClaudeCodeRun(db: Db, input: QueueRunInput): ClaudeCodeRun 
     resultSummary: null,
     error: null,
     totalCostUsd: null,
+    qaReport: null,
   };
   db.claudeCodeRuns.insert(run);
   return run;
@@ -56,8 +57,21 @@ export function approveQueuedRun(db: Db, id: string): ClaudeCodeRun {
  * same row. Refuses to execute a run that is still awaiting_approval —
  * this is the structural gate: an unapproved full_with_approval run
  * literally cannot reach dispatchClaudeCode.
+ *
+ * Post-run QA handoff (qaFn, injected — same DI shape as execFn): after a
+ * REAL successful dispatch, automatically runs the target project's own
+ * real test/typecheck/build pipeline and records the report on the row.
+ * Never runs QA on a failed dispatch (nothing to review). A QA runner
+ * that itself throws is recorded as a real, visible failure — never
+ * silently dropped and never faked as a pass. qaFn is optional so
+ * existing callers/tests that don't care about QA are unaffected.
  */
-export async function executeQueuedRun(db: Db, id: string, execFn: ExecFn): Promise<ClaudeCodeRun> {
+export async function executeQueuedRun(
+  db: Db,
+  id: string,
+  execFn: ExecFn,
+  qaFn?: (projectDir: string) => Promise<unknown>,
+): Promise<ClaudeCodeRun> {
   const run = db.claudeCodeRuns.byId(id);
   if (!run) throw new Error(`executeQueuedRun: no such run ${id}`);
   if (run.status === 'awaiting_approval') {
@@ -82,6 +96,17 @@ export async function executeQueuedRun(db: Db, id: string, execFn: ExecFn): Prom
       resultSummary: result.result,
       totalCostUsd: result.totalCostUsd,
     });
+
+    if (qaFn) {
+      let qaReport: string;
+      try {
+        const report = await qaFn(run.projectDir);
+        qaReport = JSON.stringify(report);
+      } catch (err) {
+        qaReport = JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+      db.claudeCodeRuns.update(id, { qaReport });
+    }
   } else if (!result.ok) {
     db.claudeCodeRuns.update(id, { status: 'failed', finishedAt: new Date().toISOString(), error: result.reason });
   }

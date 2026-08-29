@@ -557,7 +557,8 @@ CREATE TABLE IF NOT EXISTS claude_code_runs (
   finished_at TEXT,
   result_summary TEXT,
   error TEXT,
-  total_cost_usd REAL
+  total_cost_usd REAL,
+  qa_report TEXT
 );
 `;
 
@@ -568,6 +569,14 @@ function migrateAgentsTable(db: InstanceType<typeof Database>): void {
   );
   if (!columns.has('parent_id')) db.exec('ALTER TABLE agents ADD COLUMN parent_id TEXT');
   if (!columns.has('instance')) db.exec("ALTER TABLE agents ADD COLUMN instance TEXT NOT NULL DEFAULT 'builtin'");
+}
+
+/** Databases created before the post-run QA handoff lack this column. */
+function migrateClaudeCodeRunsTable(db: InstanceType<typeof Database>): void {
+  const columns = new Set(
+    (db.pragma('table_info(claude_code_runs)') as { name: string }[]).map((c) => c.name),
+  );
+  if (!columns.has('qa_report')) db.exec('ALTER TABLE claude_code_runs ADD COLUMN qa_report TEXT');
 }
 
 /** Databases created before the funnel-space build lack these columns. */
@@ -657,6 +666,7 @@ export function openDb(path: string) {
   db.pragma('journal_mode = WAL');
   db.exec(DDL);
   migrateAgentsTable(db);
+  migrateClaudeCodeRunsTable(db);
   migrateLeadMagnetsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
@@ -1624,16 +1634,21 @@ export function openDb(path: string) {
   const lifecycleEvidence = {
     byProjectId(projectId: string): LifecycleEvidence[] {
       return (
-        db.prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? ORDER BY recorded_at DESC').all(projectId) as any[]
+        db.prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? ORDER BY recorded_at DESC, rowid DESC').all(projectId) as any[]
       ).map(rowToLifecycleEvidence);
     },
     /** Every evidence row for one project's one phase — a phase may be
      *  attempted more than once (e.g. a failing build_test then a passing
-     *  one after a fix), so this returns all of them, newest first. */
+     *  one after a fix), so this returns all of them, newest first. Ties on
+     *  recorded_at (same-millisecond ISO timestamps — real under fast
+     *  successive calls, e.g. in tests) break on rowid DESC, which SQLite
+     *  guarantees tracks insert order — recorded_at DESC alone has no
+     *  documented tie-break and was observed picking the WRONG row when
+     *  two evidence rows for the same phase landed in the same millisecond. */
     byProjectPhase(projectId: string, phase: string): LifecycleEvidence[] {
       return (
         db
-          .prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? AND phase = ? ORDER BY recorded_at DESC')
+          .prepare('SELECT * FROM lifecycle_evidence WHERE project_id = ? AND phase = ? ORDER BY recorded_at DESC, rowid DESC')
           .all(projectId, phase) as any[]
       ).map(rowToLifecycleEvidence);
     },
@@ -1925,6 +1940,7 @@ export function openDb(path: string) {
       resultSummary: r.result_summary,
       error: r.error,
       totalCostUsd: r.total_cost_usd,
+      qaReport: r.qa_report,
     });
   }
 
@@ -1945,8 +1961,8 @@ export function openDb(path: string) {
       const parsed = ClaudeCodeRunSchema.parse(r);
       db.prepare(
         `INSERT OR REPLACE INTO claude_code_runs
-         (id, project_id, project_dir, prompt, permission_level, status, created_at, started_at, finished_at, result_summary, error, total_cost_usd)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, project_id, project_dir, prompt, permission_level, status, created_at, started_at, finished_at, result_summary, error, total_cost_usd, qa_report)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         parsed.id,
         parsed.projectId,
@@ -1960,18 +1976,19 @@ export function openDb(path: string) {
         parsed.resultSummary,
         parsed.error,
         parsed.totalCostUsd,
+        parsed.qaReport,
       );
     },
     update(
       id: string,
-      patch: Partial<Pick<ClaudeCodeRun, 'status' | 'startedAt' | 'finishedAt' | 'resultSummary' | 'error' | 'totalCostUsd'>>,
+      patch: Partial<Pick<ClaudeCodeRun, 'status' | 'startedAt' | 'finishedAt' | 'resultSummary' | 'error' | 'totalCostUsd' | 'qaReport'>>,
     ): void {
       const current = claudeCodeRuns.byId(id);
       if (!current) return;
       const next = ClaudeCodeRunSchema.parse({ ...current, ...patch });
       db.prepare(
-        'UPDATE claude_code_runs SET status = ?, started_at = ?, finished_at = ?, result_summary = ?, error = ?, total_cost_usd = ? WHERE id = ?',
-      ).run(next.status, next.startedAt, next.finishedAt, next.resultSummary, next.error, next.totalCostUsd, id);
+        'UPDATE claude_code_runs SET status = ?, started_at = ?, finished_at = ?, result_summary = ?, error = ?, total_cost_usd = ?, qa_report = ? WHERE id = ?',
+      ).run(next.status, next.startedAt, next.finishedAt, next.resultSummary, next.error, next.totalCostUsd, next.qaReport, id);
     },
   };
 

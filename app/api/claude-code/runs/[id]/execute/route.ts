@@ -24,6 +24,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   const { dispatchClaudeCodeLiveExecFn } = await import('@/lib/claude-code-dispatch-exec');
-  const updated = await executeQueuedRun(db, run.id, dispatchClaudeCodeLiveExecFn);
+  const { runQaReviewLive } = await import('@/lib/qa-review-orchestrator');
+  const updated = await executeQueuedRun(db, run.id, dispatchClaudeCodeLiveExecFn, runQaReviewLive);
   return NextResponse.json({ run: updated });
 }

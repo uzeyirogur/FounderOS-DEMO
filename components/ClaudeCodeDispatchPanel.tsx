@@ -16,7 +16,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [run, setRun] = useState<{ id: string; status: string; prompt: string; resultSummary?: string | null } | null>(null);
+  const [run, setRun] = useState<{ id: string; status: string; prompt: string; resultSummary?: string | null; qaReport?: string | null } | null>(null);
 
   if (!authorized) {
     return (
@@ -158,6 +158,27 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
               {run.resultSummary}
             </div>
           )}
+
+          {run.qaReport && (() => {
+            let qa: { ok?: boolean; test?: { passed: number; failed: number; total: number } | null; typecheck?: { ok: boolean; errorCount: number } | null; build?: { ok: boolean; detail: string } | null; error?: string } | null = null;
+            try {
+              qa = JSON.parse(run.qaReport);
+            } catch {
+              qa = null;
+            }
+            if (!qa) return null;
+            return (
+              <div className="mt-3 rounded-sm-t border border-os-border bg-os-bg px-3 py-2">
+                <div className={`font-mono text-[10.5px] uppercase tracking-widest ${qa.ok ? 'text-os-ok' : 'text-os-err'}`}>
+                  Post-run QA: {qa.ok ? 'PASS' : 'FAIL'}
+                </div>
+                {qa.error && <div className="mt-1 text-[11px] text-os-err">QA runner error: {qa.error}</div>}
+                {qa.test && <div className="mt-1 text-[11px] text-os-muted">Tests: {qa.test.passed}/{qa.test.total} passed{qa.test.failed > 0 ? ` (${qa.test.failed} failed)` : ''}</div>}
+                {qa.typecheck && <div className="text-[11px] text-os-muted">Typecheck: {qa.typecheck.ok ? 'clean' : `${qa.typecheck.errorCount} error(s)`}</div>}
+                {qa.build && <div className="text-[11px] text-os-muted">Build: {qa.build.ok ? 'ok' : 'failed'}</div>}
+              </div>
+            );
+          })()}
         </div>
       )}
 

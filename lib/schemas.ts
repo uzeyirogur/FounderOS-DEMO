@@ -874,6 +874,11 @@ export const ClaudeCodeRunSchema = z.object({
   resultSummary: z.string().nullable().default(null),
   error: z.string().nullable().default(null),
   totalCostUsd: z.number().nullable().default(null),
+  // Post-run QA handoff: JSON-serialized QaReport (test/typecheck/build +
+  // overall ok) from a real runQaReviewLive call against projectDir, run
+  // automatically after a successful dispatch. Null until a dispatch has
+  // actually succeeded and QA has actually run — never fabricated.
+  qaReport: z.string().nullable().default(null),
 });
 export type ClaudeCodeRunStatus = z.infer<typeof ClaudeCodeRunStatusSchema>;
 export type ClaudeCodeRun = z.infer<typeof ClaudeCodeRunSchema>;

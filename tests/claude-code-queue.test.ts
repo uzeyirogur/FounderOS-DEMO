@@ -95,4 +95,61 @@ describe('claude-code-queue — real run history', () => {
     await expect(executeQueuedRun(db, run.id, execFn)).rejects.toThrow(/approval/i);
     expect(execFn).not.toHaveBeenCalled();
   });
+
+  it('a successful run triggers a real post-run QA handoff and records the report on the row', async () => {
+    const db = openDb(':memory:');
+    const run = queueClaudeCodeRun(db, { projectId: 'proj-1', projectDir: '/tmp/proj', prompt: 'fix it', permissionLevel: 'auto_safe_write' });
+    const execFn = vi.fn().mockResolvedValue({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', result: 'done', session_id: 's1', num_turns: 2, total_cost_usd: 0.01 }),
+      stderr: '',
+    });
+    const qaFn = vi.fn().mockResolvedValue({ test: { total: 10, passed: 10, failed: 0, failedFiles: [] }, typecheck: { errorCount: 0, ok: true }, build: { ok: true, detail: 'ok' }, ok: true });
+    const updated = await executeQueuedRun(db, run.id, execFn, qaFn);
+    expect(qaFn).toHaveBeenCalledWith('/tmp/proj');
+    expect(updated.qaReport).toBeTruthy();
+    const parsed = JSON.parse(updated.qaReport!);
+    expect(parsed.ok).toBe(true);
+    expect(db.claudeCodeRuns.byId(run.id)?.qaReport).toBeTruthy();
+  });
+
+  it('a real QA failure after a successful dispatch does not overwrite the dispatch success, but is visible on the row', async () => {
+    const db = openDb(':memory:');
+    const run = queueClaudeCodeRun(db, { projectId: 'proj-1', projectDir: '/tmp/proj', prompt: 'fix it', permissionLevel: 'auto_safe_write' });
+    const execFn = vi.fn().mockResolvedValue({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', result: 'done', session_id: 's1', num_turns: 2, total_cost_usd: 0.01 }),
+      stderr: '',
+    });
+    const qaFn = vi.fn().mockResolvedValue({ test: { total: 10, passed: 8, failed: 2, failedFiles: ['x.test.ts'] }, typecheck: { errorCount: 0, ok: true }, build: { ok: true, detail: 'ok' }, ok: false });
+    const updated = await executeQueuedRun(db, run.id, execFn, qaFn);
+    expect(updated.status).toBe('done');
+    const parsed = JSON.parse(updated.qaReport!);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.test.failed).toBe(2);
+  });
+
+  it('QA handoff is skipped (never run) when the dispatch itself failed — no wasted QA on a failed run', async () => {
+    const db = openDb(':memory:');
+    const run = queueClaudeCodeRun(db, { projectId: 'proj-1', projectDir: '/tmp/proj', prompt: 'fix it', permissionLevel: 'auto_safe_write' });
+    const execFn = vi.fn().mockRejectedValue(new Error('claude: not found'));
+    const qaFn = vi.fn();
+    const updated = await executeQueuedRun(db, run.id, execFn, qaFn);
+    expect(updated.status).toBe('failed');
+    expect(qaFn).not.toHaveBeenCalled();
+    expect(updated.qaReport).toBeNull();
+  });
+
+  it('a QA runner that itself throws is recorded honestly, never silently dropped or faked as passing', async () => {
+    const db = openDb(':memory:');
+    const run = queueClaudeCodeRun(db, { projectId: 'proj-1', projectDir: '/tmp/proj', prompt: 'fix it', permissionLevel: 'auto_safe_write' });
+    const execFn = vi.fn().mockResolvedValue({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', result: 'done', session_id: 's1', num_turns: 2, total_cost_usd: 0.01 }),
+      stderr: '',
+    });
+    const qaFn = vi.fn().mockRejectedValue(new Error('npm test crashed'));
+    const updated = await executeQueuedRun(db, run.id, execFn, qaFn);
+    expect(updated.status).toBe('done');
+    const parsed = JSON.parse(updated.qaReport!);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toMatch(/npm test crashed/);
+  });
 });
