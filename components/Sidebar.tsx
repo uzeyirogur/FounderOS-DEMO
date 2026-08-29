@@ -77,11 +77,22 @@ export function Sidebar() {
   const dragging = useRef(false);
 
   // Restore the previous shape before first paint of the nav, so the OS opens
-  // the way it was left rather than snapping after hydration.
+  // the way it was left rather than snapping after hydration. On a narrow
+  // viewport (phone/small tablet) the saved desktop width would overflow
+  // the screen — found live via Playwright (a real 234px horizontal
+  // overflow on every route at a 412px mobile width) — so a first-load
+  // narrow viewport always starts collapsed to the icon rail regardless of
+  // the saved preference; the user's saved width still applies once they
+  // widen the window or explicitly expand it.
   useEffect(() => {
-    const savedW = Number(localStorage.getItem('founderos.sidebar.w'));
-    if (Number.isFinite(savedW) && savedW >= MIN_W && savedW <= MAX_W) setWidth(savedW);
-    setCollapsed(localStorage.getItem('founderos.sidebar.collapsed') === '1');
+    const narrow = window.innerWidth < 640;
+    if (narrow) {
+      setCollapsed(true);
+    } else {
+      const savedW = Number(localStorage.getItem('founderos.sidebar.w'));
+      if (Number.isFinite(savedW) && savedW >= MIN_W && savedW <= MAX_W) setWidth(savedW);
+      setCollapsed(localStorage.getItem('founderos.sidebar.collapsed') === '1');
+    }
   }, []);
 
   // Where this instance actually is. Client-only: there is no location

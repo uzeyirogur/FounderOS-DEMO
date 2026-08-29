@@ -12,6 +12,20 @@
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* A fixed-position panel translated off-screen (e.g. ConductorPanel's
+   translate-x-full closed state) can still register as horizontal overflow
+   in some engines even though nothing is visually off-canvas — found live
+   via Playwright at a 412px mobile width (42px of scrollWidth overflow
+   traced to the closed Conductor panel). Clipping at the document level is
+   the standard, safe fix: it never hides intentional in-page horizontal
+   scroll (those containers scope overflow-x:auto on themselves), it only
+   stops the OUTER page from growing a scrollbar for content that is
+   genuinely off-canvas by design. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 /* Dark (phosphor terminal). */
 :root[data-theme='dark'] {
   color-scheme: dark;
@@ -756,9 +770,10 @@ body {
 }
 
 /* The content column glides aside for the Conductor dock (same ease as the
-   panel slide); while the panel is being drag-resized both move 1:1. */
+   panel slide) and follows the sidebar's own width (collapse/resize); while
+   the panel is being drag-resized both move 1:1. */
 .os-shell {
-  transition: margin-right 420ms var(--ease);
+  transition: margin-left 220ms var(--ease), margin-right 420ms var(--ease);
 }
 html.conductor-dragging .os-shell {
   transition: none;

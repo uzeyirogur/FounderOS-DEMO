@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import type { ActivityEvent } from '@/lib/schemas';
 
@@ -19,6 +19,22 @@ function clock(iso: string): string {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return '';
   return new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
+ * Renders `clock(at)` only after the component has mounted on the client.
+ * toLocaleTimeString() with no explicit timeZone reads the RUNNING
+ * environment's local timezone — the Node SSR process and the browser can
+ * disagree (found live via Playwright: a real hydration mismatch on every
+ * /agents load, not styling). Deferring to a post-mount effect means the
+ * server always emits an empty placeholder and the client fills in the
+ * real time once — no mismatch, because the server's guess is never
+ * asserted as the final text.
+ */
+function ClientClock({ at }: { at: string }) {
+  const [text, setText] = useState('');
+  useEffect(() => setText(clock(at)), [at]);
+  return <span className="shrink-0 text-os-dim">{text}</span>;
 }
 
 export function AgentActivityFeed({
@@ -74,7 +90,7 @@ export function AgentActivityFeed({
               <span className="min-w-0 flex-1 truncate text-os-muted" title={e.summary}>
                 {e.summary}
               </span>
-              <span className="shrink-0 text-os-dim">{clock(e.at)}</span>
+              <ClientClock at={e.at} />
             </li>
           ))}
         </ul>
