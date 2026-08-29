@@ -1009,6 +1009,10 @@ export function openDb(path: string) {
         .all(agentId)
         .map(rowToCron);
     },
+    byId(id: string): AgentCron | null {
+      const r = db.prepare('SELECT * FROM agent_crons WHERE id = ?').get(id) as any;
+      return r ? rowToCron(r) : null;
+    },
     all(): AgentCron[] {
       return db.prepare('SELECT * FROM agent_crons ORDER BY created_at DESC, rowid DESC').all().map(rowToCron);
     },

@@ -46,9 +46,22 @@ export async function runSchedulerTick(
 
   for (const cron of db.agentCrons.allEnabled()) {
     if (!isDue(cron.schedule, now, cron.lastRunAt)) continue;
+    // Re-read + re-check against the FRESHEST lastRunAt right before
+    // claiming, not the snapshot allEnabled() took at the top of this
+    // tick — a concurrent tick (two overlapping external-ticker calls, or
+    // a tick still mid-flight when the next one starts) may have already
+    // claimed this cron in the meantime. This re-check-and-claim runs
+    // synchronously (better-sqlite3 is sync), so no other tick's own
+    // synchronous re-check-and-claim can interleave inside it — only the
+    // `await runtime.run()` below can yield. Claiming (stamping
+    // lastRunAt) BEFORE awaiting the run, not after, is what closes the
+    // window: a concurrent tick's re-check now sees the claim immediately,
+    // instead of only after the whole run finishes.
+    const fresh = db.agentCrons.byId(cron.id);
+    if (!fresh || !fresh.enabled || !isDue(fresh.schedule, now, fresh.lastRunAt)) continue;
+    db.agentCrons.setLastRunAt(cron.id, now.toISOString());
     try {
       await runtime.run(cron.agentId);
-      db.agentCrons.setLastRunAt(cron.id, now.toISOString());
       fired.push(cron.id);
     } catch (err) {
       // runtime.run() itself only throws for an unknown agent id (a throwing
