@@ -31,6 +31,8 @@ interface LifecycleSummary {
   openTasks: { id: string; title: string; status: string; blockedReason: string | null }[];
   pendingApprovals: { id: string; title: string; description: string }[];
   updatedAt: string;
+  requiredEvidence: { kind: string; satisfied: boolean; latestSummary: string | null } | null;
+  nextAction: string;
 }
 
 /**
@@ -120,6 +122,7 @@ export function ProjectLifecycleWidget({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-os-border pt-3">
         <div className="text-[11.5px] text-os-muted">
           Responsible: <span className="text-os-text">{agentNames[summary.responsibleAgentId] ?? summary.responsibleAgentId}</span>
+          <span className="ml-2 text-os-dim">· step {currentIndex + 1} of {PROJECT_LIFECYCLE_PHASES.length}</span>
         </div>
         <button
           onClick={advance}
@@ -129,6 +132,24 @@ export function ProjectLifecycleWidget({
           Advance phase <ArrowRight className="h-3 w-3" />
         </button>
       </div>
+
+      <div className="mt-2 text-[11.5px] text-os-muted">
+        Next action: <span className="text-os-text">{summary.nextAction}</span>
+      </div>
+
+      {summary.requiredEvidence && (
+        <div className="mt-2 flex items-center gap-2 text-[11px]">
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${summary.requiredEvidence.satisfied ? 'bg-os-ok' : 'bg-os-err'}`} />
+          <span className="text-os-dim">Required evidence:</span>
+          <span className="text-os-text">{summary.requiredEvidence.kind}</span>
+          <span className={summary.requiredEvidence.satisfied ? 'text-os-ok' : 'text-os-err'}>
+            {summary.requiredEvidence.satisfied ? 'satisfied' : 'not yet satisfied'}
+          </span>
+          {summary.requiredEvidence.latestSummary && (
+            <span className="text-os-dim">— {summary.requiredEvidence.latestSummary}</span>
+          )}
+        </div>
+      )}
 
       {error && <p className="mt-2 font-mono text-[10.5px] text-os-err">{error}</p>}
 

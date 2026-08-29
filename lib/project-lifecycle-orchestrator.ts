@@ -158,6 +158,17 @@ export interface ProjectLifecycleSummary {
   openTasks: LifecycleTask[];
   pendingApprovals: LifecycleApproval[];
   updatedAt: string;
+  /** What real evidence this phase needs to leave, and whether it has it
+   *  yet — null when the phase has no evidence requirement (a judgment
+   *  call phase). Mirrors evidenceSatisfied()'s own logic exactly so the
+   *  UI can never show "satisfied" when advancePhase would actually
+   *  refuse, or vice versa. */
+  requiredEvidence: { kind: PhaseEvidenceKind; satisfied: boolean; latestSummary: string | null } | null;
+  /** One human-readable sentence naming the actual next step — a pending
+   *  approval, missing/failing evidence, or "ready to advance" — read
+   *  straight off the same gates advancePhase() itself checks, never a
+   *  separately-maintained guess. */
+  nextAction: string;
 }
 
 /** One project's full lifecycle picture: phase, who is responsible for it
@@ -166,6 +177,31 @@ export function projectLifecycleSummary(db: Db, projectId: string): ProjectLifec
   const state = getOrCreateLifecycleState(db, projectId);
   const tasks = db.lifecycleTasks.byProjectId(projectId).filter((t) => t.status !== 'done');
   const approvals = db.lifecycleApprovals.byProjectId(projectId).filter((a) => a.status === 'pending');
+
+  const evidenceKind = PHASE_EXIT_EVIDENCE[state.currentPhase];
+  const requiredEvidence = evidenceKind
+    ? (() => {
+        const rows = db.lifecycleEvidence.byProjectPhase(projectId, state.currentPhase);
+        const latest = rows[0] ?? null;
+        return { kind: evidenceKind, satisfied: latest?.ok === true, latestSummary: latest?.summary ?? null };
+      })()
+    : null;
+
+  const blockingApproval = APPROVAL_GATED_PHASES.has(state.currentPhase)
+    ? approvals.find((a) => a.phase === state.currentPhase)
+    : undefined;
+
+  let nextAction: string;
+  if (isLastPhase(state.currentPhase)) {
+    nextAction = `Project is at the final phase (${state.currentPhase}) — no further advance possible.`;
+  } else if (requiredEvidence && !requiredEvidence.satisfied) {
+    nextAction = `Waiting on passing '${requiredEvidence.kind}' evidence before this phase can advance.`;
+  } else if (blockingApproval) {
+    nextAction = `Waiting on approval: "${blockingApproval.title}".`;
+  } else {
+    nextAction = `Ready to advance to the next phase.`;
+  }
+
   return {
     projectId,
     currentPhase: state.currentPhase,
@@ -173,5 +209,7 @@ export function projectLifecycleSummary(db: Db, projectId: string): ProjectLifec
     openTasks: tasks,
     pendingApprovals: approvals,
     updatedAt: state.updatedAt,
+    requiredEvidence,
+    nextAction,
   };
 }

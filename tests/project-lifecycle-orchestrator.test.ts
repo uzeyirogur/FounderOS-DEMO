@@ -128,4 +128,50 @@ describe('project-lifecycle-orchestrator', () => {
     expect(summary.pendingApprovals).toHaveLength(0);
     expect(summary.responsibleAgentId).toBe('idea-lab-agent');
   });
+
+  it('projectLifecycleSummary reports required evidence and next action for an evidence-gated phase with none recorded yet', () => {
+    db.lifecycleState.upsert({
+      projectId: 'proj-g',
+      currentPhase: 'implementation',
+      history: [{ phase: 'implementation', enteredAt: new Date().toISOString() }],
+      updatedAt: new Date().toISOString(),
+    });
+    const summary = projectLifecycleSummary(db, 'proj-g');
+    expect(summary.requiredEvidence).toEqual({ kind: 'build_test', satisfied: false, latestSummary: null });
+    expect(summary.nextAction).toMatch(/build_test/i);
+  });
+
+  it('projectLifecycleSummary reports required evidence as satisfied once a passing row is recorded, and names it in nextAction', () => {
+    db.lifecycleState.upsert({
+      projectId: 'proj-h',
+      currentPhase: 'qa',
+      history: [{ phase: 'qa', enteredAt: new Date().toISOString() }],
+      updatedAt: new Date().toISOString(),
+    });
+    recordEvidence(db, { projectId: 'proj-h', phase: 'qa', kind: 'qa_report', ok: true, summary: 'all green', recordedByAgentId: 'qa-ui-review' });
+    const summary = projectLifecycleSummary(db, 'proj-h');
+    expect(summary.requiredEvidence).toEqual({ kind: 'qa_report', satisfied: true, latestSummary: 'all green' });
+    expect(summary.nextAction).toMatch(/advance/i);
+  });
+
+  it('projectLifecycleSummary reports requiredEvidence null and a judgment-call nextAction for a phase with no evidence requirement', () => {
+    getOrCreateLifecycleState(db, 'proj-i');
+    const summary = projectLifecycleSummary(db, 'proj-i');
+    expect(summary.requiredEvidence).toBeNull();
+  });
+
+  it('projectLifecycleSummary names the pending approval in nextAction when one is blocking', () => {
+    db.lifecycleState.upsert({
+      projectId: 'proj-j',
+      currentPhase: 'deployment_approval',
+      history: [{ phase: 'deployment_approval', enteredAt: new Date().toISOString() }],
+      updatedAt: new Date().toISOString(),
+    });
+    db.lifecycleApprovals.insert({
+      id: 'appr-j', projectId: 'proj-j', phase: 'deployment_approval', title: 'Ship it', description: '',
+      requestedByAgentId: 'conductor', status: 'pending', createdAt: new Date().toISOString(), decidedAt: null, decidedBy: null, notes: null,
+    });
+    const summary = projectLifecycleSummary(db, 'proj-j');
+    expect(summary.nextAction).toMatch(/approv/i);
+  });
 });
