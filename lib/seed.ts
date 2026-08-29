@@ -588,15 +588,19 @@ const agents: Agent[] = [
 ];
 
 // ── Humans in the process ─────────────────────────────────────────────────────
-// Real heads (Marco, Nadia) plus larp-first seeds for the roles Alex will hire
-// into (rename when the real person lands). Tools use the agents' slug
-// namespace so the graph chain still ends in tools for humans too.
+// Real seats a prior operator's demo data invented specific fake names for
+// (Marco, Nadia, Mia Torres, Dana Whitfield, Rae Winters) — removed as demo
+// data. These roles are real (a person really does own sales calls, content
+// approval, escalations, monthly books, and client relationships), so the
+// role/department/tool/SOP-task structure stays; `name` honestly reads
+// "role vacant" instead of a name nobody here actually goes by. Rename the
+// `name` field when a real person is hired into the seat.
 const people: Person[] = [
-  { id: 'person-marco', departmentId: 'dept-sales', name: 'Marco', role: 'Head of Sales', tools: ['recall'] },
-  { id: 'person-nadia', departmentId: 'dept-marketing-growth', name: 'Nadia', role: 'Head of Growth & Marketing', tools: ['dmflow'] },
-  { id: 'person-mia', departmentId: 'dept-comms', name: 'Mia Torres', role: 'Executive Assistant', tools: ['imap', 'slack'] },
-  { id: 'person-dana', departmentId: 'dept-finance', name: 'Dana Whitfield', role: 'Bookkeeper', tools: ['stripe'] },
-  { id: 'person-rae', departmentId: 'dept-clients', name: 'Rae Winters', role: 'Account Manager', tools: ['recall'] },
+  { id: 'person-marco', departmentId: 'dept-sales', name: 'Head of Sales — role vacant', role: 'Head of Sales', tools: ['recall'] },
+  { id: 'person-nadia', departmentId: 'dept-marketing-growth', name: 'Head of Growth & Marketing — role vacant', role: 'Head of Growth & Marketing', tools: ['dmflow'] },
+  { id: 'person-mia', departmentId: 'dept-comms', name: 'Executive Assistant — role vacant', role: 'Executive Assistant', tools: ['imap', 'slack'] },
+  { id: 'person-dana', departmentId: 'dept-finance', name: 'Bookkeeper — role vacant', role: 'Bookkeeper', tools: ['stripe'] },
+  { id: 'person-rae', departmentId: 'dept-clients', name: 'Account Manager — role vacant', role: 'Account Manager', tools: ['recall'] },
 ];
 
 // ── SOP tasks — every department role's job, written out ─────────────────────

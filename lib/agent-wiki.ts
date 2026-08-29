@@ -48,7 +48,7 @@ export function buildAgentWiki(agent: Agent): AgentWiki {
 // Short, real-ready summaries for the tools agents lean on most. Anything not
 // listed falls back to a generic line — swap for live tool docs later.
 const TOOL_SUMMARY: Record<string, string> = {
-  attio: 'CRM of record — companies, people, and deals across Vantage + Launchpad Cohort.',
+  attio: 'CRM of record — companies, people, and deals across both business lines.',
   gbrain: 'The G-Brain CLI — hybrid search over the markdown brain-store + Supabase second brain.',
   'brain-store': 'Local markdown knowledge base; the source of truth G-Brain syncs from.',
   supabase: 'Postgres + pgvector "second brain" holding chunked embeddings.',

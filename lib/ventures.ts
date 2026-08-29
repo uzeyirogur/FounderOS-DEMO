@@ -1,5 +1,5 @@
 /**
- * Alex's two active income sources — the venture lens over the OS.
+ * Two active income sources — the venture lens over the OS.
  *
  * One database, one G-Brain, one agent roster: ventures never partition the
  * data. They are saved filters — each one names the agents that serve it per
@@ -7,8 +7,14 @@
  * focus. Switching venture in the hierarchy or life map swaps which crew
  * lights up; the agents themselves keep full visibility of everything.
  *
- * Personal Brand (brand-deals) was retired from this lens — the OS focuses on
- * Vantage (the agency) and Launchpad Cohort (the mentorship).
+ * Labels/colors are deliberately neutral business-type descriptors, not a
+ * brand identity — the named brands a prior operator used here (see
+ * lib/agents/real.ts sales-agent) were removed 2026-08-28 as demo data.
+ * `id`/`brainTag` stay as `vantage`/`launchpad-cohort` because the funnel
+ * schema (FunnelVentureSchema), seeded funnel/finance rows, and G-Brain tags
+ * already key off them — renaming the id would be a breaking schema change,
+ * not a UI cleanup. The operator names their own ventures whenever real ones
+ * replace these two rows.
  */
 import type { LifeArea } from '@/lib/life-map';
 import { LIFE_AREAS } from '@/lib/life-map';
@@ -21,7 +27,7 @@ export type Venture = {
   detail: string;
   /** Tag that marks this venture's pages inside the single shared G-Brain. */
   brainTag: string;
-  /** Current executive priorities — edit freely, this is Alex's list. */
+  /** Current executive priorities — edit freely, this is the operator's list. */
   focus: string[];
   /** life-area id → the agents working that area FOR this venture. */
   areaAgents: Record<string, string[]>;
@@ -33,15 +39,15 @@ const SHARED_KNOWLEDGE = ['data-agent', 'markdown-auditor', 'vector-auditor'];
 export const VENTURES: Venture[] = [
   {
     id: 'vantage',
-    label: 'Vantage',
+    label: 'Client Services',
     kind: 'AI agency',
-    // Brand green sampled from the Vantage logo.
-    color: '#00ffaa',
+    // Neutral slate-blue — no brand identity, see file header.
+    color: '#5b8def',
     detail: 'Client AI builds and delivery — the agency arm.',
     brainTag: 'vantage',
     focus: [
       'Active client builds shipped on schedule',
-      'Pipeline: proposals out, deals advanced in Ledger',
+      'Pipeline: proposals out, deals advanced in CRM',
       'Delivery quality — every handoff documented in G-Brain',
     ],
     areaAgents: {
@@ -55,10 +61,10 @@ export const VENTURES: Venture[] = [
   },
   {
     id: 'launchpad-cohort',
-    label: 'Launchpad Cohort',
+    label: 'Mentorship Program',
     kind: 'Mentorship program',
-    // Brand crimson — hsl(355 70% 50%) from the live LC site theme + brand guide.
-    color: '#d9263f',
+    // Neutral amber — no brand identity, see file header.
+    color: '#d9a441',
     detail: 'The mentorship — students, curriculum, community.',
     brainTag: 'launchpad-cohort',
     focus: [
