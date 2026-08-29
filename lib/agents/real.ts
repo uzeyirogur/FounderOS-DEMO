@@ -146,8 +146,15 @@ export const realAgents: RuntimeAgent[] = [
     departmentId: 'dept-tech',
     async run() {
       const [stack, status] = await Promise.all([localStackStatus(), Promise.resolve(aggregateStatus(getDb()))]);
+      // ok reflects whether the conductor's own job — aggregating real
+      // cross-system blocker counts — actually succeeded, never an
+      // unrelated local-stack tool inventory. localStackStatus() honestly
+      // reporting most/all optional local dev tools as disconnected on a
+      // given machine is real, expected data, not a conductor failure —
+      // tying ok to it created the same self-inflicted-failure class as
+      // the executive-reporter bug (see conductor-run-ok.test.ts).
       return {
-        ok: stack.state === 'connected',
+        ok: true,
         summary:
           status.totalBlockers === 0
             ? `All clear — nothing waiting on a decision. Instance hosts: ${stack.detail}`
