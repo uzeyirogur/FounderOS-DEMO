@@ -1532,6 +1532,9 @@ export function openDb(path: string) {
         id,
       );
     },
+    markFailed(id: string): void {
+      db.prepare("UPDATE notifications SET status = 'failed' WHERE id = ?").run(id);
+    },
     /** Records a decision on an approval_request row. Never called for
      *  daily_report/alert kinds by any route — see the architecture doc:
      *  a decision must be traceable to who made it (decidedBy), and the raw

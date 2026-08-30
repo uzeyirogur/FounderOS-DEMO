@@ -58,6 +58,7 @@ if (inProcessSchedulerEnabled(process.env)) {
   const { getDb } = await import('@/lib/data');
   const { realAgents } = await import('@/lib/agents/real');
   const { captureError } = await import('@/lib/monitoring');
+  const { runWhatsAppDeliveryTick } = await import('@/lib/whatsapp-delivery');
 
   const db = getDb();
   startInProcessScheduler(db, realAgents, {
@@ -65,6 +66,23 @@ if (inProcessSchedulerEnabled(process.env)) {
       if (result.fired.length > 0) {
         console.log(`[scheduler] tick fired: ${result.fired.join(', ')}`);
       }
+      // Piggybacks the WhatsApp delivery sweep on the same tick cadence —
+      // no separate interval needed. Honestly no-ops (skipped:non-null,
+      // logged once) when WhatsApp isn't configured; a real send/fail is
+      // logged per notification. See docs/WHATSAPP_CHANNEL_ARCHITECTURE.md.
+      runWhatsAppDeliveryTick(db)
+        .then((delivery) => {
+          if (delivery.sent.length > 0) {
+            console.log(`[whatsapp-delivery] sent ${delivery.sent.length} notification(s)`);
+          }
+          if (delivery.failed.length > 0) {
+            console.error(`[whatsapp-delivery] ${delivery.failed.length} notification(s) failed:`, delivery.failed);
+          }
+        })
+        .catch((err) => {
+          captureError(db, 'scheduler', 'whatsapp-delivery-tick', err);
+          console.error('[whatsapp-delivery] tick failed:', err instanceof Error ? err.message : String(err));
+        });
     },
     onError: (err) => {
       captureError(db, 'scheduler', 'in-process-tick', err);
