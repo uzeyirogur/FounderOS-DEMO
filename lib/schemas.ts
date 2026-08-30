@@ -135,6 +135,26 @@ export const AgentRunSchema = z.object({
   summary: z.string(),
 });
 
+// ── Production monitoring: real error log ────────────────────────────────
+// A single real sink for unhandled exceptions across the app — API route
+// handlers, the in-process scheduler, and (via a client-side reporter) React
+// render errors. Deliberately separate from agent_runs: that table is an
+// AGENT's own self-reported run outcome; this one is the app's OWN
+// operational health, independent of whether any agent ran at all. Never
+// stores a raw request body or headers (could contain secrets/PII) — only
+// the error's own message/stack and a short, deliberately-chosen context tag.
+export const ErrorLogSourceSchema = z.enum(['api_route', 'scheduler', 'client', 'server_unhandled']);
+export const ErrorLogSchema = z.object({
+  id: z.string().min(1),
+  source: ErrorLogSourceSchema,
+  context: z.string().min(1), // e.g. the route path or "scheduler-tick"
+  message: z.string().min(1),
+  stack: z.string().nullable().default(null),
+  createdAt: z.string().min(1),
+});
+export type ErrorLogSource = z.infer<typeof ErrorLogSourceSchema>;
+export type ErrorLog = z.infer<typeof ErrorLogSchema>;
+
 export const BroadcastReplySchema = z.object({
   id: z.string().min(1),
   broadcastId: z.string().min(1),

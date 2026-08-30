@@ -4,6 +4,7 @@ import {
   AgentCronSchema,
   AgentMessageSchema,
   AgentRunSchema,
+  ErrorLogSchema,
   AgentSchema,
   AgentTaskSchema,
   BroadcastReplySchema,
@@ -54,6 +55,7 @@ import {
   type AgentCron,
   type AgentMessage,
   type AgentRun,
+  type ErrorLog,
   type AgentTask,
   type Broadcast,
   type BroadcastReply,
@@ -181,6 +183,14 @@ CREATE TABLE IF NOT EXISTS agent_runs (
   finished_at TEXT NOT NULL,
   ok INTEGER NOT NULL,
   summary TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS error_logs (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  context TEXT NOT NULL,
+  message TEXT NOT NULL,
+  stack TEXT,
+  created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS agent_messages (
   id TEXT PRIMARY KEY,
@@ -886,6 +896,41 @@ export function openDb(path: string) {
       db.prepare(
         'INSERT OR REPLACE INTO agent_runs (id, agent_id, started_at, finished_at, ok, summary) VALUES (?, ?, ?, ?, ?, ?)',
       ).run(run.id, run.agentId, run.startedAt, run.finishedAt, run.ok ? 1 : 0, run.summary);
+    },
+  };
+
+  const rowToErrorLog = (r: any): ErrorLog =>
+    ErrorLogSchema.parse({
+      id: r.id,
+      source: r.source,
+      context: r.context,
+      message: r.message,
+      stack: r.stack,
+      createdAt: r.created_at,
+    });
+
+  /** Real production error sink — see ErrorLogSchema for why this is
+   *  separate from agent_runs. recent() caps at 500 rows by construction
+   *  (never an unbounded SELECT * for a monitoring dashboard). prune()
+   *  deletes rows older than a cutoff, for a scheduled retention job so
+   *  a small persistent volume never fills up with error history. */
+  const errorLogs = {
+    recent(limit = 100): ErrorLog[] {
+      return db
+        .prepare('SELECT * FROM error_logs ORDER BY created_at DESC, rowid DESC LIMIT ?')
+        .all(Math.min(limit, 500))
+        .map(rowToErrorLog);
+    },
+    insert(e: ErrorLog): void {
+      const parsed = ErrorLogSchema.parse(e);
+      db.prepare(
+        'INSERT OR REPLACE INTO error_logs (id, source, context, message, stack, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      ).run(parsed.id, parsed.source, parsed.context, parsed.message, parsed.stack, parsed.createdAt);
+    },
+    prune(olderThanDays: number): number {
+      const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
+      const result = db.prepare('DELETE FROM error_logs WHERE created_at < ?').run(cutoff);
+      return result.changes;
     },
   };
 
@@ -2452,6 +2497,7 @@ export function openDb(path: string) {
     personas,
     phases,
     agentRuns,
+    errorLogs,
     agentMessages,
     agentTasks,
     agentCrons,

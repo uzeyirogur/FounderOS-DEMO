@@ -21,6 +21,7 @@ const SCREENS: { path: string; name: string }[] = [
   { path: '/content', name: 'Content Studio' },
   { path: '/notifications', name: 'Notifications / Approvals' },
   { path: '/work', name: 'Work / Personal' },
+  { path: '/monitoring', name: 'Monitoring' },
 ];
 
 async function collectConsoleErrors(page: Page): Promise<string[]> {
