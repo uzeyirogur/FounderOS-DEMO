@@ -41,6 +41,8 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   // gate pages and APIs; skip Next internals + static files so the
-  // challenge page itself can render
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.png|.*\\.png$|.*\\.svg$).*)'],
+  // challenge page itself can render, and skip /api/health so a hosting
+  // platform's liveness probe (which sends no auth) is never itself
+  // blocked — a probe getting a 401 looks identical to "the app is down".
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.png|.*\\.png$|.*\\.svg$|api/health).*)'],
 };

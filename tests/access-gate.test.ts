@@ -61,4 +61,13 @@ describe('middleware wiring', () => {
     expect(src).toContain('_next');
     expect(src).toMatch(/matcher/);
   });
+
+  test('/api/health is excluded from the gate — a hosting platform probe must never see a 401', () => {
+    // Extract the matcher regex source and confirm it does not match
+    // /api/health, the same way Next's matcher itself would apply it.
+    const match = src.match(/matcher:\s*\[\s*'([^']+)'/);
+    expect(match, 'expected a matcher pattern in middleware.ts config').toBeTruthy();
+    const pattern = new RegExp('^' + match![1] + '$');
+    expect(pattern.test('/api/health')).toBe(false);
+  });
 });
