@@ -81,17 +81,49 @@ export async function attemptPublish(db: Db, planId: string, publishFn: PublishF
 }
 
 /**
- * attemptPublish wired to a real channel connector. Today this is honestly
- * not_configured: lib/connectors/zernio.ts implements only READ endpoints
- * (accounts, history) — no create-post/publish call exists yet, and one is
- * not invented here. Once a real publish endpoint is wired to a connector,
- * this function is the only place that needs to change; the approval gate
- * in attemptPublish() above is unaffected.
+ * attemptPublish wired to real per-platform connectors. Each platform in
+ * the plan is dispatched to its own real official-API connector
+ * (Instagram Graph API, X API v2, LinkedIn Posts API — see
+ * lib/connectors/*-publish.ts); a platform with no real connector yet
+ * (TikTok, YouTube) is honestly not_configured, never invented. A plan
+ * targeting multiple platforms succeeds only if EVERY platform's publish
+ * call succeeds — a partial publish is reported as a failure naming
+ * which platform(s) failed, never silently reported as success.
  */
 export async function attemptPublishLive(db: Db, planId: string): Promise<AttemptPublishResult> {
-  return attemptPublish(db, planId, async () => ({
-    ok: false,
-    reason:
-      'No real publish connector is wired yet — lib/connectors/zernio.ts only reads (accounts/history), it has no create-post endpoint implemented. Approve/reject still work; live posting needs that connector built first.',
-  }));
+  return attemptPublish(db, planId, async (plan) => {
+    const { publishToXLive } = await import('@/lib/connectors/x-publish');
+    const { publishToLinkedInLive } = await import('@/lib/connectors/linkedin-publish');
+
+    const failures: string[] = [];
+    for (const adaptation of plan.adaptations) {
+      let result: { ok: true; postId: string } | { ok: false; reason: string };
+      switch (adaptation.platform) {
+        case 'instagram': {
+          // Instagram's Graph API requires a real image/video URL — this
+          // plan shape (PlatformAdaptation) carries only a caption today,
+          // no media URL. Rather than invent a placeholder image (which
+          // would silently post garbage to a real account), this is an
+          // honest not_configured gap until PublishPlan carries a real
+          // media URL sourced from the ContentPiece's own output.
+          result = { ok: false, reason: 'Instagram publish needs a real media URL on the plan — not yet wired from ContentPiece.output.' };
+          break;
+        }
+        case 'twitter':
+          result = await publishToXLive({ text: adaptation.caption });
+          break;
+        case 'linkedin':
+          result = await publishToLinkedInLive({ text: adaptation.caption });
+          break;
+        default:
+          result = { ok: false, reason: `No real publish connector wired for platform "${adaptation.platform}" yet.` };
+      }
+      if (!result.ok) failures.push(`${adaptation.platform}: ${result.reason}`);
+    }
+
+    if (failures.length > 0) {
+      return { ok: false, reason: failures.join(' | ') };
+    }
+    return { ok: true };
+  });
 }
