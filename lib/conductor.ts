@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { openDb } from '@/lib/db';
 import type { DelegatedTask, DelegatedTaskPriority } from '@/lib/schemas';
 
