@@ -226,7 +226,12 @@ export function runNpmAuditLive(cwd: string): Promise<NpmAuditSummary | null> {
     // stdout at all. That silently looked identical to "npm audit ran and
     // found nothing" (both produce a null/empty parse) instead of "this
     // command never actually ran" — found by a real (non-mocked) test.
-    execFile('npm', ['audit', '--json'], { cwd, timeout: 60_000, maxBuffer: 10 * 1024 * 1024, shell: true }, (_err, stdout) => {
+    // env is explicitly set to a clean NODE_ENV=production rather than
+    // inheriting the calling process's environment (see the same fix in
+    // qa-review-orchestrator.ts, found live during the go-live sprint's
+    // end-to-end project test): a security scan should never silently
+    // pick up the orchestrator's own dev-mode env vars.
+    execFile('npm', ['audit', '--json'], { cwd, timeout: 60_000, maxBuffer: 10 * 1024 * 1024, shell: true, env: { ...process.env, NODE_ENV: 'production' } }, (_err, stdout) => {
       // npm audit exits non-zero when vulnerabilities are found — that is
       // expected and NOT a real error; parse stdout regardless of exit code.
       resolve(stdout ? parseNpmAuditJson(stdout) : null);

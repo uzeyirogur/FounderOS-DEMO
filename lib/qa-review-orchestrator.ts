@@ -173,13 +173,35 @@ export async function runQaReviewLive(projectDir: string): Promise<QaReport> {
         }
         return;
       }
-      execFile(cmd, args, { cwd: opts.cwd, maxBuffer: 1024 * 1024 * 50, shell: true }, (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(`${error.message}\n${stderr}`.trim()));
-          return;
-        }
-        resolve({ stdout, stderr });
-      });
+      execFile(
+        cmd,
+        args,
+        {
+          cwd: opts.cwd,
+          maxBuffer: 1024 * 1024 * 50,
+          shell: true,
+          // Real bug found live: without this, the spawned child inherits
+          // the CALLING process's full environment — including NODE_ENV.
+          // When FounderOS itself runs via `npm run dev`
+          // (NODE_ENV=development, set by Next's dev CLI), a QA review
+          // triggered through the running app spawned the target
+          // project's `next build`/`npm test` with NODE_ENV=development
+          // still set, which produced a real, reproducible Next.js build
+          // failure ("<Html> should not be imported outside of
+          // pages/_document" — a documented dev/prod env-mode confusion
+          // symptom). A build/test run must always see a clean
+          // production-shaped environment regardless of what environment
+          // the orchestrator that triggered it happens to be running in.
+          env: { ...process.env, NODE_ENV: 'production' },
+        },
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(new Error(`${error.message}\n${stderr}`.trim()));
+            return;
+          }
+          resolve({ stdout, stderr });
+        },
+      );
     });
 
   const stack = detectProjectStack(projectDir);
