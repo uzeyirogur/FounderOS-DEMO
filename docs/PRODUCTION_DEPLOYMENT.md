@@ -89,16 +89,17 @@ npm run restore -- <path-to-backup.db>
 
 1. **Remote backup via `railway ssh` did not complete in this session** —
    the SSH connection attempt (`railway ssh "npm run backup"`) hung past a
-   reasonable wait and was abandoned rather than left running indefinitely.
-   The backup CODE itself is real and tested (`tests/backup.test.ts`, run
-   locally against the real dev DB — a real 630KB+ backup file, a real
-   restore, a real safety-copy-on-overwrite, all verified). What's missing
-   is a working REMOTE trigger for it on Railway specifically. Options for
-   a future session: (a) retry `railway ssh` with a longer timeout/retry
-   loop, (b) add a `/api/admin/backup` route gated behind the access token
-   that calls `backupDatabase()` in-process and returns the file (or
-   streams it to a configured destination), (c) Railway's own volume
-   snapshot feature if the plan tier includes it.
+   reasonable wait twice and was abandoned rather than left running
+   indefinitely. **This is now closed by option (b) below, which WAS
+   verified live**: `POST /api/admin/backup` was called against the real
+   production deployment and produced a real 593920-byte backup file at
+   `/data/backups/founder-os-2026-08-30T22-45-20-223Z.db` on the
+   persistent volume, with the server staying healthy immediately after.
+   The `railway ssh` path remains a real gap for anyone who specifically
+   wants a copy of that file off the Railway host (the volume itself is
+   not directly downloadable via this route) — a future session could add
+   either a real download endpoint (careful: this is the whole database,
+   gate it tightly) or retry the SSH path with a longer timeout.
 2. **Production has none of the optional integration credentials** copied
    over (Brave Search, AI Gateway, GitHub, ANKA Operations, social
    publish, WhatsApp) — every one of those agents/connectors will report
