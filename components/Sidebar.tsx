@@ -186,7 +186,7 @@ export function Sidebar() {
             <div>
               <div className="text-[13px] font-bold tracking-[0.14em]">FOUNDER OS</div>
               <div className="mt-[3px] whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.16em] text-os-dim">
-                v3 · Operator Mode
+                v3 · Operatör Modu
               </div>
             </div>
           </div>
@@ -194,8 +194,8 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'}
+          aria-label={collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'}
           aria-expanded={!collapsed}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm-t border border-transparent text-os-dim transition-colors hover:border-os-border hover:bg-os-surface2 hover:text-os-text"
         >
@@ -203,11 +203,11 @@ export function Sidebar() {
         </button>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 pb-2">
-        <NavGroup title="Operate" items={NAV_OPERATE} pathname={pathname} collapsed={collapsed} onTip={setTip} />
-        <NavGroup title="Agents" items={NAV_AGENTS} pathname={pathname} collapsed={collapsed} onTip={setTip} />
-        <NavGroup title="Intelligence" items={NAV_INTELLIGENCE} pathname={pathname} collapsed={collapsed} onTip={setTip} />
-        <NavGroup title="System" items={NAV_SYSTEM} pathname={pathname} collapsed={collapsed} onTip={setTip} />
-        <NavGroup title="Variants" items={NAV_LIBRARY} pathname={pathname} collapsed={collapsed} onTip={setTip} />
+        <NavGroup title="Operasyon" items={NAV_OPERATE} pathname={pathname} collapsed={collapsed} onTip={setTip} />
+        <NavGroup title="Ajan Detayları" items={NAV_AGENTS} pathname={pathname} collapsed={collapsed} onTip={setTip} />
+        <NavGroup title="Bilgi ve Analiz" items={NAV_INTELLIGENCE} pathname={pathname} collapsed={collapsed} onTip={setTip} />
+        <NavGroup title="Diğer" items={NAV_SYSTEM} pathname={pathname} collapsed={collapsed} onTip={setTip} />
+        <NavGroup title="Varyantlar" items={NAV_LIBRARY} pathname={pathname} collapsed={collapsed} onTip={setTip} />
       </nav>
       <div
         className={`flex flex-col gap-2 border-t border-os-border py-3.5 ${
@@ -216,14 +216,14 @@ export function Sidebar() {
       >
         <div className="flex items-center gap-2 whitespace-nowrap font-mono text-[10px] text-os-muted">
           <span className="dot ok pulse" />
-          {!collapsed && <>{live ? `${live.up}/${live.total}` : '—/—'} systems live</>}
+          {!collapsed && <>{live ? `${live.up}/${live.total}` : '—/—'} bağlantı aktif</>}
         </div>
         {!collapsed && (
           // The host is read at runtime, so a deployed instance never claims to
           // be localhost. Wraps rather than nowrap, which used to clip the line
           // off the edge of the rail.
           <div className="break-words font-mono text-[10px] leading-relaxed text-os-dim">
-            {host ?? '…'} · sqlite · real agents
+            {host ?? '…'} · sqlite · gerçek ajanlar
           </div>
         )}
       </div>

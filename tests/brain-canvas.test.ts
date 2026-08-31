@@ -55,7 +55,7 @@ describe('/doctor keeps the health readouts', () => {
   test('is reachable from the sidebar', () => {
     const nav = read('lib/nav.ts');
     expect(nav).toContain("href: '/doctor'");
-    expect(nav).toContain('Doctor');
+    expect(nav).toContain('Sistem Sağlığı');
   });
 });
 

@@ -10,22 +10,35 @@ describe('shared nav config', () => {
     );
   });
 
-  test('Agents group holds the roster and the org chart', () => {
-    expect(NAV_AGENTS.map((n) => n.href)).toEqual(['/agents', '/tasks', '/skills', '/org']);
+  test('Operate is the trimmed daily flow: Home, Projects, Tasks, Agents, Notifications, Monitoring, Content, Connections', () => {
+    // 2026-08-31 dashboard audit: the primary sidebar group holds only the
+    // "what do I check daily" routes; the roster/org-chart/knowledge detail
+    // pages moved to their own groups (still reachable, not duplicated here).
+    expect(NAV_OPERATE.map((n) => n.href)).toEqual([
+      '/',
+      '/projects',
+      '/tasks',
+      '/agents',
+      '/notifications',
+      '/monitoring',
+      '/content',
+      '/integrations',
+    ]);
   });
 
-  test('Intelligence group holds G-Brain and its Doctor', () => {
-    // the graph tab stays a single uninterrupted canvas; the health readouts
-    // moved to /doctor rather than being dropped
-    expect(NAV_INTELLIGENCE.map((n) => n.href)).toEqual(['/brain', '/doctor']);
+  test('Agents group holds skills and the org chart (roster itself moved to Operate)', () => {
+    expect(NAV_AGENTS.map((n) => n.href)).toEqual(['/skills', '/org']);
   });
 
-  test('Finances lives in Operate; Agents, Org Chart, and G-Brain moved to their own groups', () => {
-    const hrefs = NAV_OPERATE.map((n) => n.href);
-    expect(hrefs).toContain('/finances');
-    expect(hrefs).not.toContain('/agents');
-    expect(hrefs).not.toContain('/org');
-    expect(hrefs).not.toContain('/brain');
+  test('Intelligence group holds G-Brain, its Doctor, Capabilities, and Analytics', () => {
+    expect(NAV_INTELLIGENCE.map((n) => n.href)).toEqual(['/brain', '/doctor', '/capabilities', '/analytics']);
+  });
+
+  test('every non-primary route from the old flat list is still reachable somewhere in nav', () => {
+    const all = new Set(NAV_ORDER);
+    for (const href of ['/finances', '/social', '/content', '/comms', '/funnel', '/workflows', '/roadmap', '/reference']) {
+      expect(all.has(href), `${href} should still be reachable from the sidebar`).toBe(true);
+    }
   });
 
   test('digit shortcuts (1–9) map to the first 9 views in visible order', () => {
@@ -40,17 +53,10 @@ describe('shared nav config', () => {
     }
   });
 
-  test('regression: Social, Content, Finances stay digit-reachable', () => {
-    for (const href of ['/social', '/content', '/finances']) {
+  test('regression: Content and Connections stay digit-reachable (the daily operator flow)', () => {
+    for (const href of ['/content', '/integrations']) {
       expect(DIGIT_VIEWS, `${href} must be reachable by digit`).toContain(href);
     }
-  });
-
-  test('Funnel sits right after Comms and ahead of Social (Alex, 2026-07-02)', () => {
-    const hrefs = NAV_OPERATE.map((n) => n.href);
-    expect(hrefs.indexOf('/funnel')).toBe(hrefs.indexOf('/comms') + 1);
-    // Social stays downstream of Funnel; a concurrent Workflows item may sit between them.
-    expect(hrefs.indexOf('/funnel')).toBeLessThan(hrefs.indexOf('/social'));
   });
 
   test('CommandPalette consumes the shared DIGIT_VIEWS (no private stale copy)', () => {
