@@ -59,7 +59,45 @@ Both are documented in detail in their own commit messages
 | `FOUNDER_OS_DB` | `/data/founder-os.db` — points SQLite at the persistent volume | Yes |
 | `FOUNDER_OS_INPROCESS_SCHEDULER` | `1` — enables the in-process scheduler | Yes |
 | `NODE_ENV` | `production` | Yes |
-| `BRAVE_SEARCH_API_KEY`, `AI_GATEWAY_API_KEY`, `GITHUB_TOKEN`, `ANKA_ADMIN_TOKEN`/`ANKA_ADMIN_BASE_URL`, social/WhatsApp publish credentials | Real integrations (research, agent chat, GitHub status, ANKA Operations, social publishing, WhatsApp) | **Not yet copied to production** — deliberately left for the operator to decide per-credential (see docs/PRODUCTION_SOCIAL_PUBLISHING.md and docs/WHATSAPP_CHANNEL_ARCHITECTURE.md). Local dev has some of these; production intentionally does not yet. |
+| `BRAVE_SEARCH_API_KEY` | Web research (Product & Competitor Research, AI Intelligence discovery, Growth & Marketing, Ad/Creative Research) | **Yes** (2026-08-31) — Alex's existing key, copied verbatim (not rotated, Alex's explicit call). Verified live: `product-competitor-research` agent run returns `ok:true` / "Brave Search API key valid." |
+| `GITHUB_TOKEN` | AI Intelligence repo/release discovery | **Yes** (2026-08-31) — Alex's existing fine-grained PAT, copied verbatim (not rotated). Verified live: `ai-intelligence` agent run returns `ok:true` / "Token valid · 5000/5000 API calls remaining this hour." |
+| `AI_GATEWAY_API_KEY`, `ANKA_ADMIN_TOKEN`/`ANKA_ADMIN_BASE_URL`, social/WhatsApp publish credentials | Agent chat (LLM Gateway), ANKA Operations, social publishing, WhatsApp | **Not yet copied to production** — ANKA Operations is deliberately DEFERRED this sprint (product/venture priority instead — see docs/PRODUCTION_SOCIAL_PUBLISHING.md and docs/WHATSAPP_CHANNEL_ARCHITECTURE.md for the other two). |
+
+### Priority-9 sprint: real production research chain (2026-08-31)
+
+Both credentials above were set via `railway variables --set` (values piped from
+`.env.local` through a temp file that was read but never printed to any log or
+chat output), then the service was **redeployed** (`railway redeploy --yes`) —
+a plain `service restart` reuses the already-built container image and does
+**not** pick up new variables; only a redeploy re-snapshots env into the
+running process. Confirmed by three real production actions on the redeployed
+instance:
+
+1. **Real SaaS competitor research** — a real test project
+   (`ai-meeting-notes-saas-test`) was registered via `POST /api/projects`, then
+   `POST /api/growth-briefs/research` ran two real Brave Search queries against
+   it ("AI meeting notes SaaS competitors 2026" and "...pricing plans monthly
+   comparison"). Real, current (2026) competitor names, prices, and strengths
+   came back with real source URLs (Otter.ai, Fireflies, Fathom, Granola,
+   Avoma, tl;dv, and others) — stored as real `GrowthBrief` rows, not invented.
+2. **AI Intelligence capability discovery** — `POST /api/capabilities/discover`
+   for `meeting-transcription-diarization` returned 3 real candidates
+   (AssemblyAI, Recall.ai, Speechmatics) with real URLs, added to the
+   Capability Registry as `status: candidate` — none auto-activated
+   (`approvedByUser: false` on all three), matching the "never activate a
+   paid service automatically" rule.
+3. **Project Lifecycle research phase** — the test project's lifecycle state
+   was advanced `idea -> research -> validation` via
+   `POST /api/projects/{id}/lifecycle/advance`, with the two GrowthBriefs above
+   as the real artifacts backing the `research` phase. Honest note: `research`
+   and `validation` are judgment-call phases in `PHASE_EXIT_EVIDENCE` (no
+   `PhaseEvidenceKind` gate — unlike `implementation`/`qa`/`security`/`ui_ux`/
+   `launch_readiness`, which do require a passing evidence row to leave), so
+   the advance itself did not require the briefs; they are the real research
+   record justifying the decision, not a machine-enforced gate.
+
+ANKA Operations was not touched this sprint — remains local/read-only only,
+per Alex's explicit priority call.
 
 ## Operational commands
 
