@@ -7,10 +7,10 @@ import type { RoadmapStatus } from '@/lib/schemas';
 export const dynamic = 'force-dynamic';
 
 const STATUS_BADGE: Record<RoadmapStatus, { tone: BadgeTone; ghost: boolean; label: string }> = {
-  done: { tone: 'ok', ghost: false, label: 'Done' },
-  now: { tone: 'accent', ghost: false, label: 'Now' },
-  next: { tone: 'warn', ghost: false, label: 'Next' },
-  later: { tone: 'default', ghost: true, label: 'Later' },
+  done: { tone: 'ok', ghost: false, label: 'Tamamlandı' },
+  now: { tone: 'accent', ghost: false, label: 'Şimdi' },
+  next: { tone: 'warn', ghost: false, label: 'Sıradaki' },
+  later: { tone: 'default', ghost: true, label: 'Daha Sonra' },
 };
 
 export default function RoadmapPage() {
@@ -22,18 +22,18 @@ export default function RoadmapPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="build plan"
-        title="Roadmap"
+        eyebrow="yapım planı"
+        title="Yol Haritası"
       />
 
       {/* High-level functionality phases */}
       <section className="mb-9">
-        <SectionHead label="Phases" count={phases.length} />
+        <SectionHead label="Fazlar" count={phases.length} />
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 ultra:grid-cols-6">
           {phases.map((phase) => (
             <div key={phase.id} className="rounded-lg-t border border-os-border bg-os-surface px-[17px] py-[15px]">
               <div className="mb-[7px] font-mono text-[10px] tracking-[0.18em] text-os-accent">
-                PHASE {String(phase.number).padStart(2, '0')}
+                FAZ {String(phase.number).padStart(2, '0')}
               </div>
               <h2 className="text-sm font-bold">{phase.title}</h2>
               <ul className="mt-2.5 flex flex-col gap-1.5">
@@ -50,7 +50,7 @@ export default function RoadmapPage() {
       </section>
 
       {/* Quarterly columns */}
-      <SectionHead label="Quarter by quarter" />
+      <SectionHead label="Çeyrek çeyrek" />
       <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-4 ultra:grid-cols-6">
         {quarters.map(({ quarter, items }) => {
           const doneN = items.filter((r) => r.status === 'done').length;
@@ -61,7 +61,7 @@ export default function RoadmapPage() {
                   {quarter.replace('-', ' · ')}
                 </span>
                 <span className="font-mono text-[10px] text-os-dim">
-                  {doneN}/{items.length} done
+                  {doneN}/{items.length} tamamlandı
                 </span>
                 <span className="h-px flex-1 bg-os-border" />
               </div>

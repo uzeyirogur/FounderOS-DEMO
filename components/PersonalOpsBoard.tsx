@@ -7,6 +7,13 @@ import type { Routine, RoutineFrequency } from '@/lib/schemas';
 
 type RoutineWithStreak = Routine & { streak: number };
 
+const FREQUENCY_LABEL: Record<RoutineFrequency, string> = {
+  daily: 'günlük',
+  weekdays: 'hafta içi',
+  weekly: 'haftalık',
+  monthly: 'aylık',
+};
+
 function RoutineRow({ routine }: { routine: RoutineWithStreak }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -26,7 +33,7 @@ function RoutineRow({ routine }: { routine: RoutineWithStreak }) {
       <div>
         <div className="text-[12.5px] text-os-text">{routine.title}</div>
         <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-os-dim">
-          <span>{routine.frequency}</span>
+          <span>{FREQUENCY_LABEL[routine.frequency] ?? routine.frequency}</span>
           <span className="inline-flex items-center gap-0.5 text-os-warn">
             <Flame className="h-3 w-3" /> {routine.streak}
           </span>
@@ -37,7 +44,7 @@ function RoutineRow({ routine }: { routine: RoutineWithStreak }) {
         disabled={busy}
         className="rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok disabled:opacity-40"
       >
-        check in
+        yoklama ver
       </button>
     </li>
   );
@@ -72,7 +79,7 @@ function NewRoutineForm() {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="New routine…"
+        placeholder="Yeni rutin…"
         className="flex-1 rounded-sm-t border border-os-border bg-os-surface px-3 py-1.5 text-[12.5px] text-os-text outline-none"
       />
       <select
@@ -80,17 +87,17 @@ function NewRoutineForm() {
         onChange={(e) => setFrequency(e.target.value as RoutineFrequency)}
         className="rounded-sm-t border border-os-border bg-os-surface px-2 py-1.5 font-mono text-[11px] uppercase tracking-wider text-os-muted"
       >
-        <option value="daily">daily</option>
-        <option value="weekdays">weekdays</option>
-        <option value="weekly">weekly</option>
-        <option value="monthly">monthly</option>
+        <option value="daily">günlük</option>
+        <option value="weekdays">hafta içi</option>
+        <option value="weekly">haftalık</option>
+        <option value="monthly">aylık</option>
       </select>
       <button
         onClick={submit}
         disabled={busy || !title.trim()}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-accent disabled:opacity-40"
       >
-        <Plus className="h-3 w-3" /> add
+        <Plus className="h-3 w-3" /> ekle
       </button>
     </div>
   );
@@ -103,7 +110,7 @@ export function PersonalOpsBoard({ routines }: { routines: RoutineWithStreak[] }
       <NewRoutineForm />
       {active.length === 0 ? (
         <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-          No active routines.
+          Aktif rutin yok.
         </p>
       ) : (
         <ul className="rounded-lg-t border border-os-border bg-os-surface">

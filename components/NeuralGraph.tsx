@@ -47,12 +47,12 @@ const sparkPts = (id: string, x: number, y: number) => {
 
 /** short kind tag for the hover readout (from the node-id prefix) */
 const hoverKind = (id: string): string => {
-  if (id.startsWith('emp:')) return 'AI agent';
-  if (id.startsWith('person:')) return 'human';
-  if (id.startsWith('task:')) return 'SOP task';
-  if (id.startsWith('tool:')) return 'tool';
-  if (id.startsWith('team:')) return 'pillar';
-  return 'memory core';
+  if (id.startsWith('emp:')) return 'AI ajanı';
+  if (id.startsWith('person:')) return 'insan';
+  if (id.startsWith('task:')) return 'SOP görevi';
+  if (id.startsWith('tool:')) return 'araç';
+  if (id.startsWith('team:')) return 'sütun';
+  return 'hafıza çekirdeği';
 };
 
 export function NeuralGraph({
@@ -127,7 +127,7 @@ export function NeuralGraph({
       style={{ background: NAVY_BG }}
       onMouseLeave={() => setHoverId(null)}
     >
-      <svg viewBox={`0 0 ${NEURAL_W} ${NEURAL_H}`} className="block w-full" role="img" aria-label="G-Brain neural view">
+      <svg viewBox={`0 0 ${NEURAL_W} ${NEURAL_H}`} className="block w-full" role="img" aria-label="G-Brain sinir ağı görünümü">
         <defs>
           <radialGradient id="ngGlow" cx="50%" cy="50%" r="62%">
             <stop offset="0%" stopColor="#1b2a56" stopOpacity="0.9" />
@@ -251,7 +251,7 @@ export function NeuralGraph({
                   )}
                   {isSelf && (
                     <text y={24} textAnchor="middle" fontFamily="var(--font-mono)" fontSize={9.5} fontWeight={600} fill="var(--kg-mem, #e35c35)">
-                      Notes
+                      Notlar
                     </text>
                   )}
                 </g>

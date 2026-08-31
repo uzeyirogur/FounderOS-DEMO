@@ -39,7 +39,7 @@ export function Topbar() {
         <ThemeToggle />
         <button
           onClick={openPalette}
-          title="Command palette (⌘K)"
+          title="Komut paleti (⌘K)"
           className="grid h-[30px] w-[30px] place-items-center rounded-sm-t border border-os-border bg-os-surface text-os-muted transition-colors hover:border-os-border-strong hover:text-os-text"
         >
           <Search className="h-3.5 w-3.5" />
@@ -48,8 +48,8 @@ export function Topbar() {
             Conductor answers about whatever screen you're on */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent(CONDUCTOR_OPEN_EVENT))}
-          title="Ask the Conductor about this screen"
-          aria-label="Open the Conductor agent panel"
+          title="Bu ekran hakkında Conductor'a sor"
+          aria-label="Conductor ajan panelini aç"
           className="grid h-[30px] w-[30px] place-items-center rounded-sm-t border border-os-border bg-os-surface text-os-muted transition-colors hover:border-os-border-strong hover:text-os-accent"
         >
           <Bot className="h-3.5 w-3.5" />

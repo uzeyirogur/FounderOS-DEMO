@@ -19,20 +19,20 @@ const fontMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'FOUNDER OS',
-  description: 'Personal operating system and AI agent command center for a single person company',
+  description: 'Tek kişilik bir şirket için kişisel işletim sistemi ve yapay zeka ajan komuta merkezi',
 };
 
 const NAV_COMMANDS: Command[] = [
-  { id: 'nav-home', label: 'Home', keywords: 'dashboard today overview start', href: '/', hint: 'view' },
-  { id: 'nav-social', label: 'Social', keywords: 'instagram tiktok twitter x youtube linkedin followers growth zernio founderos', href: '/social', hint: 'view' },
-  { id: 'nav-comms', label: 'Comms', keywords: 'messages email whatsapp slack inbox unified feed', href: '/comms', hint: 'view' },
-  { id: 'nav-agents', label: 'Agents', keywords: 'runtime run real roster', href: '/agents', hint: 'view' },
-  { id: 'nav-connections', label: 'Connections', keywords: 'integrations tools status creds', href: '/integrations', hint: 'view' },
-  { id: 'nav-roadmap', label: 'Roadmap', keywords: 'plan phases quarters', href: '/roadmap', hint: 'view' },
-  { id: 'nav-analytics', label: 'Analytics', keywords: 'metrics numbers', href: '/analytics', hint: 'view' },
-  { id: 'nav-reference', label: 'Reference Model', keywords: 'domains business brm', href: '/reference', hint: 'view' },
-  { id: 'nav-org', label: 'Org Chart', keywords: 'org chart hierarchy departments tree structure leads specialists', href: '/org', hint: 'view' },
-  { id: 'nav-brain', label: 'G-Brain', keywords: 'brain knowledge core markdown vector pgvector supabase embeddings zeroentropy graph doctor', href: '/brain', hint: 'view' },
+  { id: 'nav-home', label: 'Ana Sayfa', keywords: 'dashboard today overview start home', href: '/', hint: 'görünüm' },
+  { id: 'nav-social', label: 'Sosyal', keywords: 'instagram tiktok twitter x youtube linkedin followers growth zernio founderos social', href: '/social', hint: 'görünüm' },
+  { id: 'nav-comms', label: 'İletişim', keywords: 'messages email whatsapp slack inbox unified feed comms', href: '/comms', hint: 'görünüm' },
+  { id: 'nav-agents', label: 'Ajanlar', keywords: 'runtime run real roster agents', href: '/agents', hint: 'görünüm' },
+  { id: 'nav-connections', label: 'Bağlantılar', keywords: 'integrations tools status creds connections', href: '/integrations', hint: 'görünüm' },
+  { id: 'nav-roadmap', label: 'Yol Haritası', keywords: 'plan phases quarters roadmap', href: '/roadmap', hint: 'görünüm' },
+  { id: 'nav-analytics', label: 'Analitik', keywords: 'metrics numbers analytics', href: '/analytics', hint: 'görünüm' },
+  { id: 'nav-reference', label: 'Referans Modeli', keywords: 'domains business brm reference model', href: '/reference', hint: 'görünüm' },
+  { id: 'nav-org', label: 'Organizasyon Şeması', keywords: 'org chart hierarchy departments tree structure leads specialists', href: '/org', hint: 'görünüm' },
+  { id: 'nav-brain', label: 'G-Brain', keywords: 'brain knowledge core markdown vector pgvector supabase embeddings zeroentropy graph doctor', href: '/brain', hint: 'görünüm' },
   // Local apps discovered on this machine — open in a new tab
   { id: 'ext-command-center', label: 'Command Center', keywords: 'command-center kanban missions port 4000', href: 'http://localhost:4000', hint: 'localhost' },
   { id: 'ext-remotion', label: 'Remotion Studio', keywords: 'video render pipeline port 3789', href: 'http://localhost:3789', hint: 'localhost' },
@@ -48,21 +48,21 @@ function buildCommands(): Command[] {
     label: t.name,
     keywords: `${t.category} ${t.description}`,
     href: '/integrations',
-    hint: 'tool',
+    hint: 'araç',
   }));
   const agents: Command[] = db.agents.all().map((a) => ({
     id: `agent-${a.id}`,
     label: a.name,
     keywords: `${a.role} ${a.description}`,
     href: '/agents',
-    hint: 'agent',
+    hint: 'ajan',
   }));
   return [...NAV_COMMANDS, ...agents, ...tools];
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={fontMono.variable} suppressHydrationWarning>
+    <html lang="tr" className={fontMono.variable} suppressHydrationWarning>
       <head>
         {/* Apply the persisted theme before first paint — no dark↔light flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

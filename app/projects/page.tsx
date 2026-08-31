@@ -19,11 +19,11 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="agent authorization" title="Projects" right={<Badge tone="accent">{active} active</Badge>} />
+      <PageHeader eyebrow="ajan yetkilendirme" title="Projeler" right={<Badge tone="accent">{active} aktif</Badge>} />
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        Every repo or folder an agent is allowed to work on, registered here — not hardcoded into agent
-        logic. Registering a project grants no access by itself: an agent must be explicitly authorized at a
-        permission level before it may touch it.
+        Bir ajanın üzerinde çalışmasına izin verilen her repo veya klasör burada kayıtlıdır — ajan mantığına
+        gömülü değildir. Bir projeyi kaydetmek tek başına erişim vermez: bir ajanın ona dokunabilmesi için
+        önce açıkça bir yetki seviyesinde yetkilendirilmesi gerekir.
       </p>
       <NewProject />
       <ProjectsTable rows={rows} agentNames={agentNames} manage />

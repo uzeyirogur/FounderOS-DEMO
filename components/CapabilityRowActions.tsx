@@ -49,17 +49,17 @@ export function CapabilityRowActions({ capability }: { capability: CapabilityPro
       <button
         onClick={approve}
         disabled={busy}
-        title={capability.costModel === 'paid' || capability.authRequired ? 'Requires credential/cost — approving does not spend anything itself, but activates the row for use' : 'Approve'}
+        title={capability.costModel === 'paid' || capability.authRequired ? 'Kimlik bilgisi/ücret gerektirir — onaylamak kendisi bir şey harcamaz, ancak satırı kullanım için etkinleştirir' : 'Onayla'}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        <Check className="h-3 w-3" /> approve
+        <Check className="h-3 w-3" /> onayla
       </button>
       <button
         onClick={reject}
         disabled={busy}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        <X className="h-3 w-3" /> reject
+        <X className="h-3 w-3" /> reddet
       </button>
     </span>
   );

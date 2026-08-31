@@ -10,7 +10,7 @@ export default function TasksPage() {
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
   return (
     <div>
-      <PageHeader eyebrow="agent work" title="Tasks" />
+      <PageHeader eyebrow="ajan çalışmaları" title="Görevler" />
       <TaskBoard initialTasks={tasks} agentNames={agentNames} />
     </div>
   );

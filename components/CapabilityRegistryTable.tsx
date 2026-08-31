@@ -22,6 +22,28 @@ const COST_TEXT: Record<string, string> = {
 
 const STATUS_FILTERS = ['all', 'candidate', 'available', 'active', 'rejected'] as const;
 
+const STATUS_FILTER_LABEL: Record<(typeof STATUS_FILTERS)[number], string> = {
+  all: 'tümü',
+  candidate: 'aday',
+  available: 'kullanılabilir',
+  active: 'aktif',
+  rejected: 'reddedildi',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  candidate: 'aday',
+  available: 'kullanılabilir',
+  active: 'aktif',
+  rejected: 'reddedildi',
+};
+
+const COST_LABEL: Record<string, string> = {
+  free: 'ücretsiz',
+  freemium: 'freemium',
+  paid: 'ücretli',
+  unknown: 'bilinmiyor',
+};
+
 /**
  * Client-side filter/table for the Capability Registry — status filter
  * (installed/configured/candidate/approved/rejected map onto the real
@@ -49,7 +71,7 @@ export function CapabilityRegistryTable({ rows }: { rows: CapabilityProvider[] }
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Status</span>
+          <span className="mr-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Durum</span>
           {STATUS_FILTERS.map((s) => (
             <button
               key={s}
@@ -60,12 +82,12 @@ export function CapabilityRegistryTable({ rows }: { rows: CapabilityProvider[] }
                   : 'border-os-border text-os-dim hover:border-os-border-strong'
               }`}
             >
-              {s}
+              {STATUS_FILTER_LABEL[s]}
             </button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Category</span>
+          <span className="mr-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Kategori</span>
           <button
             onClick={() => setCategory('all')}
             className={`rounded-sm-t border px-2 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors ${
@@ -74,7 +96,7 @@ export function CapabilityRegistryTable({ rows }: { rows: CapabilityProvider[] }
                 : 'border-os-border text-os-dim hover:border-os-border-strong'
             }`}
           >
-            all
+            tümü
           </button>
           {CAPABILITY_CATEGORIES.map((c) => (
             <button
@@ -95,15 +117,15 @@ export function CapabilityRegistryTable({ rows }: { rows: CapabilityProvider[] }
       {filtered.length === 0 ? (
         <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
           {rows.length === 0
-            ? "No capabilities discovered yet. Agents will populate this as tasks need tools this OS doesn't have yet."
-            : 'No capabilities match the current filters.'}
+            ? 'Henüz keşfedilmiş bir yetenek yok. Bu sistemde henüz olmayan araçlara ihtiyaç duyan görevler oluştukça ajanlar burayı dolduracak.'
+            : 'Mevcut filtrelerle eşleşen bir yetenek yok.'}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg-t border border-os-border bg-os-surface">
           <table className="w-full min-w-[900px] border-collapse">
             <thead>
               <tr className="border-b border-os-border">
-                {['Name', 'Capability', 'Category', 'Type', 'Cost', 'Status', 'Auth', 'Allowed agents', 'Decide'].map((h) => (
+                {['Ad', 'Yetenek', 'Kategori', 'Tür', 'Maliyet', 'Durum', 'Kimlik Doğrulama', 'İzinli ajanlar', 'Karar'].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">
                     {h}
                   </th>
@@ -128,17 +150,17 @@ export function CapabilityRegistryTable({ rows }: { rows: CapabilityProvider[] }
                     {c.type.replace(/_/g, ' ')}
                   </td>
                   <td className={`whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] uppercase tracking-wider ${COST_TEXT[c.costModel]}`}>
-                    {c.costModel}
+                    {COST_LABEL[c.costModel] ?? c.costModel}
                     {c.freeTier && <div className="mt-0.5 text-[10px] normal-case text-os-dim">{c.freeTier}</div>}
                   </td>
                   <td className={`whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] uppercase tracking-wider ${STATUS_TEXT[c.status]}`}>
-                    {c.status}
+                    {STATUS_LABEL[c.status] ?? c.status}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] text-os-muted">
-                    {c.authRequired ? 'required' : '—'}
+                    {c.authRequired ? 'gerekli' : '—'}
                   </td>
                   <td className="px-4 py-3 align-top text-[11.5px] leading-snug text-os-muted">
-                    {c.allowedAgents.length === 0 ? <span className="text-os-dim">none</span> : c.allowedAgents.join(', ')}
+                    {c.allowedAgents.length === 0 ? <span className="text-os-dim">yok</span> : c.allowedAgents.join(', ')}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 align-top">
                     <CapabilityRowActions capability={c} />

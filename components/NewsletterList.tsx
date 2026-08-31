@@ -30,7 +30,7 @@ export function NewsletterList({ newsletters }: { newsletters: Newsletter[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   if (newsletters.length === 0) {
-    return <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-6 text-center font-mono text-[11px] text-os-dim">No newsletters yet.</p>;
+    return <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-6 text-center font-mono text-[11px] text-os-dim">Henüz bülten yok.</p>;
   }
 
   return (
@@ -50,28 +50,28 @@ export function NewsletterList({ newsletters }: { newsletters: Newsletter[] }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-semibold">{n.title}</span>
                 <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.12em] text-os-dim">
-                  {dateLabel(n.publishedAt)} · {fmt(n.recipients)} sent
+                  {dateLabel(n.publishedAt)} · {fmt(n.recipients)} gönderildi
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-mono text-[17px] font-semibold leading-none tracking-[-0.02em] text-os-accent">
                   {pct(n.openRate)}
                 </span>
-                <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.14em] text-os-dim">open rate</span>
+                <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.14em] text-os-dim">açılma oranı</span>
               </span>
             </button>
 
             {expanded && (
               <div className="border-t border-os-border px-4 pb-4 pt-3">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-                  <Metric label="Recipients" value={fmt(n.recipients)} />
-                  <Metric label="Delivered" value={fmt(n.delivered)} sub={pct(n.deliveryRate) + ' delivery'} tone="ok" />
-                  <Metric label="Open rate" value={pct(n.openRate)} sub={fmt(n.opens) + ' opens'} tone="ok" />
-                  <Metric label="Click rate" value={pct(n.clickRate)} sub={fmt(n.clicks) + ' clicks'} />
-                  <Metric label="Unsubscribes" value={fmt(n.unsubscribes)} sub={pct(n.unsubscribeRate)} tone={n.unsubscribeRate > 1 ? 'warn' : undefined} />
-                  <Metric label="Spam reports" value={fmt(n.spamReports)} tone={n.spamReports > 0 ? 'warn' : undefined} />
-                  <Metric label="Web views" value={fmt(n.webViews)} />
-                  <Metric label="Delivered %" value={pct(n.deliveryRate)} />
+                  <Metric label="Alıcılar" value={fmt(n.recipients)} />
+                  <Metric label="Teslim edildi" value={fmt(n.delivered)} sub={pct(n.deliveryRate) + ' teslimat'} tone="ok" />
+                  <Metric label="Açılma oranı" value={pct(n.openRate)} sub={fmt(n.opens) + ' açılma'} tone="ok" />
+                  <Metric label="Tıklama oranı" value={pct(n.clickRate)} sub={fmt(n.clicks) + ' tıklama'} />
+                  <Metric label="Abonelikten çıkanlar" value={fmt(n.unsubscribes)} sub={pct(n.unsubscribeRate)} tone={n.unsubscribeRate > 1 ? 'warn' : undefined} />
+                  <Metric label="Spam bildirimleri" value={fmt(n.spamReports)} tone={n.spamReports > 0 ? 'warn' : undefined} />
+                  <Metric label="Web görüntülenmesi" value={fmt(n.webViews)} />
+                  <Metric label="Teslimat %" value={pct(n.deliveryRate)} />
                 </div>
                 {n.webUrl && (
                   <a
@@ -80,7 +80,7 @@ export function NewsletterList({ newsletters }: { newsletters: Newsletter[] }) {
                     rel="noreferrer"
                     className="mt-3 inline-flex items-center gap-1.5 rounded-sm-t border border-os-border px-2.5 py-1 font-mono text-[10.5px] text-os-accent transition-colors hover:border-os-border-strong"
                   >
-                    Read the issue <ExternalLink className="h-3 w-3" />
+                    Sayıyı oku <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>

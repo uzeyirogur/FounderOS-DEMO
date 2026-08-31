@@ -15,6 +15,14 @@ const STATUS_TEXT: Record<string, string> = {
   archived: 'text-os-dim',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  new: 'Yeni',
+  researching: 'Araştırılıyor',
+  scored: 'Puanlandı',
+  shipped: 'Yayınlandı',
+  archived: 'Arşivlendi',
+};
+
 /**
  * Idea Lab, full page. Every idea, ranked by a transparent weighted score
  * (market size 40% + ease-to-build 30% + strategic fit 30%) — never an
@@ -28,22 +36,22 @@ export default function IdeasPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="idea generation & scoring" title="Idea Lab" right={<Badge tone="accent">{rows.length} ideas</Badge>} />
+      <PageHeader eyebrow="fikir üretimi ve puanlama" title="Fikir Laboratuvarı" right={<Badge tone="accent">{rows.length} fikir</Badge>} />
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        Score = market size × 0.4 + ease-to-build × 0.3 + strategic fit × 0.3, out of 5. Every input is a rating you
-        (or a future research pass) supply — the number is always traceable back to those three ratings.
+        Puan = pazar büyüklüğü × 0.4 + geliştirme kolaylığı × 0.3 + stratejik uyum × 0.3, 5 üzerinden. Her girdi senin (ya da
+        ileride yapılacak bir araştırmanın) verdiği bir puandır — sonuç her zaman bu üç puana geri izlenebilir.
       </p>
       <NewIdea />
       {rows.length === 0 ? (
         <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-          No ideas yet. Score your first one above.
+          Henüz fikir yok. İlk fikrini yukarıda puanla.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg-t border border-os-border bg-os-surface">
           <table className="w-full min-w-[760px] border-collapse">
             <thead>
               <tr className="border-b border-os-border">
-                {['Idea', 'Score', 'Market', 'Ease', 'Fit', 'Status', 'Manage'].map((h) => (
+                {['Fikir', 'Puan', 'Pazar', 'Kolaylık', 'Uyum', 'Durum', 'Yönet'].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">
                     {h}
                   </th>
@@ -62,7 +70,7 @@ export default function IdeasPage() {
                   <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-[11px] text-os-muted">{idea.effort}/5</td>
                   <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-[11px] text-os-muted">{idea.strategicFit}/5</td>
                   <td className={`whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] uppercase tracking-wider ${STATUS_TEXT[idea.status] ?? 'text-os-muted'}`}>
-                    {idea.status}
+                    {STATUS_LABEL[idea.status] ?? idea.status}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 align-top">
                     <IdeaRowActions idea={idea} />

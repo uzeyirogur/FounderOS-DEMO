@@ -6,12 +6,12 @@ import { Sparkles } from 'lucide-react';
 import type { CreativeBrief, CreativeFormat } from '@/lib/schemas';
 
 const FORMAT_OPTIONS: { value: CreativeFormat; label: string }[] = [
-  { value: 'social_post', label: 'Social post' },
+  { value: 'social_post', label: 'Sosyal gönderi' },
   { value: 'carousel', label: 'Carousel' },
-  { value: 'short_video', label: 'Short video' },
-  { value: 'static_ad', label: 'Static ad' },
-  { value: 'landing_page', label: 'Landing page' },
-  { value: 'demo_video', label: 'Demo video' },
+  { value: 'short_video', label: 'Kısa video' },
+  { value: 'static_ad', label: 'Statik reklam' },
+  { value: 'landing_page', label: 'Açılış sayfası' },
+  { value: 'demo_video', label: 'Tanıtım videosu' },
 ];
 
 /** Ad/Creative Research's real research form for a single project: pick a
@@ -43,7 +43,7 @@ export function CreativeResearchPanel({ projectId, briefs }: { projectId: string
         setQuery('');
         router.refresh();
       } else {
-        setError(body.error ?? 'Research failed.');
+        setError(body.error ?? 'Araştırma başarısız oldu.');
       }
     } finally {
       setBusy(false);
@@ -66,11 +66,11 @@ export function CreativeResearchPanel({ projectId, briefs }: { projectId: string
           </select>
         </div>
         <div className="flex min-w-[280px] flex-1 flex-col gap-1">
-          <label className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Query</label>
+          <label className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Sorgu</label>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="What competitor creative should we research?"
+            placeholder="Hangi rakip kreatifini araştırmalıyız?"
             className="rounded-sm-t border border-os-border bg-os-bg px-2 py-1.5 text-[12px] text-os-text outline-none focus:border-os-border-strong"
           />
         </div>
@@ -79,7 +79,7 @@ export function CreativeResearchPanel({ projectId, briefs }: { projectId: string
           disabled={busy || !query.trim()}
           className="inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
         >
-          <Sparkles className="h-3 w-3" /> Research
+          <Sparkles className="h-3 w-3" /> Araştır
         </button>
       </div>
 
@@ -104,7 +104,7 @@ export function CreativeResearchPanel({ projectId, briefs }: { projectId: string
 
       {briefs.length > 0 && (
         <div className="mt-4 border-t border-os-border pt-3">
-          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Past briefs</div>
+          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Geçmiş briefler</div>
           <ul className="space-y-1.5">
             {briefs.map((b) => (
               <li key={b.id} className="text-[11.5px] text-os-muted">

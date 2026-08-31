@@ -6,19 +6,26 @@ import { Sparkles } from 'lucide-react';
 import type { ContentKind, ContentPiece } from '@/lib/schemas';
 
 const KIND_OPTIONS: { value: ContentKind; label: string }[] = [
-  { value: 'social_post', label: 'Social post' },
+  { value: 'social_post', label: 'Sosyal gönderi' },
   { value: 'carousel', label: 'Carousel' },
-  { value: 'ad_creative', label: 'Ad creative' },
-  { value: 'product_demo_video', label: 'Product demo video' },
-  { value: 'motion_content', label: 'Motion content' },
-  { value: 'short_video', label: 'Short video' },
-  { value: 'image', label: 'Image' },
+  { value: 'ad_creative', label: 'Reklam kreatifi' },
+  { value: 'product_demo_video', label: 'Ürün tanıtım videosu' },
+  { value: 'motion_content', label: 'Hareketli içerik' },
+  { value: 'short_video', label: 'Kısa video' },
+  { value: 'image', label: 'Görsel' },
   { value: 'mockup', label: 'Mockup' },
-  { value: 'landing_page_creative', label: 'Landing page creative' },
-  { value: 'voiceover', label: 'Voiceover' },
-  { value: 'animation', label: 'Animation' },
-  { value: '3d_web_interactive', label: '3D / web interactive' },
+  { value: 'landing_page_creative', label: 'Açılış sayfası kreatifi' },
+  { value: 'voiceover', label: 'Seslendirme' },
+  { value: 'animation', label: 'Animasyon' },
+  { value: '3d_web_interactive', label: '3D / web etkileşimli' },
 ];
+
+const STATUS_LABEL: Record<ContentPiece['status'], string> = {
+  drafted: 'Taslak',
+  needs_capability: 'Yetenek gerekli',
+  produced: 'Üretildi',
+  failed: 'Başarısız',
+};
 
 const STATUS_TEXT: Record<ContentPiece['status'], string> = {
   drafted: 'text-os-dim',
@@ -66,7 +73,7 @@ export function ContentStudioProducer({ recent }: { recent: ContentPiece[] }) {
     <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Kind</label>
+          <label className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Tür</label>
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as ContentKind)}
@@ -82,7 +89,7 @@ export function ContentStudioProducer({ recent }: { recent: ContentPiece[] }) {
           <input
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            placeholder="What should this say/show?"
+            placeholder="Bu ne söylemeli/göstermeli?"
             className="rounded-sm-t border border-os-border bg-os-bg px-2 py-1.5 text-[12px] text-os-text outline-none focus:border-os-border-strong"
           />
         </div>
@@ -91,17 +98,17 @@ export function ContentStudioProducer({ recent }: { recent: ContentPiece[] }) {
           disabled={busy || !brief.trim()}
           className="inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
         >
-          <Sparkles className="h-3 w-3" /> Produce
+          <Sparkles className="h-3 w-3" /> Üret
         </button>
       </div>
 
       {result && (
         <div className="mt-3 rounded-sm-t border border-os-border bg-os-bg px-3 py-2">
-          <div className={`font-mono text-[10px] uppercase tracking-widest ${STATUS_TEXT[result.status]}`}>{result.status}</div>
+          <div className={`font-mono text-[10px] uppercase tracking-widest ${STATUS_TEXT[result.status]}`}>{STATUS_LABEL[result.status]}</div>
           {result.output && <div className="mt-1 whitespace-pre-wrap text-[12.5px] leading-relaxed text-os-text">{result.output}</div>}
           {result.requiredCapability && (
             <div className="mt-1 text-[11.5px] text-os-warn">
-              Needs <span className="font-mono">{result.requiredCapability}</span> — review candidates at{' '}
+              Gerekli: <span className="font-mono">{result.requiredCapability}</span> — adayları burada incele{' '}
               <a href="/capabilities" className="underline hover:text-os-accent">/capabilities</a>.
             </div>
           )}
@@ -110,11 +117,11 @@ export function ContentStudioProducer({ recent }: { recent: ContentPiece[] }) {
 
       {recent.length > 0 && (
         <div className="mt-4 border-t border-os-border pt-3">
-          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Recent pieces</div>
+          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Son üretilenler</div>
           <ul className="space-y-1.5">
             {recent.map((p) => (
               <li key={p.id} className="flex items-start gap-2 text-[11.5px] text-os-muted">
-                <span className={`mt-0.5 font-mono text-[9px] uppercase tracking-wider ${STATUS_TEXT[p.status]}`}>{p.status}</span>
+                <span className={`mt-0.5 font-mono text-[9px] uppercase tracking-wider ${STATUS_TEXT[p.status]}`}>{STATUS_LABEL[p.status]}</span>
                 <span className="min-w-0 flex-1 truncate">{p.brief}</span>
               </li>
             ))}

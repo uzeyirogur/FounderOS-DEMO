@@ -48,7 +48,7 @@ export function ConductorChat({ agentNames }: { agentNames: Record<string, strin
         <div className="min-w-0">
           <div className="text-[13px] font-bold tracking-[0.12em]">CONDUCTOR</div>
           <div className="font-mono text-[10px] text-os-dim">
-            routes to the best-fit agent — or prefix <span className="text-os-muted">@agent-id</span> to pick one
+            en uygun ajana yönlendirir — veya belirli birini seçmek için <span className="text-os-muted">@agent-id</span> ön ekini kullan
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ export function ConductorChat({ agentNames }: { agentNames: Record<string, strin
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Talk to Conductor — it routes you to the right agent"
+          placeholder="Conductor ile konuş — seni doğru ajana yönlendirir"
           disabled={sending}
           className="min-w-0 flex-1 rounded-full border border-os-border bg-os-bg px-3 py-1.5 text-xs text-os-text placeholder:text-os-dim focus:border-os-border-strong focus:outline-none"
         />
@@ -92,7 +92,7 @@ export function ConductorChat({ agentNames }: { agentNames: Record<string, strin
           disabled={sending || !input.trim()}
           className="flex shrink-0 items-center gap-1.5 rounded-full border border-os-border-strong bg-os-surface2 px-3 py-1.5 text-xs font-semibold text-os-text transition-opacity hover:border-os-dim disabled:opacity-40"
         >
-          {sending ? <span className="font-mono text-[11px]">routing…</span> : <Send className="h-3 w-3" />}
+          {sending ? <span className="font-mono text-[11px]">yönlendiriliyor…</span> : <Send className="h-3 w-3" />}
         </button>
       </div>
       {error && <p className="mt-1.5 font-mono text-[10px] text-os-err">⚠ {error}</p>}

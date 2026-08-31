@@ -16,9 +16,9 @@ const HEAT_VAR: Record<NonNullable<SlackClientCard['heat']>, string> = {
 };
 
 const WAIT_LABEL: Record<SlackClientCard['waiting'], string> = {
-  you: 'waiting on you',
-  them: 'waiting on them',
-  none: 'all clear',
+  you: 'senden bekleniyor',
+  them: 'onlardan bekleniyor',
+  none: 'her şey tamam',
 };
 
 function ago(iso: string, nowISO: string): string {
@@ -50,11 +50,11 @@ function ClientCard({ card, nowISO }: { card: SlackClientCard; nowISO: string })
       </div>
       <div className="mt-1 flex items-center gap-1.5 font-mono text-[9.5px] text-os-dim">
         <Hash className="h-3 w-3 shrink-0" strokeWidth={1.7} />
-        <span className="truncate">{card.channel ? card.channel.replace(/^#/, '') : 'no channel linked'}</span>
+        <span className="truncate">{card.channel ? card.channel.replace(/^#/, '') : 'kanal bağlı değil'}</span>
         {card.lastTs && <span className="ml-auto shrink-0">{ago(card.lastTs, nowISO)}</span>}
       </div>
       <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-os-muted">
-        {card.lastText || <span className="text-os-dim">No Slack thread yet. Invite the bot to their channel.</span>}
+        {card.lastText || <span className="text-os-dim">Henüz Slack konuşması yok. Botu kanallarına davet edin.</span>}
       </p>
       <div className="mt-2.5 flex items-center gap-2 border-t border-os-border pt-2">
         <span
@@ -65,7 +65,7 @@ function ClientCard({ card, nowISO }: { card: SlackClientCard; nowISO: string })
           {WAIT_LABEL[card.waiting]}
         </span>
         <span className="ml-auto shrink-0">
-          {card.live ? <Badge tone="ok">live</Badge> : <Badge ghost>quiet</Badge>}
+          {card.live ? <Badge tone="ok">canlı</Badge> : <Badge ghost>sessiz</Badge>}
         </span>
       </div>
     </div>
@@ -76,7 +76,7 @@ export function SlackClientBoard({ cards, nowISO }: { cards: SlackClientCard[]; 
   if (cards.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-os-border-strong px-3 py-3 text-center font-mono text-[10.5px] text-os-dim">
-        No current clients on the roster. Won deals in Attio (and anyone with a live Slack thread) land here.
+        Kadroda güncel müşteri yok. Attio'da kazanılan anlaşmalar (ve canlı bir Slack konuşması olan herkes) buraya düşer.
       </p>
     );
   }

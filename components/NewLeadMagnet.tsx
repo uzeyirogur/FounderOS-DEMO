@@ -47,7 +47,7 @@ export function NewLeadMagnet() {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: unknown };
-        setError(typeof body.error === 'string' ? body.error : 'Check the name and the URL.');
+        setError(typeof body.error === 'string' ? body.error : 'Adı ve URL\u2019yi kontrol et.');
         return;
       }
       const body = (await res.json()) as { leadMagnet?: { name?: string } };
@@ -56,7 +56,7 @@ export function NewLeadMagnet() {
       setOpen(false);
       router.refresh(); // the table is a server component; pull the new row
     } catch {
-      setError('Network error. Try again.');
+      setError('Ağ hatası. Tekrar dene.');
     } finally {
       setBusy(false);
     }
@@ -75,11 +75,11 @@ export function NewLeadMagnet() {
           }}
           className="flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-surface px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong"
         >
-          <Plus className="h-3 w-3" /> New lead magnet
+          <Plus className="h-3 w-3" /> Yeni mıknatıs
         </button>
         {done && (
           <span className="font-mono text-[10.5px] text-os-ok">
-            Added {done} to the register.
+            {done} kayıt defterine eklendi.
           </span>
         )}
       </div>
@@ -89,62 +89,62 @@ export function NewLeadMagnet() {
   return (
     <form onSubmit={submit} className="mb-4 rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="mb-3 flex items-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Register a page</span>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="ml-auto text-os-dim hover:text-os-text">
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Bir sayfa kaydet</span>
+        <button type="button" onClick={() => setOpen(false)} aria-label="Kapat" className="ml-auto text-os-dim hover:text-os-text">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className={label} htmlFor="lm-name">Name</label>
-          <input id="lm-name" className={field} value={form.name} onChange={set('name')} required placeholder="The Operator Teardown" />
+          <label className={label} htmlFor="lm-name">Ad</label>
+          <input id="lm-name" className={field} value={form.name} onChange={set('name')} required placeholder="Operatör Analizi" />
         </div>
         <div>
-          <label className={label} htmlFor="lm-url">Live URL</label>
+          <label className={label} htmlFor="lm-url">Canlı URL</label>
           <input id="lm-url" className={field} value={form.url} onChange={set('url')} required type="url" placeholder="https://…" />
         </div>
         <div className="sm:col-span-2">
-          <label className={label} htmlFor="lm-offer">What they get</label>
-          <input id="lm-offer" className={field} value={form.offer} onChange={set('offer')} placeholder="The workflow pulled apart, step by step" />
+          <label className={label} htmlFor="lm-offer">Ne alıyorlar</label>
+          <input id="lm-offer" className={field} value={form.offer} onChange={set('offer')} placeholder="İş akışı adım adım incelendi" />
         </div>
         <div>
-          <label className={label} htmlFor="lm-source">Campaign it was built for</label>
-          <input id="lm-source" className={field} value={form.source} onChange={set('source')} placeholder="Short (comment TEARDOWN)" />
+          <label className={label} htmlFor="lm-source">Hangi kampanya için yapıldı</label>
+          <input id="lm-source" className={field} value={form.source} onChange={set('source')} placeholder="Short video (TEARDOWN yorumu)" />
         </div>
         <div>
-          <label className={label} htmlFor="lm-dest">Where leads land</label>
+          <label className={label} htmlFor="lm-dest">Adaylar nereye düşüyor</label>
           <input id="lm-dest" className={field} value={form.destination} onChange={set('destination')} />
         </div>
         <div>
-          <label className={label} htmlFor="lm-captures">Captures</label>
+          <label className={label} htmlFor="lm-captures">Toplar</label>
           <select id="lm-captures" className={field} value={form.captures} onChange={set('captures')}>
-            <option value="email">Email</option>
-            <option value="booking">Booking</option>
-            <option value="none">Nothing yet</option>
+            <option value="email">E-posta</option>
+            <option value="booking">Randevu</option>
+            <option value="none">Henüz hiçbir şey</option>
           </select>
         </div>
         <div>
-          <label className={label} htmlFor="lm-launched">Went live</label>
+          <label className={label} htmlFor="lm-launched">Yayına girdi</label>
           <input id="lm-launched" className={field} type="date" value={form.launchedAt} onChange={set('launchedAt')} />
         </div>
         <div>
-          <label className={label} htmlFor="lm-status">Status</label>
+          <label className={label} htmlFor="lm-status">Durum</label>
           <select id="lm-status" className={field} value={form.status} onChange={set('status')}>
-            <option value="live">Live</option>
-            <option value="draft">Draft</option>
-            <option value="paused">Paused</option>
-            <option value="archived">Archived</option>
+            <option value="live">Yayında</option>
+            <option value="draft">Taslak</option>
+            <option value="paused">Duraklatıldı</option>
+            <option value="archived">Arşivlendi</option>
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label className={label} htmlFor="lm-notes">Notes</label>
+          <label className={label} htmlFor="lm-notes">Notlar</label>
           <textarea
             id="lm-notes"
             rows={2}
             className={`${field} resize-y`}
             value={form.notes}
             onChange={set('notes')}
-            placeholder="Anything future-you needs to know: what is gated, what still needs wiring, which automation feeds it"
+            placeholder="Gelecekteki senin bilmen gereken her şey: neyin kilitli olduğu, hangi bağlantının hâlâ kurulması gerektiği, hangi otomasyonun beslediği"
           />
         </div>
       </div>
@@ -154,7 +154,7 @@ export function NewLeadMagnet() {
         disabled={busy}
         className="mt-3 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        {busy ? 'saving…' : 'add to the register'}
+        {busy ? 'kaydediliyor…' : 'kayıt defterine ekle'}
       </button>
     </form>
   );

@@ -6,6 +6,7 @@ import { Check, Plus } from 'lucide-react';
 import type { PersonalTask } from '@/lib/schemas';
 
 const PRIORITY_TEXT: Record<string, string> = { high: 'text-os-err', normal: 'text-os-muted', low: 'text-os-dim' };
+const PRIORITY_LABEL: Record<string, string> = { high: 'yüksek', normal: 'normal', low: 'düşük' };
 
 /** Complete-in-place button for one task. */
 function TaskRow({ task }: { task: PersonalTask }) {
@@ -27,8 +28,8 @@ function TaskRow({ task }: { task: PersonalTask }) {
       <div>
         <div className="text-[12.5px] text-os-text">{task.title}</div>
         <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider">
-          <span className={PRIORITY_TEXT[task.priority]}>{task.priority}</span>
-          {task.dueAt && <span className="ml-2 text-os-dim">due {new Date(task.dueAt).toLocaleDateString()}</span>}
+          <span className={PRIORITY_TEXT[task.priority]}>{PRIORITY_LABEL[task.priority] ?? task.priority}</span>
+          {task.dueAt && <span className="ml-2 text-os-dim">bitiş {new Date(task.dueAt).toLocaleDateString()}</span>}
         </div>
       </div>
       <button
@@ -36,7 +37,7 @@ function TaskRow({ task }: { task: PersonalTask }) {
         disabled={busy}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok disabled:opacity-40"
       >
-        <Check className="h-3 w-3" /> done
+        <Check className="h-3 w-3" /> tamam
       </button>
     </li>
   );
@@ -72,7 +73,7 @@ function NewTaskForm() {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="New task…"
+        placeholder="Yeni görev…"
         className="flex-1 rounded-sm-t border border-os-border bg-os-surface px-3 py-1.5 text-[12.5px] text-os-text outline-none"
       />
       <select
@@ -80,16 +81,16 @@ function NewTaskForm() {
         onChange={(e) => setPriority(e.target.value as 'low' | 'normal' | 'high')}
         className="rounded-sm-t border border-os-border bg-os-surface px-2 py-1.5 font-mono text-[11px] uppercase tracking-wider text-os-muted"
       >
-        <option value="low">low</option>
+        <option value="low">düşük</option>
         <option value="normal">normal</option>
-        <option value="high">high</option>
+        <option value="high">yüksek</option>
       </select>
       <button
         onClick={submit}
         disabled={busy || !title.trim()}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-accent disabled:opacity-40"
       >
-        <Plus className="h-3 w-3" /> add
+        <Plus className="h-3 w-3" /> ekle
       </button>
     </div>
   );
@@ -103,7 +104,7 @@ export function WorkAssistantBoard({ tasks }: { tasks: PersonalTask[] }) {
       <NewTaskForm />
       {open.length === 0 ? (
         <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-          No open tasks.
+          Açık görev yok.
         </p>
       ) : (
         <ul className="rounded-lg-t border border-os-border bg-os-surface">
@@ -113,7 +114,7 @@ export function WorkAssistantBoard({ tasks }: { tasks: PersonalTask[] }) {
         </ul>
       )}
       {done.length > 0 && (
-        <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-os-dim">{done.length} done</p>
+        <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-os-dim">{done.length} tamamlandı</p>
       )}
     </div>
   );

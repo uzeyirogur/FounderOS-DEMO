@@ -105,12 +105,12 @@ export default async function FinancesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="every processor, one view"
-        title="Finances"
+        eyebrow="tüm işlemciler, tek bir görünüm"
+        title="Finans"
         right={
           <Badge tone={netMonthly >= 0 ? 'ok' : 'err'}>
             {netMonthly >= 0 ? '+' : '−'}
-            {usd(Math.abs(netMonthly))} net /mo
+            {usd(Math.abs(netMonthly))} net /ay
           </Badge>
         }
       />
@@ -119,7 +119,7 @@ export default async function FinancesPage() {
       <section className="mb-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <div className="flex flex-col gap-1 rounded-lg-t border border-os-border bg-os-surface px-3 py-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Income · MTD</Label>
+            <Label>Gelir · Ay içi</Label>
             <ArrowDownLeft className="h-3 w-3 text-os-ok" strokeWidth={1.8} />
           </div>
           <div className="flex items-baseline justify-between gap-2">
@@ -127,14 +127,14 @@ export default async function FinancesPage() {
               {usd(incomeMtd)}
             </span>
             <span className="min-w-0 truncate font-mono text-[9.5px] uppercase tracking-[0.1em] text-os-dim">
-              {liveCount}/{accounts.length} live
+              {liveCount}/{accounts.length} canlı
             </span>
           </div>
         </div>
 
         <div className="flex flex-col gap-1 rounded-lg-t border border-os-border bg-os-surface px-3 py-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Expenses · /mo</Label>
+            <Label>Giderler · /ay</Label>
             <ArrowUpRight className="h-3 w-3 text-os-err" strokeWidth={1.8} />
           </div>
           <div className="flex items-baseline justify-between gap-2">
@@ -142,14 +142,14 @@ export default async function FinancesPage() {
             <span
               className={`min-w-0 truncate font-mono text-[9.5px] uppercase tracking-[0.1em] ${expensesLive ? 'text-os-ok' : 'text-os-warn'}`}
             >
-              {expensesLive ? `uploaded · ${monthLabel}` : 'sample'}
+              {expensesLive ? `yüklendi · ${monthLabel}` : 'örnek'}
             </span>
           </div>
         </div>
 
         <div className="flex flex-col gap-1 rounded-lg-t border border-os-border bg-os-surface px-3 py-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Net · /mo</Label>
+            <Label>Net · /ay</Label>
             <Scale className="h-3 w-3 text-os-accent" strokeWidth={1.8} />
           </div>
           <div className="flex items-baseline justify-between gap-2">
@@ -159,13 +159,13 @@ export default async function FinancesPage() {
               {netMonthly >= 0 ? '' : '−'}
               {usd(Math.abs(netMonthly))}
             </span>
-            <span className="min-w-0 truncate font-mono text-[9.5px] uppercase tracking-[0.1em] text-os-dim">in − out</span>
+            <span className="min-w-0 truncate font-mono text-[9.5px] uppercase tracking-[0.1em] text-os-dim">giren − çıkan</span>
           </div>
         </div>
 
         <div className="flex flex-col gap-1 rounded-lg-t border border-os-border bg-os-surface px-3 py-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Stripe balance</Label>
+            <Label>Stripe bakiyesi</Label>
             <Landmark className="h-3 w-3 text-os-accent" strokeWidth={1.8} />
           </div>
           <div className="flex items-baseline justify-between gap-2">
@@ -173,7 +173,7 @@ export default async function FinancesPage() {
               {stripeLive ? usd(available, true) : '—'}
             </span>
             <span className="min-w-0 truncate font-mono text-[9.5px] uppercase tracking-[0.1em] text-os-dim">
-              {stripeLive ? `${usd(pending, true)} pending` : 'connect Stripe'}
+              {stripeLive ? `${usd(pending, true)} beklemede` : 'Stripe bağla'}
             </span>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default async function FinancesPage() {
       {/* Income by business — from uploaded bank statements, with a range dropdown */}
       {bankSeries.length > 0 && (
         <section className="mb-5">
-          <SectionHead label="Income · by business" count="bank deposits" />
+          <SectionHead label="Gelir · işletmeye göre" count="banka yatırımları" />
           <div className="grid gap-3.5 lg:grid-cols-2">
             {bankSeries.map((s) => (
               <BusinessIncomeChart key={s.business} series={s} />
@@ -195,18 +195,18 @@ export default async function FinancesPage() {
       {/* Monthly expenses by category */}
       <section className="mb-5">
         <SectionHead
-          label="Monthly expenses · by category"
-          count={expensesLive && monthLabel ? `${usd(expenses)} · ${monthLabel}` : `${usd(expenses)} /mo`}
+          label="Aylık giderler · kategoriye göre"
+          count={expensesLive && monthLabel ? `${usd(expenses)} · ${monthLabel}` : `${usd(expenses)} /ay`}
         />
         <div className="grid items-stretch gap-3.5 lg:grid-cols-[1.15fr_1fr_0.85fr]">
           {/* where the money goes — share per category */}
           <SharePie
             items={byCategory.map((c) => ({ key: c.category, label: c.category, value: Math.round(c.total * 100) }))}
             total={Math.round(expenses * 100)}
-            centerLabel={expensesLive && monthLabel ? monthLabel : 'per month'}
+            centerLabel={expensesLive && monthLabel ? monthLabel : 'ay başına'}
             format={(cents) => usd(cents / 100)}
             donutPx={190}
-            ariaLabel="Monthly expenses by category"
+            ariaLabel="Kategoriye göre aylık giderler"
           />
 
           <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
@@ -231,7 +231,7 @@ export default async function FinancesPage() {
       </section>
 
       <section className="mb-5">
-        <SectionHead label="Income · by processor" count={`${liveCount}/${accounts.length} live`} />
+        <SectionHead label="Gelir · işlemciye göre" count={`${liveCount}/${accounts.length} canlı`} />
         <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
           {accounts.map((a) => (
             <div key={a.id} className="hoverable rounded-lg-t border border-os-border bg-os-surface px-4 py-3">
@@ -242,12 +242,12 @@ export default async function FinancesPage() {
                 </div>
                 {a.live ? (
                   <Badge tone="ok">
-                    <span className="dot ok pulse mr-1 inline-block" /> live
+                    <span className="dot ok pulse mr-1 inline-block" /> canlı
                   </Badge>
                 ) : a.configured ? (
-                  <Badge tone="warn">key set</Badge>
+                  <Badge tone="warn">anahtar ayarlı</Badge>
                 ) : (
-                  <Badge ghost>connect →</Badge>
+                  <Badge ghost>bağlan →</Badge>
                 )}
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
@@ -255,7 +255,7 @@ export default async function FinancesPage() {
                   {a.income != null ? usd(a.income) : '—'}
                 </span>
                 <span className="font-mono text-[9.5px] text-os-dim">
-                  {a.live ? 'this month' : a.configured ? 'pull pending' : 'awaiting key'}
+                  {a.live ? 'bu ay' : a.configured ? 'veri çekimi bekliyor' : 'anahtar bekleniyor'}
                 </span>
               </div>
               <div className="mt-2 h-1 overflow-hidden rounded-sm-t bg-os-surface2">
@@ -272,10 +272,10 @@ export default async function FinancesPage() {
       {/* Outgoing transfers — Wise (hidden entirely until a Wise key lands) */}
       {wiseOut && (
         <section className="mb-5">
-          <SectionHead label="Outgoing · Wise" count={`${wiseOut.length} transfer${wiseOut.length === 1 ? '' : 's'}`} />
+          <SectionHead label="Giden · Wise" count={`${wiseOut.length} transfer`} />
           {wiseOut.length === 0 ? (
             <div className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[11px] text-os-dim">
-              Wise connected · no recent outgoing transfers
+              Wise bağlı · son zamanlarda giden transfer yok
             </div>
           ) : (
             <ul className="space-y-1.5">
@@ -300,7 +300,7 @@ export default async function FinancesPage() {
       {/* Recent income — real Stripe charges */}
       {stripeLive && recent.length > 0 && (
         <section>
-          <SectionHead label="Recent income" count="Stripe · live" />
+          <SectionHead label="Son gelir" count="Stripe · canlı" />
           <ul className="space-y-1.5">
             {recent.map((c, i) => (
               <li

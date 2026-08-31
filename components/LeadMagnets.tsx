@@ -16,10 +16,17 @@ const STATUS: Record<LeadMagnet['status'], { dot: string; text: string }> = {
 };
 
 const CAPTURES = {
-  email: { Icon: Mail, label: 'Email' },
-  booking: { Icon: CalendarCheck, label: 'Booking' },
-  none: { Icon: Minus, label: 'None' },
+  email: { Icon: Mail, label: 'E-posta' },
+  booking: { Icon: CalendarCheck, label: 'Randevu' },
+  none: { Icon: Minus, label: 'Yok' },
 } as const;
+
+const STATUS_LABEL: Record<LeadMagnet['status'], string> = {
+  live: 'Yayında',
+  draft: 'Taslak',
+  paused: 'Duraklatıldı',
+  archived: 'Arşivlendi',
+};
 
 const dateLabel = (iso: string): string => {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -49,7 +56,7 @@ export function LeadMagnets({
   if (rows.length === 0) {
     return (
       <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-        No lead magnets yet. Every landing page we ship lands here.
+        Henüz potansiyel müşteri mıknatısı yok. Yayınladığımız her açılış sayfası buraya düşer.
       </p>
     );
   }
@@ -59,14 +66,14 @@ export function LeadMagnets({
         <thead>
           <tr className="border-b border-os-border">
             {[
-              'Name',
-              'Status',
-              'Captures',
-              'Leads to',
-              'Source',
-              'Live',
-              ...(showCopy ? ['Link'] : []),
-              ...(manage ? ['Manage'] : []),
+              'Ad',
+              'Durum',
+              'Toplar',
+              'Yönlendirir',
+              'Kaynak',
+              'Yayın tarihi',
+              ...(showCopy ? ['Bağlantı'] : []),
+              ...(manage ? ['Yönet'] : []),
             ].map((h) => (
               <th
                 key={h}
@@ -99,7 +106,7 @@ export function LeadMagnets({
                 <td className="whitespace-nowrap px-4 py-3 align-top">
                   <span className="inline-flex items-center gap-1.5">
                     <span className={`h-1.5 w-1.5 shrink-0 ${s.dot}`} />
-                    <span className={`font-mono text-[10.5px] uppercase tracking-wider ${s.text}`}>{m.status}</span>
+                    <span className={`font-mono text-[10.5px] uppercase tracking-wider ${s.text}`}>{STATUS_LABEL[m.status]}</span>
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 align-top">

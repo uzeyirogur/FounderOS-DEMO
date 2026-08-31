@@ -67,7 +67,7 @@ export function PersonaBrainGraph({ persona }: { persona: Persona }) {
       preserveAspectRatio="xMidYMid meet"
       className="block h-full w-full"
       role="img"
-      aria-label={`${persona.name} knowledge graph`}
+      aria-label={`${persona.name} bilgi grafiği`}
     >
       <defs>
         <radialGradient id={`${gid}-glow`} cx="50%" cy="50%" r="42%">
@@ -167,7 +167,7 @@ export function PersonaBrainGraph({ persona }: { persona: Persona }) {
           {trunc(persona.name, 24)}
         </text>
         <text x={CX} y={CY + 88} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8.5" letterSpacing="0.14em" fill="var(--dim)">
-          KNOWLEDGE CORE
+          BİLGİ ÇEKİRDEĞİ
         </text>
       </g>
     </svg>

@@ -57,11 +57,11 @@ export function CommsTabs({
     <div>
       <div className="mb-5 flex items-center gap-2 border-b border-os-border pb-3">
         <div className="inline-flex gap-1 rounded-xl border border-os-border bg-os-surface p-1">
-          <TabButton id="messaging" icon={MessageSquare} label="Messaging" count={unread} />
-          <TabButton id="meetings" icon={CalendarDays} label="Meetings" count={events.length} />
+          <TabButton id="messaging" icon={MessageSquare} label="Mesajlaşma" count={unread} />
+          <TabButton id="meetings" icon={CalendarDays} label="Toplantılar" count={events.length} />
         </div>
         <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.15em] text-os-dim">
-          {tab === 'messaging' ? `${unread} unread` : 'next 7 days'}
+          {tab === 'messaging' ? `${unread} okunmamış` : 'önümüzdeki 7 gün'}
         </span>
       </div>
 
@@ -69,14 +69,14 @@ export function CommsTabs({
         <div className="flex flex-col gap-7">
           <CommsBoard lanes={lanes} nowISO={nowISO} />
           <div>
-            <SectionHead label="Slack · clients" count={`${slackCards.length} clients`} />
+            <SectionHead label="Slack · müşteriler" count={`${slackCards.length} müşteri`} />
             <SlackClientBoard cards={slackCards} nowISO={nowISO} />
           </div>
           <div>
-            <SectionHead label="Slack · channels" count={channels.length} />
+            <SectionHead label="Slack · kanallar" count={channels.length} />
             {channels.length === 0 ? (
               <p className="rounded-xl border border-dashed border-os-border px-3 py-3 font-mono text-[10.5px] text-os-dim">
-                No channels imported — connect the Slack bot token to pull every current channel.
+                Hiç kanal içe aktarılmadı — mevcut her kanalı çekmek için Slack bot token'ını bağlayın.
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -95,7 +95,7 @@ export function CommsTabs({
                       </span>
                     </div>
                     <p className="mt-1 truncate text-[10px] leading-snug text-os-dim">
-                      {c.topic || (c.isMember ? 'member' : 'not a member')}
+                      {c.topic || (c.isMember ? 'üye' : 'üye değil')}
                     </p>
                   </div>
                 ))}

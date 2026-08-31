@@ -27,7 +27,7 @@ export function GrowthBadge({ label, value }: { label: string; value: number | n
 /** Tiny grayscale bar series of follower history. */
 export function Sparkline({ series }: { series: { date: string; followers: number }[] }) {
   if (series.length === 0) {
-    return <div className="text-[10px] text-os-dim">no history yet — syncs daily</div>;
+    return <div className="text-[10px] text-os-dim">henüz geçmiş yok — günlük senkronize edilir</div>;
   }
   const min = Math.min(...series.map((s) => s.followers));
   const max = Math.max(...series.map((s) => s.followers));

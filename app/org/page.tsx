@@ -103,7 +103,7 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
   return (
     <div>
       <PageHeader
-        title="Agent Hierarchy"
+        title="Ajan Hiyerarşisi"
       />
 
       {/* Venture switcher: one click swaps which crew lights up below.
@@ -115,7 +115,7 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
             !venture ? 'border-os-text bg-os-text text-os-bg' : 'border-os-border bg-os-surface text-os-muted hover:text-os-text'
           }`}
         >
-          All ventures
+          Tüm girişimler
         </Link>
         {VENTURES.map((v) => {
           const active = venture?.id === v.id;
@@ -142,7 +142,7 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
           style={{ borderColor: `${venture.color}66`, boxShadow: `inset 3px 0 0 ${venture.color}` }}
         >
           <div className="text-[9px] uppercase tracking-[0.2em]" style={{ color: venture.color }}>
-            {venture.label} — executive focus
+            {venture.label} — yönetici odağı
           </div>
           <ul className="mt-1.5 space-y-1">
             {venture.focus.map((f) => (
@@ -153,14 +153,14 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
             ))}
           </ul>
           <div className="mt-2 font-mono text-[10px] text-os-dim">
-            G-Brain tag: #{venture.brainTag} · {ventureSet?.size} agents on this venture
+            G-Brain etiketi: #{venture.brainTag} · {ventureSet?.size} ajan bu girişimde
           </div>
         </div>
       )}
 
       {/* Life-area legend: every crew below is tinted by the part of life it serves */}
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-os-border bg-os-surface px-3 py-2">
-        <span className="text-[9px] uppercase tracking-[0.2em] text-os-dim">Life areas</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-os-dim">Yaşam alanları</span>
         {LIFE_AREAS.map((area) => (
           <span key={area.id} className="flex items-center gap-1.5 text-[10px] text-os-muted">
             <span className="h-2 w-2 rounded-full" style={{ background: area.color }} />
@@ -173,9 +173,9 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
       <div className="flex flex-col items-center">
         <Users className="h-7 w-7 text-os-text" />
         <div className="mt-1 text-base font-bold tracking-wide">Alex Rivera</div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-os-dim">Operator</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-os-dim">Operatör</div>
         <div className="mt-2 h-6 w-px bg-os-border-bright" />
-        <div className="text-[10px] uppercase tracking-[0.2em] text-os-muted">Conductor (Super Agent)</div>
+        <div className="text-[10px] uppercase tracking-[0.2em] text-os-muted">Conductor (Süper Ajan)</div>
         <div className="h-3 w-px bg-os-border-bright" />
       </div>
 
@@ -187,11 +187,11 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
           <ConductorCard conductor={conductor} agentNames={agentNames} initialBroadcast={lastBroadcast} />
         ) : (
           <div className="rounded-xl border border-dashed border-os-border px-6 py-4 text-xs text-os-dim">
-            conductor missing — run npm run seed
+            conductor bulunamadı — npm run seed çalıştırın
           </div>
         )}
         <div className="hidden h-px w-10 bg-os-border-bright md:block" />
-        <SystemCard href="/comms" title="Comms Feed" caption="Gmail · WhatsApp · Slack, unified" />
+        <SystemCard href="/comms" title="İletişim Akışı" caption="Gmail · WhatsApp · Slack, tek yerde" />
       </div>
 
       {/* Trunk down to the department rail */}
@@ -240,7 +240,7 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
               {instanceAgents.length > 0 && (
                 <div className="w-full space-y-1.5">
                   <div className="text-center text-[9px] uppercase tracking-[0.2em] text-os-dim">
-                    {department.name} crew
+                    {department.name} ekibi
                   </div>
                   {/* Instance slots: each becomes an OpenClaw / Claude Code process on the host */}
                   {instanceAgents.map((agent) => (
@@ -282,14 +282,14 @@ export default function OrgChartPage({ searchParams }: { searchParams?: { ventur
 
               {all.length === 0 && (
                 <div className="w-full rounded-xl border border-dashed border-os-border px-3 py-5 text-center text-[10px] text-os-dim">
-                  Agents land here as this department goes live
+                  Bu departman devreye girdikçe ajanlar burada belirir
                 </div>
               )}
 
               {deptTools.length > 0 && (
                 <div className="w-full">
                   <div className="rounded-md bg-os-raised px-2 py-1 text-center text-[8px] uppercase tracking-[0.2em] text-os-muted">
-                    Agent Tools
+                    Ajan Araçları
                   </div>
                   <div className="mt-1.5 flex flex-wrap justify-center gap-1">
                     {deptTools.map((tool) => (

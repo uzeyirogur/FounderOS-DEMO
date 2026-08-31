@@ -10,9 +10,9 @@ import type { ActivityEvent } from '@/lib/schemas';
  * SSR-seeded; the refresh button re-pulls GET /api/agents/activity.
  */
 const KIND: Record<ActivityEvent['kind'], { label: string; cls: string }> = {
-  run: { label: 'run', cls: 'text-os-muted' },
-  message: { label: 'chat', cls: 'text-os-accent' },
-  broadcast: { label: 'cast', cls: 'text-os-text' },
+  run: { label: 'çalışma', cls: 'text-os-muted' },
+  message: { label: 'sohbet', cls: 'text-os-accent' },
+  broadcast: { label: 'yayın', cls: 'text-os-text' },
 };
 
 function clock(iso: string): string {
@@ -62,20 +62,20 @@ export function AgentActivityFeed({
   return (
     <section className="rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-os-dim">Activity</h2>
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-os-dim">Etkinlik</h2>
         <button
           onClick={refresh}
           disabled={loading}
           className="flex items-center gap-1.5 font-mono text-[10px] text-os-dim hover:text-os-muted disabled:opacity-50"
-          aria-label="Refresh activity"
+          aria-label="Etkinliği yenile"
         >
-          <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> refresh
+          <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> yenile
         </button>
       </div>
 
       {events.length === 0 ? (
         <p className="font-mono text-[10.5px] text-os-dim">
-          No activity yet — chat with an agent or the Conductor to see it here.
+          Henüz etkinlik yok — burada görmek için bir ajanla veya Conductor ile sohbet edin.
         </p>
       ) : (
         <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
@@ -86,7 +86,7 @@ export function AgentActivityFeed({
             >
               <span className={`w-9 shrink-0 uppercase ${KIND[e.kind].cls}`}>{KIND[e.kind].label}</span>
               <span className="shrink-0 font-semibold text-os-text">{agentNames[e.agentId] ?? e.agentId}</span>
-              {e.ok === false && <span className="shrink-0 text-os-err">FAIL</span>}
+              {e.ok === false && <span className="shrink-0 text-os-err">HATA</span>}
               <span className="min-w-0 flex-1 truncate text-os-muted" title={e.summary}>
                 {e.summary}
               </span>

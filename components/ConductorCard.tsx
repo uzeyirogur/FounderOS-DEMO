@@ -49,7 +49,7 @@ export function ConductorCard({
 
   return (
     <div className="hoverable group w-[340px] rounded-2xl border border-os-border-bright bg-os-surface p-4">
-      <div className="text-center text-[10px] uppercase tracking-[0.25em] text-os-dim">AI Head</div>
+      <div className="text-center text-[10px] uppercase tracking-[0.25em] text-os-dim">AI Beyin</div>
 
       {/* Living core — breathes and orbits while the Conductor is broadcasting */}
       <div className="mt-2 flex justify-center">
@@ -57,7 +57,7 @@ export function ConductorCard({
       </div>
       <div className="mt-2 text-center text-sm font-bold tracking-[0.2em]">CONDUCTOR</div>
       <div className="text-center text-[10px] text-os-dim">
-        super agent · {conductor.instance} runtime until the dedicated host lands
+        super agent · {conductor.instance} özel ana bilgisayar hazır olana kadar çalışır
       </div>
 
       {/* Chat pill → broadcast to every agent */}
@@ -66,7 +66,7 @@ export function ConductorCard({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Chat with Conductor — reaches every agent"
+          placeholder="Conductor ile sohbet et — her ajana ulaşır"
           className="min-w-0 flex-1 rounded-full border border-os-border bg-os-bg px-3 py-1.5 text-xs text-os-text placeholder:text-os-dim focus:border-os-border-bright focus:outline-none"
           disabled={sending}
         />
@@ -75,14 +75,14 @@ export function ConductorCard({
           disabled={sending || !message.trim()}
           className="shrink-0 rounded-full bg-os-text px-3.5 py-1.5 text-xs font-semibold text-os-bg transition-opacity disabled:opacity-40"
         >
-          {sending ? '…' : 'Send'}
+          {sending ? '…' : 'Gönder'}
         </button>
       </div>
       {error && <p className="mt-1.5 text-[11px] text-os-muted">⚠ {error}</p>}
 
       {/* Capability pills */}
       <div className="mt-3 grid grid-cols-3 gap-1">
-        {['Broadcast', 'Orchestration', 'Instances'].map((cap) => (
+        {['Yayın', 'Orkestrasyon', 'Örnekler'].map((cap) => (
           <span key={cap} className="rounded-full bg-os-text px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-wider text-os-bg">
             {cap}
           </span>
@@ -91,7 +91,7 @@ export function ConductorCard({
 
       {/* Agent tools bar */}
       <div className="mt-2 rounded-md bg-os-raised px-2 py-1 text-center text-[9px] uppercase tracking-[0.2em] text-os-muted">
-        Agent Tools
+        Ajan Araçları
       </div>
       <div className="mt-1.5 flex justify-center gap-1">
         {conductor.tools.map((tool) => (
@@ -110,7 +110,7 @@ export function ConductorCard({
           >
             <span className="truncate text-[11px] text-os-muted">«{broadcast.message}»</span>
             <span className="shrink-0 text-[10px] text-os-dim">
-              {broadcast.replies.filter((r) => r.ok).length}/{broadcast.replies.length} ok {showReplies ? '▾' : '▸'}
+              {broadcast.replies.filter((r) => r.ok).length}/{broadcast.replies.length} tamam {showReplies ? '▾' : '▸'}
             </span>
           </button>
           {showReplies && (

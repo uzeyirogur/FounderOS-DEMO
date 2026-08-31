@@ -25,7 +25,7 @@ export default function SocialPlatformPage({ params }: { params: { platform: str
         className="mb-4 inline-flex items-center gap-1.5 text-xs text-os-muted transition-colors hover:text-os-text"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        All platforms
+        Tüm platformlar
       </Link>
 
       <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
@@ -40,7 +40,7 @@ export default function SocialPlatformPage({ params }: { params: { platform: str
             rel="noreferrer"
             className="flex items-center gap-1.5 rounded-lg border border-os-border px-3 py-1.5 text-xs text-os-muted transition-colors hover:border-os-border-bright hover:text-os-text"
           >
-            Open profile
+            Profili aç
             <ExternalLink className="h-3 w-3" />
           </a>
         )}
@@ -48,15 +48,15 @@ export default function SocialPlatformPage({ params }: { params: { platform: str
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 ultra:grid-cols-5">
         <div className="rounded-xl border border-os-border bg-os-surface p-5">
-          <div className="text-xs uppercase tracking-wider text-os-muted">Followers</div>
+          <div className="text-xs uppercase tracking-wider text-os-muted">Takipçi</div>
           <div className="mt-2 text-3xl font-bold tracking-tight">{formatFollowers(followers)}</div>
         </div>
         {(
           [
-            ['Growth · 7d', growth.d7],
-            ['Growth · 30d', growth.d30],
-            ['Growth · 60d', growth.d60],
-            ['Growth · all time', growth.allTime],
+            ['Büyüme · 7g', growth.d7],
+            ['Büyüme · 30g', growth.d30],
+            ['Büyüme · 60g', growth.d60],
+            ['Büyüme · tüm zamanlar', growth.allTime],
           ] as const
         ).map(([label, value]) => (
           <div key={label} className="rounded-xl border border-os-border bg-os-surface p-5">
@@ -71,13 +71,13 @@ export default function SocialPlatformPage({ params }: { params: { platform: str
       <section className="mt-6 rounded-xl border border-os-border bg-os-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-os-muted">
-            Follower history
+            Takipçi geçmişi
           </h2>
           <div className="flex gap-1.5">
             <GrowthBadge label="7d" value={growth.d7} />
             <GrowthBadge label="30d" value={growth.d30} />
             <GrowthBadge label="60d" value={growth.d60} />
-            <GrowthBadge label="all" value={growth.allTime} />
+            <GrowthBadge label="tümü" value={growth.allTime} />
           </div>
         </div>
         {/* the diagram: one bar per snapshot — hover for exact count + change */}
@@ -85,13 +85,13 @@ export default function SocialPlatformPage({ params }: { params: { platform: str
         {newestFirst.length > 0 && (
           <div className="mt-2 flex items-center gap-3 font-mono text-[9.5px] uppercase tracking-[0.08em] text-os-dim">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-[2px] w-3 bg-os-ok" /> gained vs prev
+              <span className="inline-block h-[2px] w-3 bg-os-ok" /> öncekine göre arttı
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-[2px] w-3 bg-os-err" /> dipped
+              <span className="inline-block h-[2px] w-3 bg-os-err" /> düştü
             </span>
             <span className="ml-auto">
-              {newestFirst.length} snapshots · latest {newestFirst[0].capturedAt} · {newestFirst[0].source}
+              {newestFirst.length} anlık görüntü · son {newestFirst[0].capturedAt} · {newestFirst[0].source}
             </span>
           </div>
         )}

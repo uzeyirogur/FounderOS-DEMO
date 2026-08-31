@@ -19,7 +19,7 @@ export default function WorkflowsPage() {
   }
   return (
     <div>
-      <PageHeader eyebrow="process map" title="Workflows" />
+      <PageHeader eyebrow="süreç haritası" title="İş Akışları" />
       <WorkflowMap workflows={workflows} toolLogos={toolLogos} />
     </div>
   );

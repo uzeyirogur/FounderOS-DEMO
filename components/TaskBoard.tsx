@@ -11,9 +11,9 @@ import { User } from 'lucide-react';
 import type { AgentTask } from '@/lib/schemas';
 
 const COLUMNS: { status: AgentTask['status']; label: string; tone: string }[] = [
-  { status: 'open', label: 'To do', tone: 'var(--text-3)' },
-  { status: 'doing', label: 'In progress', tone: 'var(--warn)' },
-  { status: 'done', label: 'Done', tone: 'var(--ok)' },
+  { status: 'open', label: 'Yapılacak', tone: 'var(--text-3)' },
+  { status: 'doing', label: 'Devam ediyor', tone: 'var(--warn)' },
+  { status: 'done', label: 'Tamamlandı', tone: 'var(--ok)' },
 ];
 
 export function TaskBoard({
@@ -65,7 +65,7 @@ export function TaskBoard({
   return (
     <div>
       <p className="mb-4 font-mono text-[11px] text-os-dim">
-        Drag a card across the board as work moves. Agents advance their own cards as they commit and finish.
+        Bir kart iş ilerledikçe panoda sürüklenir. Ajanlar commit yaptıkça ve işlerini bitirdikçe kendi kartlarını ilerletir.
       </p>
       <div className="grid gap-4 md:grid-cols-3">
         {COLUMNS.map((col) => {
@@ -126,7 +126,7 @@ export function TaskBoard({
 
               {colTasks.length === 0 && (
                 <div className="rounded-lg border border-dashed border-os-border px-3 py-6 text-center font-mono text-[10px] text-os-dim">
-                  drop here
+                  buraya bırak
                 </div>
               )}
             </div>

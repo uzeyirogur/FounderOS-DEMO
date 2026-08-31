@@ -19,19 +19,19 @@ export default function LeadMagnetsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="content engine"
-        title="Lead Magnets"
-        right={<Badge tone="accent">{live} live</Badge>}
+        eyebrow="içerik motoru"
+        title="Potansiyel Müşteri Mıknatısları"
+        right={<Badge tone="accent">{live} yayında</Badge>}
       />
       <Link
         href="/content"
         className="mb-4 inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.16em] text-os-dim transition-colors hover:text-os-text"
       >
-        <ArrowLeft className="h-3 w-3" /> Content
+        <ArrowLeft className="h-3 w-3" /> İçerik
       </Link>
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        Every landing page we ship, with the live link on each row. Open it, or copy it straight
-        to whoever asked.
+        Yayınladığımız her açılış sayfası, her satırda canlı bağlantısıyla birlikte. Aç, ya da isteyen kişiye
+        doğrudan kopyala.
       </p>
       <NewLeadMagnet />
       <LeadMagnets rows={rows} showCopy manage />

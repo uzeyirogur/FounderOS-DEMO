@@ -6,6 +6,13 @@ import { Trash2, Rocket, X } from 'lucide-react';
 import type { Idea, IdeaStatus, ProjectKind } from '@/lib/schemas';
 
 const STATUSES: IdeaStatus[] = ['new', 'researching', 'scored', 'shipped', 'archived'];
+const STATUS_LABEL: Record<IdeaStatus, string> = {
+  new: 'Yeni',
+  researching: 'Araştırılıyor',
+  scored: 'Puanlandı',
+  shipped: 'Yayınlandı',
+  archived: 'Arşivlendi',
+};
 
 /**
  * Per-idea controls: status change, promote-to-project (the idea -> project
@@ -47,13 +54,13 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: unknown };
-        setError(typeof body.error === 'string' ? body.error : 'Check the project name and path/URL.');
+        setError(typeof body.error === 'string' ? body.error : 'Proje adını ve yol/URL bilgisini kontrol et.');
         return;
       }
       setPromoting(false);
       router.refresh();
     } catch {
-      setError('Network error. Try again.');
+      setError('Ağ hatası. Tekrar dene.');
     } finally {
       setBusy(false);
     }
@@ -66,7 +73,7 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
           href="/projects"
           className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok"
         >
-          <Rocket className="h-3 w-3" /> promoted
+          <Rocket className="h-3 w-3" /> yükseltildi
         </a>
       </span>
     );
@@ -75,32 +82,32 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
   return (
     <span className="flex items-center gap-1.5">
       <select
-        aria-label="Status"
+        aria-label="Durum"
         disabled={busy}
         value={idea.status}
         onChange={(e) => call({ method: 'PATCH', body: JSON.stringify({ status: e.target.value }) })}
         className="rounded-sm-t border border-os-border bg-os-bg px-1.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-os-muted outline-none focus:border-os-border-strong disabled:opacity-40"
       >
         {STATUSES.map((s) => (
-          <option key={s} value={s}>{s}</option>
+          <option key={s} value={s}>{STATUS_LABEL[s]}</option>
         ))}
       </select>
 
       {promoting ? (
-        <span className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-label="Promote to project">
+        <span className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-label="Projeye yükselt">
           <form
             onSubmit={submitPromote}
             className="w-full max-w-[420px] rounded-lg-t border border-os-border bg-os-surface p-4"
           >
             <div className="mb-3 flex items-center">
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Promote to project</span>
-              <button type="button" onClick={() => setPromoting(false)} aria-label="Close" className="ml-auto text-os-dim hover:text-os-text">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Projeye yükselt</span>
+              <button type="button" onClick={() => setPromoting(false)} aria-label="Kapat" className="ml-auto text-os-dim hover:text-os-text">
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
             <div className="grid gap-3">
               <label className="block">
-                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Project name</span>
+                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Proje adı</span>
                 <input
                   required
                   value={form.name}
@@ -109,18 +116,18 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Kind</span>
+                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Tür</span>
                 <select
                   value={form.kind}
                   onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value as ProjectKind }))}
                   className="w-full rounded-sm-t border border-os-border bg-os-bg px-2.5 py-2 text-[12px] text-os-text outline-none focus:border-os-border-strong"
                 >
-                  <option value="local">Local folder</option>
-                  <option value="git">Git remote</option>
+                  <option value="local">Yerel klasör</option>
+                  <option value="git">Git uzak deposu</option>
                 </select>
               </label>
               <label className="block">
-                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Path or URL</span>
+                <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">Yol veya URL</span>
                 <input
                   required
                   value={form.pathOrUrl}
@@ -136,20 +143,20 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
               disabled={busy}
               className="mt-3 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong disabled:opacity-40"
             >
-              {busy ? 'promoting…' : 'create project'}
+              {busy ? 'yükseltiliyor…' : 'proje oluştur'}
             </button>
             <p className="mt-2 font-mono text-[10px] leading-relaxed text-os-dim">
-              Registers a new Project Registry entry, read-only with no agents authorized. Grant access from /projects.
+              Yeni bir Proje Kayıt Defteri girdisi oluşturur; salt okunur ve hiçbir ajan yetkilendirilmemiş. Erişimi /projects üzerinden ver.
             </p>
           </form>
         </span>
       ) : (
         <button
           onClick={() => setPromoting(true)}
-          title="Promote to project"
+          title="Projeye yükselt"
           className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-1.5 py-1 font-mono text-[10px] uppercase tracking-widest text-os-dim transition-colors hover:border-os-border-strong hover:text-os-accent"
         >
-          <Rocket className="h-3 w-3" /> promote
+          <Rocket className="h-3 w-3" /> yükselt
         </button>
       )}
 
@@ -160,17 +167,17 @@ export function IdeaRowActions({ idea }: { idea: Idea }) {
             disabled={busy}
             className="rounded-sm-t border border-os-border px-1.5 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err transition-colors hover:border-os-border-strong disabled:opacity-40"
           >
-            sure?
+            emin misin?
           </button>
           <button onClick={() => setConfirming(false)} className="font-mono text-[10px] uppercase tracking-widest text-os-dim transition-colors hover:text-os-text">
-            no
+            hayır
           </button>
         </span>
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          aria-label="Delete idea"
-          title="Delete"
+          aria-label="Fikri sil"
+          title="Sil"
           className="text-os-dim opacity-0 transition-opacity hover:text-os-err group-hover:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5" />

@@ -36,14 +36,14 @@ export default async function CommsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="by source"
-        title="Comms"
-        right={<Badge tone="accent">{totalUnread} unread</Badge>}
+        eyebrow="kaynağa göre"
+        title="İletişim"
+        right={<Badge tone="accent">{totalUnread} okunmamış</Badge>}
       />
 
       {/* Source status row */}
       <section className="mb-7">
-        <SectionHead label="Sources" count={`${connectedSources}/${sources.length} connected`} />
+        <SectionHead label="Kaynaklar" count={`${connectedSources}/${sources.length} bağlı`} />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {sources.map((source) => {
             const Icon = SOURCE_ICON[source.id] ?? Mail;
@@ -59,7 +59,7 @@ export default async function CommsPage() {
                       tone={ok ? 'ok' : source.state === 'error' ? 'err' : 'default'}
                       ghost={source.state === 'not_configured'}
                     >
-                      {ok ? 'Connected' : source.state === 'error' ? 'Error' : 'Not configured'}
+                      {ok ? 'Bağlı' : source.state === 'error' ? 'Hata' : 'Yapılandırılmadı'}
                     </Badge>
                   </span>
                 </div>
@@ -74,7 +74,7 @@ export default async function CommsPage() {
       <CommsTabs lanes={lanes} slackCards={slackCards} channels={channels} events={weekEvents} accounts={calLegend} nowISO={nowISO} />
 
       <p className="mt-4 rounded-xl border border-dashed border-os-border-strong px-3 py-3 text-center font-mono text-[10.5px] text-os-dim">
-        Four inboxes (expand to read + reply) and WhatsApp as lanes · Slack per client + every current channel · meetings via CalDAV
+        Dört gelen kutusu (açıp okuyup yanıtlayın) ve WhatsApp şerit olarak · Müşteri bazlı Slack + tüm mevcut kanallar · CalDAV üzerinden toplantılar
       </p>
     </div>
   );

@@ -52,7 +52,7 @@ function PersonaCard({ p, cover = true }: { p: Persona; cover?: boolean }) {
         <div className="mt-3 flex items-start gap-2 rounded-md-t border border-os-border bg-os-surface2 px-3 py-2">
           <Star className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: p.accent }} />
           <div>
-            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-os-dim">North star</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-os-dim">Kuzey yıldızı</span>
             <div className="text-[12.5px] font-semibold">{p.northStar}</div>
           </div>
         </div>
@@ -60,7 +60,7 @@ function PersonaCard({ p, cover = true }: { p: Persona; cover?: boolean }) {
 
       {/* pillars */}
       <div className="px-5 py-4">
-        <SectionLabel icon={Boxes}>Pillars · {p.pillars.length}</SectionLabel>
+        <SectionLabel icon={Boxes}>Sütunlar · {p.pillars.length}</SectionLabel>
         <div className="grid gap-2.5 lg:grid-cols-2">
           {p.pillars.map((pillar) => (
             <div key={pillar.name} className="rounded-md-t border border-os-border bg-os-surface2 px-3 py-2.5">
@@ -83,7 +83,7 @@ function PersonaCard({ p, cover = true }: { p: Persona; cover?: boolean }) {
       {/* connectors + metrics */}
       <div className="grid gap-4 border-t border-os-border px-5 py-4 sm:grid-cols-2">
         <div>
-          <SectionLabel icon={Plug}>Connectors</SectionLabel>
+          <SectionLabel icon={Plug}>Bağlantılar</SectionLabel>
           <div className="flex flex-wrap gap-1.5">
             {p.connectors.map((c) => (
               <span key={c} className="rounded-sm-t border border-os-border bg-os-surface2 px-2 py-0.5 font-mono text-[10px] text-os-muted">
@@ -93,7 +93,7 @@ function PersonaCard({ p, cover = true }: { p: Persona; cover?: boolean }) {
           </div>
         </div>
         <div>
-          <SectionLabel icon={BarChart3}>Tracks</SectionLabel>
+          <SectionLabel icon={BarChart3}>Takip Edilenler</SectionLabel>
           <ul className="flex flex-col gap-1">
             {p.metrics.map((m) => (
               <li key={m} className="flex items-baseline gap-1.5 text-[11.5px] text-os-muted">
@@ -120,7 +120,7 @@ function PersonaCard({ p, cover = true }: { p: Persona; cover?: boolean }) {
           <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: p.accent }} />
           <div>
             <span className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: p.accent }}>
-              Signature play
+              İmza hamlesi
             </span>
             <p className="mt-0.5 text-[12px] leading-relaxed [text-wrap:pretty]">{p.signaturePlay}</p>
           </div>
@@ -167,14 +167,14 @@ export function PersonasViewer({ personas }: { personas: Persona[] }) {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={() => go(-1)}
-            aria-label="Previous persona"
+            aria-label="Önceki persona"
             className="flex h-9 w-9 items-center justify-center rounded-sm-t border border-os-border text-os-muted transition-colors hover:border-os-border-strong hover:text-os-text"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             onClick={() => go(1)}
-            aria-label="Next persona"
+            aria-label="Sonraki persona"
             className="flex h-9 w-9 items-center justify-center rounded-sm-t border border-os-border text-os-muted transition-colors hover:border-os-border-strong hover:text-os-text"
           >
             <ChevronRight className="h-4 w-4" />
@@ -219,10 +219,10 @@ export function PersonasViewer({ personas }: { personas: Persona[] }) {
         >
           <div className="flex shrink-0 items-center justify-between border-b border-os-border px-4 py-2.5">
             <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">
-              G-Brain · knowledge graph
+              G-Brain · bilgi grafiği
             </span>
             <span className="font-mono text-[9.5px] text-os-dim">
-              {current.pillars.length} depts · {current.pillars.reduce((s, p) => s + p.agents.length, 0)} agents
+              {current.pillars.length} birim · {current.pillars.reduce((s, p) => s + p.agents.length, 0)} ajan
             </span>
           </div>
           <div className="min-h-0 flex-1 p-2">

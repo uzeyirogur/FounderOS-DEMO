@@ -41,8 +41,8 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
 
   async function submit() {
     setError(null);
-    if (!caption.trim()) return setError('Add a caption first.');
-    if (selected.size === 0) return setError('Pick at least one platform.');
+    if (!caption.trim()) return setError('Önce bir açıklama ekle.');
+    if (selected.size === 0) return setError('En az bir platform seç.');
     setBusy(true);
     try {
       const res = await fetch('/api/social/posts', {
@@ -78,7 +78,7 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          placeholder="Write a caption — this queues for the Zernio publishing agent…"
+          placeholder="Bir açıklama yaz — bu, Zernio yayınlama ajanına kuyruğa alınır…"
           rows={4}
           className="w-full resize-none rounded-sm-t border border-os-border bg-os-surface2 px-3 py-2.5 text-[13px] leading-relaxed text-os-text outline-none placeholder:text-os-dim focus:border-os-border-strong"
         />
@@ -107,7 +107,7 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
             <input
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
-              placeholder="media URL (optional)"
+              placeholder="medya URL'si (opsiyonel)"
               className="w-full bg-transparent font-mono text-[11px] text-os-text outline-none placeholder:text-os-dim"
             />
           </label>
@@ -123,14 +123,14 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="font-mono text-[10px] text-os-dim">
-            Queues only — the Social agent publishes on its next run.
+            Yalnızca kuyruğa alır — Sosyal ajan bir sonraki çalıştırmasında yayınlar.
           </span>
           <button
             onClick={submit}
             disabled={busy}
             className="flex items-center gap-2 whitespace-nowrap rounded-sm-t border border-os-accent bg-os-accent px-3.5 py-[7px] text-[12.5px] font-semibold text-os-ink transition-all hover:shadow-[var(--glow)] disabled:opacity-45"
           >
-            {busy ? <span className="font-mono text-[11px]">queuing…</span> : <><Send className="h-[13px] w-[13px]" /> Queue post</>}
+            {busy ? <span className="font-mono text-[11px]">kuyruğa alınıyor…</span> : <><Send className="h-[13px] w-[13px]" /> Gönderiyi kuyruğa al</>}
           </button>
         </div>
         {error && <p className="mt-2 font-mono text-[11px] text-os-err">{error}</p>}
@@ -139,12 +139,12 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
       {/* Queue */}
       <div className="rounded-lg-t border border-os-border bg-os-surface p-1">
         <div className="flex items-center justify-between px-3 py-2.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-os-dim">Queue</span>
-          <span className="font-mono text-[10px] text-os-muted">{queued.length} pending</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-os-dim">Kuyruk</span>
+          <span className="font-mono text-[10px] text-os-muted">{queued.length} bekliyor</span>
         </div>
         <div className="flex max-h-[280px] flex-col gap-1 overflow-y-auto px-1 pb-1">
           {queued.length === 0 && (
-            <p className="px-3 py-6 text-center font-mono text-[10.5px] text-os-dim">nothing queued yet</p>
+            <p className="px-3 py-6 text-center font-mono text-[10.5px] text-os-dim">henüz kuyrukta bir şey yok</p>
           )}
           {queued.map((post) => (
             <div key={post.id} className="rounded-sm-t border border-os-border bg-os-surface2 px-3 py-2.5">
@@ -157,7 +157,7 @@ export function PostComposer({ initialPosts }: { initialPosts: SocialPost[] }) {
                 ))}
                 <span className="ml-auto">
                   <Badge tone={post.scheduledFor ? 'warn' : 'accent'}>
-                    {post.scheduledFor ? fmtWhen(post.scheduledFor) : 'queued'}
+                    {post.scheduledFor ? fmtWhen(post.scheduledFor) : 'kuyrukta'}
                   </Badge>
                 </span>
               </div>

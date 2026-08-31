@@ -33,7 +33,7 @@ export function PublishPlanActions({ plan }: { plan: PublishPlan }) {
     try {
       const res = await fetch(`/api/publish-plans/${encodeURIComponent(plan.id)}/publish`, { method: 'POST' });
       const body = await res.json();
-      setResult(body.result?.reason ?? (body.result?.ok ? 'Published.' : 'Failed.'));
+      setResult(body.result?.reason ?? (body.result?.ok ? 'Yayınlandı.' : 'Başarısız.'));
       router.refresh();
     } finally {
       setBusy(false);
@@ -49,14 +49,14 @@ export function PublishPlanActions({ plan }: { plan: PublishPlan }) {
             disabled={busy}
             className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok disabled:opacity-40"
           >
-            <Check className="h-3 w-3" /> approve
+            <Check className="h-3 w-3" /> onayla
           </button>
           <button
             onClick={() => decide('rejected')}
             disabled={busy}
             className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err disabled:opacity-40"
           >
-            <X className="h-3 w-3" /> reject
+            <X className="h-3 w-3" /> reddet
           </button>
         </span>
       )}
@@ -66,7 +66,7 @@ export function PublishPlanActions({ plan }: { plan: PublishPlan }) {
           disabled={busy}
           className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-accent disabled:opacity-40"
         >
-          <Send className="h-3 w-3" /> attempt publish
+          <Send className="h-3 w-3" /> yayınlamayı dene
         </button>
       )}
       {result && <div className="mt-1 max-w-[260px] text-[10.5px] text-os-dim">{result}</div>}

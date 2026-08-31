@@ -30,6 +30,13 @@ function platformLabel(p: string): string {
   return p.charAt(0).toUpperCase() + p.slice(1);
 }
 
+const AGENT_STATUS_LABEL: Record<string, string> = {
+  active: 'Aktif',
+  idle: 'Boşta',
+  training: 'Eğitimde',
+  planned: 'Planlandı',
+};
+
 function AgentCard({ agent, lead = false }: { agent: Agent; lead?: boolean }) {
   return (
     <div
@@ -40,12 +47,12 @@ function AgentCard({ agent, lead = false }: { agent: Agent; lead?: boolean }) {
           <div className="flex items-center gap-2">
             <Dot state={agent.status === 'active' ? 'ok' : 'available'} pulse={agent.status === 'active'} />
             <span className="truncate text-[14px] font-bold">{agent.name}</span>
-            {lead && <span className="rounded-sm-t border border-[var(--accent-line)] px-1.5 py-px font-mono text-[9px] uppercase tracking-wide text-os-accent">lead</span>}
+            {lead && <span className="rounded-sm-t border border-[var(--accent-line)] px-1.5 py-px font-mono text-[9px] uppercase tracking-wide text-os-accent">lider</span>}
           </div>
           <div className="mt-0.5 font-mono text-[10.5px] text-os-dim">{agent.role} · {agent.model}</div>
         </div>
         <span className={`shrink-0 font-mono text-[10px] uppercase tracking-wide ${agent.status === 'active' ? 'text-os-ok' : 'text-os-warn'}`}>
-          {agent.status}
+          {AGENT_STATUS_LABEL[agent.status] ?? agent.status}
         </span>
       </div>
       <p className="mt-2.5 text-[12px] leading-relaxed text-os-muted [text-wrap:pretty]">{agent.description}</p>
@@ -77,21 +84,21 @@ export default async function ContentPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="content engine"
-        title="Content Creation"
-        right={<Badge tone="accent">{crew.length} agents</Badge>}
+        eyebrow="içerik motoru"
+        title="İçerik Üretimi"
+        right={<Badge tone="accent">{crew.length} ajan</Badge>}
       />
 
       {/* Content agent + crew (real seed roster) */}
       <section>
         <SectionHead
-          label="Content agents"
+          label="İçerik ajanları"
           count={`${crew.length}`}
         />
         <p className="mb-3 flex items-center gap-1.5 text-xs text-os-dim">
-          <Clapperboard className="h-3.5 w-3.5" /> Tied to your social media — run them from{' '}
+          <Clapperboard className="h-3.5 w-3.5" /> Sosyal medyanla bağlantılı — şuradan çalıştır{' '}
           <Link href="/agents" className="inline-flex items-center gap-0.5 text-os-accent hover:underline">
-            Agents <ArrowUpRight className="h-3 w-3" />
+            Ajanlar <ArrowUpRight className="h-3 w-3" />
           </Link>
         </p>
         {lead && <AgentCard agent={lead} lead />}
@@ -106,12 +113,12 @@ export default async function ContentPage() {
 
       {/* Social Content Studio — real production, not just text */}
       <section className="mt-8">
-        <SectionHead label="Social Content Studio" count={`${contentPieces.length} produced`} />
+        <SectionHead label="Sosyal İçerik Stüdyosu" count={`${contentPieces.length} üretildi`} />
         <p className="mb-3 text-xs text-os-dim">
-          Posts and carousels are written directly. Everything else (video, image, motion, 3D/web interactive, mockups,
-          voiceover) checks the Capability Registry for a real tool first — see{' '}
+          Gönderi ve carousel'ler doğrudan yazılır. Geri kalan her şey (video, görsel, hareket, 3D/web etkileşimli, mockup,
+          seslendirme) önce Yetenek Kayıt Defteri'nde gerçek bir araç olup olmadığını kontrol eder — bkz.{' '}
           <Link href="/capabilities" className="inline-flex items-center gap-0.5 text-os-accent hover:underline">
-            Capabilities <ArrowUpRight className="h-3 w-3" />
+            Yetenekler <ArrowUpRight className="h-3 w-3" />
           </Link>
         </p>
         <ContentStudioProducer recent={contentPieces.slice(0, 6)} />
@@ -120,13 +127,13 @@ export default async function ContentPage() {
       {/* Zernio content pipeline — recent published content + cadence */}
       <section className="mt-8">
         <SectionHead
-          label="Zernio content pipeline"
-          count={posts.length > 0 ? `${posts.length} recent` : 'no live pull'}
+          label="Zernio içerik hattı"
+          count={posts.length > 0 ? `${posts.length} son` : 'canlı veri yok'}
         />
         <p className="mb-3 flex items-center gap-1.5 text-xs text-os-dim">
-          Published across six platforms via Zernio · {activeDays} active days tracked · full dashboard in{' '}
+          Zernio üzerinden altı platformda yayınlandı · {activeDays} aktif gün izleniyor · tam panel için{' '}
           <Link href="/social" className="inline-flex items-center gap-0.5 text-os-accent hover:underline">
-            Social <ArrowUpRight className="h-3 w-3" />
+            Sosyal <ArrowUpRight className="h-3 w-3" />
           </Link>
         </p>
         {posts.length > 0 ? (
@@ -135,7 +142,7 @@ export default async function ContentPage() {
               <li key={`${p.url}-${i}`} className="flex items-center gap-3 px-4 py-2.5">
                 <Play className="h-3.5 w-3.5 shrink-0 text-os-dim" />
                 <span className="w-24 shrink-0 font-mono text-[10.5px] uppercase tracking-wide text-os-muted">{platformLabel(p.platform)}</span>
-                <span className="min-w-0 flex-1 truncate text-[12.5px]">{p.caption || 'Untitled post'}</span>
+                <span className="min-w-0 flex-1 truncate text-[12.5px]">{p.caption || 'İsimsiz gönderi'}</span>
                 {p.url ? (
                   <a href={p.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-os-dim hover:text-os-accent">
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -147,21 +154,21 @@ export default async function ContentPage() {
           </ul>
         ) : (
           <p className="rounded-lg-t border border-dashed border-os-border bg-os-surface px-4 py-5 text-center font-mono text-[11.5px] text-os-dim">
-            No live Zernio pull right now — recent content shows here once the API responds (key from ~/.config/social/.env).
+            Şu anda canlı bir Zernio verisi yok — API yanıt verdiğinde son içerikler burada görünür (anahtar ~/.config/social/.env içinden).
           </p>
         )}
       </section>
 
       {/* Lead magnets — every landing page we ship, with the live link */}
       <section className="mt-8">
-        <SectionHead label="Lead magnets" count={`${leadMagnets.filter((m) => m.status === 'live').length} live`} />
+        <SectionHead label="Potansiyel müşteri mıknatısları" count={`${leadMagnets.filter((m) => m.status === 'live').length} yayında`} />
         <p className="mb-3 flex items-center gap-1.5 text-xs text-os-dim">
-          Every landing page shipped behind a post ·{' '}
+          Bir gönderinin arkasında yayınlanan her açılış sayfası ·{' '}
           <Link
             href="/content/lead-magnets"
             className="inline-flex items-center gap-0.5 text-os-accent hover:underline"
           >
-            Open the register <ArrowUpRight className="h-3 w-3" />
+            Kayıt defterini aç <ArrowUpRight className="h-3 w-3" />
           </Link>
         </p>
         <LeadMagnets rows={leadMagnets.slice(0, 4)} />

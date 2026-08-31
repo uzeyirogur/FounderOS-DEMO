@@ -139,9 +139,9 @@ export function SkillsGrid({ cards, sourceNote }: { cards: SkillCard[]; sourceNo
     try {
       const res = await fetch(`/api/skills/${encodeURIComponent(card.id)}`);
       const body = (await res.json()) as { markdown?: string; error?: string };
-      setMd(body.markdown ?? `SKILL.md could not be read (${body.error ?? res.status}).`);
+      setMd(body.markdown ?? `SKILL.md okunamadı (${body.error ?? res.status}).`);
     } catch {
-      setMd('SKILL.md could not be read.');
+      setMd('SKILL.md okunamadı.');
     }
   };
 
@@ -183,7 +183,7 @@ export function SkillsGrid({ cards, sourceNote }: { cards: SkillCard[]; sourceNo
                   <button
                     key={c.id}
                     onClick={() => open(c)}
-                    title={`${c.name} — open SKILL.md`}
+                    title={`${c.name} — SKILL.md'yi aç`}
                     className="group flex flex-col gap-1.5 rounded-lg border border-os-border bg-os-surface p-2.5 text-left transition-colors hover:border-os-border-strong hover:bg-os-surface2"
                   >
                     <div className="flex items-center gap-1.5">
@@ -211,20 +211,20 @@ export function SkillsGrid({ cards, sourceNote }: { cards: SkillCard[]; sourceNo
               <span className="flex shrink-0 items-center gap-3">
                 <button
                   onClick={() => download(viewing)}
-                  title="Download SKILL.md"
+                  title="SKILL.md'yi indir"
                   className="flex items-center gap-1.5 rounded-md border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-dim transition-colors hover:border-os-border-strong hover:text-os-text"
                 >
                   <Download className="h-3 w-3" />
                   skill.md
                 </button>
-                <button onClick={() => setViewing(null)} aria-label="Close" className="shrink-0 text-os-dim transition-colors hover:text-os-text">
+                <button onClick={() => setViewing(null)} aria-label="Kapat" className="shrink-0 text-os-dim transition-colors hover:text-os-text">
                   <X className="h-4 w-4" />
                 </button>
               </span>
             </div>
             <div className="overflow-y-auto px-5 py-4">
               {md === null ? (
-                <p className="animate-pulse font-mono text-[11px] text-os-dim">loading SKILL.md…</p>
+                <p className="animate-pulse font-mono text-[11px] text-os-dim">SKILL.md yükleniyor…</p>
               ) : (
                 <Markdown src={md} />
               )}

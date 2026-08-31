@@ -32,7 +32,7 @@ export function gateDecision(input: {
 /** Self-contained challenge page: no app chrome, no data, just the form. */
 export function challengePage(): string {
   return `<!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -55,10 +55,10 @@ export function challengePage(): string {
 <body>
   <div class="card">
     <div class="mark"><b>F</b>OUNDER OS</div>
-    <p>This OS is private. Enter your access token.</p>
+    <p>Bu sistem özeldir. Erişim anahtarınızı girin.</p>
     <form method="GET" action="/">
-      <input name="token" type="password" placeholder="access token" autofocus>
-      <button type="submit">Unlock</button>
+      <input name="token" type="password" placeholder="erişim anahtarı" autofocus>
+      <button type="submit">Kilidi Aç</button>
     </form>
   </div>
 </body>

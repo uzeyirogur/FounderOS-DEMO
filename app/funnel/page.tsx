@@ -38,9 +38,9 @@ import type { ConnectorStatus } from '@/lib/connectors/types';
 export const dynamic = 'force-dynamic';
 
 const VENTURE_TABS: { id: FunnelVenture | 'all'; label: string }[] = [
-  { id: 'all', label: 'All clients' },
-  { id: 'vantage', label: 'Client Services' },
-  { id: 'launchpad-cohort', label: 'Mentorship Program' },
+  { id: 'all', label: 'Tüm müşteriler' },
+  { id: 'vantage', label: 'Müşteri Hizmetleri' },
+  { id: 'launchpad-cohort', label: 'Mentorluk Programı' },
 ];
 
 function usd(amount: number): string {
@@ -173,7 +173,7 @@ function AttentionRow({
 
 const agoDays = (ts: string, now: Date): string => {
   const d = Math.max(0, Math.floor((now.getTime() - Date.parse(ts)) / 86_400_000));
-  return d === 0 ? 'today' : `${d}d ago`;
+  return d === 0 ? 'bugün' : `${d}g önce`;
 };
 
 /** Two table rows per client: the formatted data line, then their touches. */
@@ -264,13 +264,13 @@ function JourneyTableRows({
             {!converted && <span className="font-mono text-[10px] text-os-dim">→ …</span>}
             {lastMsg !== undefined && (
               <span className="ml-auto flex min-w-0 items-center gap-1.5 font-mono text-[10px]">
-                <span className="shrink-0 uppercase tracking-wide text-os-dim">last msg</span>
+              <span className="shrink-0 uppercase tracking-wide text-os-dim">son mesaj</span>
                 {lastMsg ? (
                   <span className="min-w-0 truncate text-os-muted" title={lastMsg.preview}>
-                    via {lastMsg.source} · {agoDays(lastMsg.ts, now)} · “{lastMsg.preview.slice(0, 60)}”
+                    {lastMsg.source} üzerinden · {agoDays(lastMsg.ts, now)} · "{lastMsg.preview.slice(0, 60)}"
                   </span>
                 ) : (
-                  <span className="text-os-dim">no thread on record</span>
+                  <span className="text-os-dim">kayıtlı konuşma yok</span>
                 )}
               </span>
             )}
@@ -356,17 +356,17 @@ export default async function FunnelPage({
     <div>
       {/* Camera-ready: two slim rows, then the space owns the viewport. */}
       <header className="mb-2 flex items-end justify-between gap-4">
-        <h1 className="text-[25px] font-bold uppercase leading-[1.1] tracking-[0.06em]">Funnel</h1>
+        <h1 className="text-[25px] font-bold uppercase leading-[1.1] tracking-[0.06em]">Huni</h1>
         <div className="flex shrink-0 items-center gap-2">
           {isLive ? (
-            <Badge tone="ok">live · {liveLabel}</Badge>
+            <Badge tone="ok">canlı · {liveLabel}</Badge>
           ) : (
             <Badge tone="warn" ghost>
-              demo data
+              demo veri
             </Badge>
           )}
           <Badge tone="accent">
-            {summary.converted}/{summary.clients} converted · {usd(summary.revenueUsd)}
+            {summary.converted}/{summary.clients} dönüştürüldü · {usd(summary.revenueUsd)}
           </Badge>
         </div>
       </header>
@@ -380,7 +380,7 @@ export default async function FunnelPage({
               <Link
                 key={tab.id}
                 href={href(tab.id === 'all' ? undefined : (tab.id as FunnelVenture), view)}
-                title={tab.id !== 'all' && isLive ? 'Live split = deal-name heuristic; add a venture attribute in Attio for exact' : undefined}
+                title={tab.id !== 'all' && isLive ? 'Canlı ayrım = anlaşma adı sezgisi; Attio\'da tam eşleşme için bir venture özniteliği ekleyin' : undefined}
                 className={`rounded-sm-t border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide transition-colors ${
                   active
                     ? 'border-[var(--accent-line)] bg-[var(--accent-soft)] text-os-accent'
@@ -399,7 +399,7 @@ export default async function FunnelPage({
           })}
         </span>
         <span className="h-3 w-px bg-os-border" />
-        <span className="flex items-center gap-2.5" title={isLive ? `${excludedCount} lost/closed-lost excluded` : undefined}>
+        <span className="flex items-center gap-2.5" title={isLive ? `${excludedCount} kaybedilen/kapatılmış hariç tutuldu` : undefined}>
           <SourceCheck status={attio} live={Boolean(attioLive?.journeys.length)} count={attioLive?.total} />
           <SourceCheck status={ghl} live={Boolean(ghlLive?.journeys.length)} count={ghlLive?.total} />
           <SourceCheck status={trakyo} />
@@ -408,32 +408,32 @@ export default async function FunnelPage({
         <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide">
           <Link
             href={href(venture, 'live', stage, 'flow')}
-            title="Open space left → right — every lead orbits the stage it's in now"
+            title="Alanı soldan sağa aç — her lead şu anda bulunduğu aşamanın etrafında döner"
             className={layout === 'flow' && view === 'live' ? 'text-os-accent' : 'text-os-dim hover:text-os-muted'}
           >
-            flow
+            akış
           </Link>
           <span className="text-os-dim">·</span>
           <Link
             href={href(venture, 'live', stage, 'radial')}
-            title="Circle, outside → in — center is the purchase"
+            title="Daire, dıştan içe — merkez satın almadır"
             className={layout === 'radial' && view === 'live' ? 'text-os-accent' : 'text-os-dim hover:text-os-muted'}
           >
-            radial
+            radyal
           </Link>
           <span className="mx-1 h-3 w-px bg-os-border" />
           <Link
             href={href(venture, 'live')}
             className={view === 'live' ? 'text-os-accent' : 'text-os-dim hover:text-os-muted'}
           >
-            live funnel
+            canlı huni
           </Link>
           <span className="text-os-dim">·</span>
           <Link
             href={href(venture, 'archive')}
             className={view === 'archive' ? 'text-os-accent' : 'text-os-dim hover:text-os-muted'}
           >
-            archive ({archived.length})
+            arşiv ({archived.length})
           </Link>
         </span>
       </div>
@@ -445,17 +445,17 @@ export default async function FunnelPage({
           {view === 'archive' ? (
             archived.length === 0 ? (
               <p className="py-6 text-center font-mono text-[11.5px] text-os-dim">
-                Nothing decayed — no lead has sat quiet past {DECAY_DAYS} days.
+                Hiçbir şey sönmedi — hiçbir lead {DECAY_DAYS} günden fazla sessiz kalmadı.
               </p>
             ) : (
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">
                     <th className="px-3 pb-1 pt-2 font-normal">Lead</th>
-                    <th className="px-3 pb-1 pt-2 font-normal">Reached</th>
-                    <th className="px-3 pb-1 pt-2 font-normal">Quiet</th>
-                    <th className="px-3 pb-1 pt-2 font-normal">Likelihood</th>
-                    <th className="px-3 pb-1 pt-2 font-normal">Last touch</th>
+                    <th className="px-3 pb-1 pt-2 font-normal">Ulaşıldı</th>
+                    <th className="px-3 pb-1 pt-2 font-normal">Sessiz</th>
+                    <th className="px-3 pb-1 pt-2 font-normal">Olasılık</th>
+                    <th className="px-3 pb-1 pt-2 font-normal">Son temas</th>
                     <th className="px-3 pb-1 pt-2 font-normal" />
                   </tr>
                 </thead>
@@ -515,15 +515,15 @@ export default async function FunnelPage({
           <div className="rounded-lg-t border border-os-border bg-os-surface">
             <div className="flex items-baseline justify-between px-2.5 py-2">
               <span className="font-mono text-[9.5px] font-bold uppercase tracking-[0.22em] text-os-accent">
-                push now
+                şimdi it
               </span>
               <span className="font-mono text-[9px] uppercase tracking-wide text-os-dim">
-                hot + moving — close them
+                sıcak + hareket halinde — kapat
               </span>
             </div>
             {attention.pushNow.length === 0 ? (
               <p className="border-t border-os-border px-2.5 py-2 font-mono text-[10px] text-os-dim">
-                no hot leads in motion right now
+                şu anda hareket halinde sıcak lead yok
               </p>
             ) : (
               attention.pushNow.map((j) => (
@@ -534,15 +534,15 @@ export default async function FunnelPage({
           <div className="rounded-lg-t border border-os-border bg-os-surface">
             <div className="flex items-baseline justify-between px-2.5 py-2">
               <span className="font-mono text-[9.5px] font-bold uppercase tracking-[0.22em] text-os-err">
-                save now
+                şimdi kurtar
               </span>
               <span className="font-mono text-[9px] uppercase tracking-wide text-os-dim">
-                fading toward the archive — highest likelihood first
+                arşive doğru sönüyor — önce en yüksek olasılık
               </span>
             </div>
             {attention.saveNow.length === 0 ? (
               <p className="border-t border-os-border px-2.5 py-2 font-mono text-[10px] text-os-dim">
-                nothing fading — every lead is fresh
+                sönen yok — her lead taze
               </p>
             ) : (
               attention.saveNow.map((j) => (
@@ -555,7 +555,7 @@ export default async function FunnelPage({
 
       {/* The same clients as formatted data — pick a segment, contact them */}
       <section className="mt-8">
-        <SectionHead label="Journey data" count={`${tableJourneys.length}`} />
+        <SectionHead label="Yolculuk verisi" count={`${tableJourneys.length}`} />
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <Link
             href={href(venture, view, undefined)}
@@ -565,7 +565,7 @@ export default async function FunnelPage({
                 : 'border-os-border text-os-dim hover:border-os-border-strong hover:text-os-muted'
             }`}
           >
-            All segments
+            Tüm segmentler
           </Link>
           {FUNNEL_STAGES.map((s, i) => {
             const active = stage === s.id;
@@ -588,26 +588,26 @@ export default async function FunnelPage({
             );
           })}
           {stage && !commsFeed && tableJourneys.length > 0 && (
-            <span className="font-mono text-[10px] text-os-dim">comms feed unavailable — last messages hidden</span>
+            <span className="font-mono text-[10px] text-os-dim">iletişim akışı kullanılamıyor — son mesajlar gizli</span>
           )}
         </div>
         {tableJourneys.length === 0 ? (
           <p className="rounded-lg-t border border-dashed border-os-border bg-os-surface px-4 py-5 text-center font-mono text-[11.5px] text-os-dim">
-            No leads in this segment.
+            Bu segmentte lead yok.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg-t border border-os-border bg-os-surface">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-os-dim">
-                  <th className="px-3 pb-1 pt-3 font-normal">Client</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Stage</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Quiet</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Relationship</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Likelihood</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Entry</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Value</th>
-                  <th className="px-3 pb-1 pt-3 font-normal">Contact</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Müşteri</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Aşama</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Sessiz</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">İlişki</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Olasılık</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Giriş</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">Değer</th>
+                  <th className="px-3 pb-1 pt-3 font-normal">İletişim</th>
                 </tr>
               </thead>
               <tbody>

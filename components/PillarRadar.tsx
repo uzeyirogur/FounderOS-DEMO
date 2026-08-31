@@ -31,10 +31,10 @@ const VB_W = S + PAD_X * 2;
 
 type Layer = { key: PillarLayerKey; label: string; color: string; dash?: string; fill?: boolean };
 const LAYERS: Layer[] = [
-  { key: 'score', label: 'Overall health', color: 'var(--text)', fill: true },
-  { key: 'roster', label: 'Roster active', color: 'var(--funnel-s0)' },
-  { key: 'freshness', label: 'Run recency', color: 'var(--funnel-s1)', dash: '6 4' },
-  { key: 'sop', label: 'SOP coverage', color: 'var(--funnel-s2)', dash: '2 4' },
+  { key: 'score', label: 'Genel sağlık', color: 'var(--text)', fill: true },
+  { key: 'roster', label: 'Aktif kadro', color: 'var(--funnel-s0)' },
+  { key: 'freshness', label: 'Çalıştırma sıklığı', color: 'var(--funnel-s1)', dash: '6 4' },
+  { key: 'sop', label: 'SOP kapsamı', color: 'var(--funnel-s2)', dash: '2 4' },
 ];
 
 export function PillarRadar({
@@ -76,7 +76,7 @@ export function PillarRadar({
           viewBox={`${VB_MIN_X} 0 ${VB_W} ${S}`}
           className="block w-full max-w-[560px]"
           role="img"
-          aria-label="Pillar health radar · hover to sift between layers"
+          aria-label="Sütun sağlık radarı · katmanlar arasında geçiş için üzerine gelin"
           onMouseMove={onMove}
           onMouseLeave={() => setActive(null)}
         >
@@ -161,17 +161,17 @@ export function PillarRadar({
       <div className="flex items-baseline justify-center gap-2 pb-4 pt-2 font-mono">
         {activeLayer ? (
           <span className="text-[11px] uppercase tracking-[0.16em]" style={{ color: activeLayer.color === 'var(--text)' ? 'var(--text)' : activeLayer.color }}>
-            {activeLayer.label} · per pillar, 0 to 100
+            {activeLayer.label} · sütun başına, 0 ile 100 arası
           </span>
         ) : (
           <>
             <span className="text-2xl font-semibold text-os-ok">{health ?? '—'}</span>
-            <span className="text-[11px] text-os-dim">/ 100 health</span>
+            <span className="text-[11px] text-os-dim">/ 100 sağlık</span>
             {warnings > 0 && (
               <>
                 <span className="text-os-border-strong">·</span>
                 <span className="text-[11px] font-semibold text-os-warn">
-                  {warnings} warning{warnings === 1 ? '' : 's'}
+                  {warnings} uyarı
                 </span>
               </>
             )}

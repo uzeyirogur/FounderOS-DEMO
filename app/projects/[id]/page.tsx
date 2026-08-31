@@ -7,8 +7,15 @@ import { GrowthResearchPanel } from '@/components/GrowthResearchPanel';
 import { CreativeResearchPanel } from '@/components/CreativeResearchPanel';
 import { ClaudeCodeDispatchPanel } from '@/components/ClaudeCodeDispatchPanel';
 import { projectLifecycleSummary } from '@/lib/project-lifecycle-orchestrator';
+import type { Project } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
+
+const STATUS_LABEL: Record<Project['status'], string> = {
+  active: 'Aktif',
+  paused: 'Duraklatıldı',
+  archived: 'Arşivlendi',
+};
 
 /**
  * A single Project Registry entry's detail view: identity + the live
@@ -28,12 +35,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   return (
     <div>
       <PageHeader
-        eyebrow="project lifecycle"
+        eyebrow="proje yaşam döngüsü"
         title={project.name}
-        right={<Badge tone="accent">{project.status}</Badge>}
+        right={<Badge tone="accent">{STATUS_LABEL[project.status]}</Badge>}
       />
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        {project.purpose || 'No purpose set.'} <span className="text-os-dim">— {project.pathOrUrl}</span>
+        {project.purpose || 'Amaç belirlenmemiş.'} <span className="text-os-dim">— {project.pathOrUrl}</span>
       </p>
       <ProjectLifecycleWidget projectId={project.id} agentNames={agentNames} initial={summary} />
       <div className="mt-4">

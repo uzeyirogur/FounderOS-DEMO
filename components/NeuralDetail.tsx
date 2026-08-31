@@ -24,11 +24,11 @@ const agoLabel = (iso: string): string => {
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms) || ms < 0) return '';
   const m = Math.floor(ms / 60_000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return 'az önce';
+  if (m < 60) return `${m}dk önce`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return `${h}sa önce`;
+  return `${Math.floor(h / 24)}g önce`;
 };
 
 export function NeuralDetail({
@@ -111,9 +111,9 @@ export function NeuralDetail({
       <SopTaskDetailCard
         task={task}
         assigneeName={agent?.name ?? person?.name ?? task.assigneeId}
-        assigneeKindLabel={agent ? 'AI agent' : 'human'}
+        assigneeKindLabel={agent ? 'AI ajanı' : 'insan'}
         assigneeColor={agent ? 'var(--accent)' : 'var(--warn)'}
-        runtime={agent ? `${agent.instance} · ${agent.model}` : 'human · judgment call'}
+        runtime={agent ? `${agent.instance} · ${agent.model}` : 'insan · takdir gerektirir'}
         tools={chips(agent?.tools ?? person?.tools ?? [])}
         onClose={onClose}
         onAssignee={workerNode ? () => onSelect(workerNode) : undefined}

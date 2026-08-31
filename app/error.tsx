@@ -26,7 +26,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <div style={{ padding: 40, fontFamily: 'ui-monospace, monospace' }}>
-      <h1 style={{ fontSize: 16, fontWeight: 700 }}>Something broke</h1>
+      <h1 style={{ fontSize: 16, fontWeight: 700 }}>Bir şeyler bozuldu</h1>
       <p style={{ color: '#888', fontSize: 13, marginTop: 8 }}>{error.message}</p>
       <button
         onClick={reset}
@@ -40,7 +40,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           fontFamily: 'inherit',
         }}
       >
-        Try again
+        Tekrar dene
       </button>
     </div>
   );

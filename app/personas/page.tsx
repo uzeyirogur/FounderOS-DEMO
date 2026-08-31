@@ -11,9 +11,9 @@ export default function PersonasPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="platform variants"
-        title="Personas"
-        right={<Badge tone="accent">{personas.length} templates</Badge>}
+        eyebrow="platform varyantları"
+        title="Personalar"
+        right={<Badge tone="accent">{personas.length} şablon</Badge>}
       />
       <PersonasViewer personas={personas} />
     </div>

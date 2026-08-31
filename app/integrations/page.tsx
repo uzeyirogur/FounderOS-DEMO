@@ -25,12 +25,12 @@ export default async function ConnectionsPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="connections" title="Connections" />
+      <PageHeader eyebrow="bağlantılar" title="Bağlantılar" />
 
       {/* Your connected tools — driven by real connector status */}
       {connected.length > 0 && (
         <section className="mb-8">
-          <SectionHead label="Your connected tools" count={connected.length} />
+          <SectionHead label="Bağlı araçlarınız" count={connected.length} />
           <div className={GRID}>
             {connected.map((entry) => (
               <ConnectionCard key={entry.slug} entry={entry} guidance={guidanceFor(entry)} />
@@ -41,7 +41,7 @@ export default async function ConnectionsPage() {
 
       {/* Popular */}
       <section className="mb-8">
-        <SectionHead label="Popular" count={popular.length} />
+        <SectionHead label="Popüler" count={popular.length} />
         <div className={GRID}>
           {popular.map((entry) => (
             <ConnectionCard key={entry.slug} entry={entry} guidance={guidanceFor(entry)} />
@@ -51,7 +51,7 @@ export default async function ConnectionsPage() {
 
       {/* Browse by category — collapsible */}
       <section className="mb-8">
-        <SectionHead label="Browse by category" count={categories.length} />
+        <SectionHead label="Kategoriye göre gözat" count={categories.length} />
         <div className="flex flex-col gap-2.5">
           {categories.map(([category, tools], idx) => (
             <IntegrationCategory key={category} label={category} count={tools.length} defaultOpen={idx === 0}>

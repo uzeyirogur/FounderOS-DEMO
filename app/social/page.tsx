@@ -38,11 +38,11 @@ const PLATFORM_ICONS: Record<SocialPlatform, LucideIcon> = {
 // lands (the publish queue below is the real, wired path). views/likes carry
 // the like-to-view (engagement) ratio shown per post + averaged in the header.
 const RECENT_POSTS = [
-  { tag: 'Instagram · Reel', ago: '2h', caption: '3 agents that run my business while I sleep', kind: 'views', views: 12400, likes: 1104 },
-  { tag: 'TikTok · Video', ago: '6h', caption: 'POV: your operating system has a command palette', kind: 'views', views: 8100, likes: 640 },
-  { tag: 'X · Thread', ago: '1d', caption: 'How I wired 7 real connectors into one OS', kind: 'impressions', views: 1200, likes: 74 },
-  { tag: 'YouTube · Long', ago: '2d', caption: 'Founder OS walkthrough — building in public #4', kind: 'views', views: 940, likes: 88 },
-  { tag: 'Instagram · Carousel', ago: '3d', caption: 'The larp-first, real-ready architecture', kind: 'reach', views: 6700, likes: 717 },
+  { tag: 'Instagram · Reel', ago: '2h', caption: 'Ben uyurken işimi yürüten 3 ajan', kind: 'views', views: 12400, likes: 1104 },
+  { tag: 'TikTok · Video', ago: '6h', caption: 'POV: işletim sisteminde bir komut paleti var', kind: 'views', views: 8100, likes: 640 },
+  { tag: 'X · Thread', ago: '1d', caption: '7 gerçek bağlantıyı tek bir işletim sisteminde nasıl birleştirdim', kind: 'impressions', views: 1200, likes: 74 },
+  { tag: 'YouTube · Long', ago: '2d', caption: 'Founder OS gezintisi — herkesin gözü önünde inşa etmek #4', kind: 'views', views: 940, likes: 88 },
+  { tag: 'Instagram · Carousel', ago: '3d', caption: 'Önce simülasyon, gerçek zamana hazır mimari', kind: 'reach', views: 6700, likes: 717 },
 ];
 
 // Human label for a raw Zernio platform string (falls back to capitalising it).
@@ -55,7 +55,7 @@ function platformLabel(platform: string): string {
 function RecencyDots({ rank, of }: { rank: number; of: number }) {
   const lit = of - rank;
   return (
-    <div className="mt-1.5 flex items-center gap-1" title={`#${rank + 1} most recent of ${of}`}>
+    <div className="mt-1.5 flex items-center gap-1" title={`#${rank + 1} en son yayınlanan / toplam ${of}`}>
       {Array.from({ length: of }, (_, d) => (
         <span
           key={d}
@@ -114,14 +114,14 @@ export default async function SocialPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="audience"
-        title="Social"
-        right={<Badge tone="ok">● zernio live</Badge>}
+        eyebrow="kitle"
+        title="Sosyal"
+        right={<Badge tone="ok">● zernio canlı</Badge>}
       />
 
       {/* Every account on the first screen — compact row, one cell per channel.
           Click through for the platform detail. */}
-      <SectionHead label="Accounts" count={`${formatFollowers(total)} total`} />
+      <SectionHead label="Hesaplar" count={`${formatFollowers(total)} toplam`} />
       <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {dash.platforms.map((p) => {
           const Icon = PLATFORM_ICONS[p.platform];
@@ -130,7 +130,7 @@ export default async function SocialPage() {
             <Link
               key={p.platform}
               href={`/social/${p.platform}`}
-              title={`${share.toFixed(0)}% of reach`}
+              title={`erişimin %${share.toFixed(0)}\u2019i`}
               className="hoverable group rounded-lg-t border border-os-border bg-os-surface px-4 py-4"
             >
               <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default async function SocialPage() {
                   className={`ml-auto shrink-0 font-mono text-[10px] ${
                     p.growth.d7 == null ? 'text-os-dim' : p.growth.d7 >= 0 ? 'text-os-ok' : 'text-os-err'
                   }`}
-                  title="7-day growth"
+                  title="7 günlük büyüme"
                 >
                   {formatPct(p.growth.d7)}
                 </span>
@@ -161,25 +161,25 @@ export default async function SocialPage() {
         {/* Email list — same cell, Beehiiv-backed; opens the Beehiiv dashboard */}
         <Link
           href="/social/beehiiv"
-          title={`${total > 0 && email.subscribers != null ? ((email.subscribers / total) * 100).toFixed(0) : 0}% of reach · open Beehiiv analytics`}
+          title={`erişimin %${total > 0 && email.subscribers != null ? ((email.subscribers / total) * 100).toFixed(0) : 0}\u2019i · Beehiiv analizini aç`}
           className="hoverable rounded-lg-t border border-os-border bg-os-surface px-4 py-4"
         >
           <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 shrink-0 text-os-accent" />
-            <span className="truncate font-mono text-[10px] uppercase tracking-[0.1em] text-os-dim">Email list</span>
-            <span
-              className={`ml-auto shrink-0 font-mono text-[10px] ${
-                email.growth.d7 == null ? 'text-os-dim' : email.growth.d7 >= 0 ? 'text-os-ok' : 'text-os-err'
-              }`}
-              title="7-day growth"
-            >
-              {formatPct(email.growth.d7)}
-            </span>
+          <Mail className="h-4 w-4 shrink-0 text-os-accent" />
+          <span className="truncate font-mono text-[10px] uppercase tracking-[0.1em] text-os-dim">E-posta listesi</span>
+          <span
+            className={`ml-auto shrink-0 font-mono text-[10px] ${
+              email.growth.d7 == null ? 'text-os-dim' : email.growth.d7 >= 0 ? 'text-os-ok' : 'text-os-err'
+            }`}
+            title="7-day growth"
+          >
+            {formatPct(email.growth.d7)}
+          </span>
           </div>
           <div className="mt-3 font-mono text-[26px] font-semibold leading-none tracking-[-0.02em]">
-            {formatFollowers(email.subscribers)}
+          {formatFollowers(email.subscribers)}
           </div>
-          <div className="mt-1.5 truncate font-mono text-[9.5px] text-os-dim">Beehiiv · Alex&apos;s Newsletter</div>
+          <div className="mt-1.5 truncate font-mono text-[9.5px] text-os-dim">Beehiiv · Alex&apos;in Bülteni</div>
           <div className="mt-3 h-1 overflow-hidden rounded-sm-t bg-os-surface2">
             <div
               className="h-full bg-os-accent opacity-60"
@@ -232,11 +232,11 @@ export default async function SocialPage() {
           (all dots lit = most recent, fading down to the oldest). */}
       <section className="mb-6">
         <SectionHead
-          label="Recent posts"
+          label="Son gönderiler"
           count={
             recentLive
-              ? `${livePosts.length} live · zernio`
-              : `${formatRatioPct(averageLikeToView(RECENT_POSTS))} avg L/V · sample`
+              ? `${livePosts.length} canlı · zernio`
+              : `${formatRatioPct(averageLikeToView(RECENT_POSTS))} ort. B/G · örnek`
           }
         />
         <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
@@ -255,7 +255,7 @@ export default async function SocialPage() {
                   <RecencyDots rank={i} of={livePosts.length} />
                   <div className="mt-2 line-clamp-3 text-[12px] [text-wrap:pretty]">{p.caption.split('\n')[0]}</div>
                   <div className="mt-auto flex items-center gap-1.5 pt-2 font-mono text-[10px] text-os-dim">
-                    <span className={p.status === 'success' ? 'text-os-ok' : 'text-os-warn'}>{p.status}</span>
+                    <span className={p.status === 'success' ? 'text-os-ok' : 'text-os-warn'}>{p.status === 'success' ? 'başarılı' : p.status}</span>
                     {p.url && (
                       <a
                         href={p.url}
@@ -263,7 +263,7 @@ export default async function SocialPage() {
                         rel="noreferrer"
                         className="ml-auto rounded-sm-t border border-os-border px-1.5 py-0.5 text-os-accent hover:border-os-border-strong"
                       >
-                        view →
+                        görüntüle →
                       </a>
                     )}
                   </div>
@@ -282,10 +282,10 @@ export default async function SocialPage() {
                       {formatFollowers(p.views)} {p.kind}
                     </span>
                     <span aria-hidden>·</span>
-                    <span>{formatFollowers(p.likes)} likes</span>
+                    <span>{formatFollowers(p.likes)} beğeni</span>
                     <span
                       className="ml-auto rounded-sm-t border border-os-border px-1.5 py-0.5 text-os-accent"
-                      title="like-to-view ratio"
+                      title="beğeni/görüntülenme oranı"
                     >
                       {formatRatioPct(likeToViewRatio(p.likes, p.views))}
                     </span>
@@ -297,7 +297,7 @@ export default async function SocialPage() {
 
       {/* Publish — compose a post that queues for the Social agent */}
       <section className="mt-10">
-        <SectionHead label="Publish" count={`${queued} queued`} link="Social agent" href="/agents" />
+        <SectionHead label="Yayınla" count={`${queued} kuyrukta`} link="Sosyal ajan" href="/agents" />
         <PostComposer initialPosts={posts} />
       </section>
     </div>

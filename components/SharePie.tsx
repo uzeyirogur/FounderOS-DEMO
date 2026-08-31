@@ -46,7 +46,7 @@ export function SharePie({
 }) {
   const slices = pieSlices(items);
   if (slices.length === 0) {
-    return <p className="py-4 text-center font-mono text-[10.5px] text-os-dim">Nothing to chart yet.</p>;
+    return <p className="py-4 text-center font-mono text-[10.5px] text-os-dim">Henüz gösterilecek bir şey yok.</p>;
   }
 
   const S = 168;

@@ -21,9 +21,9 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
   if (!authorized) {
     return (
       <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
-        <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Claude Code Orchestrator</div>
+        <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Claude Code Orkestratörü</div>
         <p className="text-[12px] text-os-muted">
-          Not authorized on this project. Grant claude-code-orchestrator access above to enable real dispatch.
+          Bu projede yetkili değil. Gerçek dispatch'i etkinleştirmek için yukarıdan claude-code-orchestrator erişimi verin.
         </p>
       </div>
     );
@@ -44,7 +44,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
         setRun(body.run);
         setGoal('');
       } else {
-        setError(body.error ?? 'Failed to queue the run.');
+        setError(body.error ?? 'Çalıştırma kuyruğa alınamadı.');
       }
     } finally {
       setBusy(false);
@@ -58,7 +58,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
       const res = await fetch(`/api/claude-code/runs/${run.id}/approve`, { method: 'POST' });
       const body = await res.json();
       if (res.ok) setRun(body.run);
-      else setError(body.error ?? 'Failed to approve.');
+      else setError(body.error ?? 'Onaylanamadı.');
     } finally {
       setBusy(false);
     }
@@ -75,7 +75,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
         setRun(body.run);
         setConfirmed(false);
       } else {
-        setError(body.error ?? 'Execution failed.');
+        setError(body.error ?? 'Çalıştırma başarısız oldu.');
       }
     } finally {
       setBusy(false);
@@ -85,11 +85,11 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
   return (
     <div className="rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">
-        <Terminal className="h-3 w-3" /> Claude Code Orchestrator
+        <Terminal className="h-3 w-3" /> Claude Code Orkestratörü
       </div>
       <p className="mb-2 text-[11px] text-os-dim">
-        Queuing builds a real prompt and is free. Running it dispatches to the real `claude` CLI — a paid API call.
-        Never pushes, force-pushes, or merges.
+        Kuyruğa almak gerçek bir prompt oluşturur ve ücretsizdir. Çalıştırmak gerçek `claude` CLI'ına dispatch eder — ücretli bir API çağrısı.
+        Asla push, force-push veya merge yapmaz.
       </p>
 
       {!run && (
@@ -97,7 +97,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
           <textarea
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            placeholder="Describe the coding task…"
+            placeholder="Kodlama görevini tanımlayın…"
             rows={3}
             className="w-full rounded-sm-t border border-os-border bg-os-bg px-2 py-1.5 text-[12px] text-os-text outline-none focus:border-os-border-strong"
           />
@@ -106,7 +106,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
             disabled={busy || !goal.trim()}
             className="mt-2 inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
           >
-            Queue (free)
+            Kuyruğa al (ücretsiz)
           </button>
         </>
       )}
@@ -116,7 +116,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
           <div className="whitespace-pre-wrap rounded-sm-t border border-os-border bg-os-bg px-3 py-2 text-[11px] leading-relaxed text-os-muted">
             {run.prompt}
           </div>
-          <div className="mt-2 font-mono text-[10.5px] uppercase tracking-widest text-os-accent">Status: {run.status}</div>
+          <div className="mt-2 font-mono text-[10.5px] uppercase tracking-widest text-os-accent">Durum: {run.status}</div>
 
           {run.status === 'awaiting_approval' && (
             <button
@@ -124,7 +124,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
               disabled={busy}
               className="mt-2 inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
             >
-              Approve
+              Onayla
             </button>
           )}
 
@@ -132,14 +132,14 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
             <>
               <label className="mt-2 flex items-center gap-1.5 text-[11px] text-os-muted">
                 <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-                I understand this is a real, paid claude call
+                Bunun gerçek, ücretli bir claude çağrısı olduğunu anlıyorum
               </label>
               <button
                 onClick={execute}
                 disabled={busy || !confirmed}
                 className="mt-2 inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
               >
-                Run for real
+                Gerçekten çalıştır
               </button>
             </>
           )}
@@ -149,7 +149,7 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
               onClick={() => setRun(null)}
               className="mt-2 inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong"
             >
-              Queue another
+              Başka bir tane kuyruğa al
             </button>
           )}
 
@@ -170,12 +170,12 @@ export function ClaudeCodeDispatchPanel({ projectId, authorized }: { projectId: 
             return (
               <div className="mt-3 rounded-sm-t border border-os-border bg-os-bg px-3 py-2">
                 <div className={`font-mono text-[10.5px] uppercase tracking-widest ${qa.ok ? 'text-os-ok' : 'text-os-err'}`}>
-                  Post-run QA: {qa.ok ? 'PASS' : 'FAIL'}
+                  Çalıştırma sonrası QA: {qa.ok ? 'BAŞARILI' : 'BAŞARISIZ'}
                 </div>
-                {qa.error && <div className="mt-1 text-[11px] text-os-err">QA runner error: {qa.error}</div>}
-                {qa.test && <div className="mt-1 text-[11px] text-os-muted">Tests: {qa.test.passed}/{qa.test.total} passed{qa.test.failed > 0 ? ` (${qa.test.failed} failed)` : ''}</div>}
-                {qa.typecheck && <div className="text-[11px] text-os-muted">Typecheck: {qa.typecheck.ok ? 'clean' : `${qa.typecheck.errorCount} error(s)`}</div>}
-                {qa.build && <div className="text-[11px] text-os-muted">Build: {qa.build.ok ? 'ok' : 'failed'}</div>}
+                {qa.error && <div className="mt-1 text-[11px] text-os-err">QA çalıştırıcı hatası: {qa.error}</div>}
+                {qa.test && <div className="mt-1 text-[11px] text-os-muted">Testler: {qa.test.passed}/{qa.test.total} geçti{qa.test.failed > 0 ? ` (${qa.test.failed} başarısız)` : ''}</div>}
+                {qa.typecheck && <div className="text-[11px] text-os-muted">Tip kontrolü: {qa.typecheck.ok ? 'temiz' : `${qa.typecheck.errorCount} hata`}</div>}
+                {qa.build && <div className="text-[11px] text-os-muted">Derleme: {qa.build.ok ? 'başarılı' : 'başarısız'}</div>}
               </div>
             );
           })()}

@@ -19,11 +19,11 @@ function relativeTime(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms) || ms < 0) return iso;
   const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return 'az önce';
+  if (minutes < 60) return `${minutes} dk önce`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours} sa önce`;
+  return `${Math.floor(hours / 24)} gün önce`;
 }
 
 function Stage({
@@ -113,25 +113,25 @@ export default async function DoctorPage() {
     {
       name: 'gbrain CLI',
       sub: 'v0.41 · gbrain CLI · doctor --fast',
-      val: doctor.connected ? 'LIVE' : 'UNREACHABLE',
+      val: doctor.connected ? 'CANLI' : 'ERİŞİLEMİYOR',
       state: doctor.connected ? 'connected' : 'error',
     },
     {
       name: 'brain-store/',
-      sub: `${storeShort} · markdown knowledge`,
-      val: `${store.totalFiles} pages`,
+      sub: `${storeShort} · markdown bilgi`,
+      val: `${store.totalFiles} sayfa`,
       state: store.totalFiles > 0 ? 'connected' : 'available',
     },
     {
       name: 'ZeroEntropy',
       sub: 'hybrid-search embeddings · key in ~/.config/knowledge',
-      val: zeroEntropyCheck ? (zeroEntropyCheck.status === 'ok' ? 'LIVE' : zeroEntropyCheck.status.toUpperCase()) : 'LIVE',
+      val: zeroEntropyCheck ? (zeroEntropyCheck.status === 'ok' ? 'CANLI' : zeroEntropyCheck.status.toUpperCase()) : 'CANLI',
       state: zeroEntropyCheck && zeroEntropyCheck.status !== 'ok' ? 'available' : 'connected',
     },
     {
       name: 'Supabase Second Brain',
-      sub: '1240 pages / 15k chunks · free tier idle-pause',
-      val: fallbackActive ? 'PAUSED' : 'LIVE',
+      sub: '1240 sayfa / 15k parça · ücretsiz plan boşta durakla',
+      val: fallbackActive ? 'DURAKLATILDI' : 'CANLI',
       state: fallbackActive ? 'available' : 'connected',
     },
   ];
@@ -141,8 +141,8 @@ export default async function DoctorPage() {
       {/* the engine's health readouts. The graph itself owns /brain, so this
           page is purely "is the knowledge layer working". */}
       <PageHeader
-        eyebrow="knowledge core"
-        title="Doctor"
+        eyebrow="bilgi çekirdeği"
+        title="Doktor"
         caret
       />
 
@@ -154,7 +154,7 @@ export default async function DoctorPage() {
         <div className="flex min-h-[480px] flex-col overflow-hidden rounded-lg-t border border-os-border bg-os-surface">
           <div className="flex items-start justify-between px-4 pt-3.5 font-mono text-[10px] leading-normal text-os-dim">
             <span>
-              <b className="font-medium text-os-muted">pillar health</b> — live roster + runs + SOP coverage
+              <b className="font-medium text-os-muted">sütun sağlığı</b> — canlı kadro + çalıştırmalar + SOP kapsamı
             </span>
           </div>
           <PillarRadar
@@ -170,18 +170,18 @@ export default async function DoctorPage() {
           <div className="flex items-start justify-between px-4 pt-3.5 font-mono text-[10px] leading-normal text-os-dim">
             <div className="flex flex-col gap-1">
               <span>
-                <b className="font-medium text-os-muted">doctor</b> —{' '}
-                {doctor.connected ? (warnings.length > 0 ? 'warnings' : 'ok') : 'unreachable'}
+                <b className="font-medium text-os-muted">doktor</b> —{' '}
+                {doctor.connected ? (warnings.length > 0 ? 'uyarılar' : 'sorunsuz') : 'erişilemiyor'}
               </span>
               <span>
-                {lastBrainRun ? `last run ${relativeTime(lastBrainRun.finishedAt)} · data-agent` : 'no agent runs yet'}
+                {lastBrainRun ? `son çalıştırma ${relativeTime(lastBrainRun.finishedAt)} · data-agent` : 'henüz ajan çalıştırması yok'}
               </span>
             </div>
             <div className="flex flex-col gap-1 text-right">
               <span>
-                <b className="font-medium text-os-muted">hybrid search</b> {doctor.connected ? 'verified' : 'degraded'}
+                <b className="font-medium text-os-muted">hibrit arama</b> {doctor.connected ? 'doğrulandı' : 'düşük performans'}
               </span>
-              <span>{fallbackActive ? 'local fallback active' : 'supabase reachable'}</span>
+              <span>{fallbackActive ? 'yerel yedek aktif' : 'supabase erişilebilir'}</span>
             </div>
           </div>
           <div className="grid flex-1 place-items-center">
@@ -196,7 +196,7 @@ export default async function DoctorPage() {
       {/* Core status: storage layers + doctor-health footer, full width. */}
       <div className="mt-4 flex flex-col overflow-hidden rounded-lg-t border border-os-border bg-os-surface">
         <div className="border-b border-os-border px-3.5 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">
-          Storage layers
+          Depolama katmanları
         </div>
         <div className="flex flex-1 flex-col divide-y divide-os-border">
           {layers.map((layer) => (
@@ -218,23 +218,23 @@ export default async function DoctorPage() {
         </div>
         <div className="flex items-center justify-between border-t border-os-border px-3.5 py-3 font-mono text-[10.5px]">
           <span className="text-os-dim">
-            <b className="font-medium text-os-muted">doctor</b> — health {doctor.healthScore ?? '—'}/100
+            <b className="font-medium text-os-muted">doktor</b> — sağlık {doctor.healthScore ?? '—'}/100
           </span>
           <span className={warnings.length > 0 ? 'text-os-warn' : doctor.connected ? 'text-os-ok' : 'text-os-err'}>
-            {doctor.connected ? (warnings.length > 0 ? `${warnings.length} warnings` : 'all green') : 'offline'}
+            {doctor.connected ? (warnings.length > 0 ? `${warnings.length} uyarı` : 'her şey yolunda') : 'çevrimdışı'}
           </span>
         </div>
       </div>
 
       {/* The pipeline: where knowledge lives and how it becomes searchable */}
       <section className="mt-8">
-        <SectionHead label="Pipeline" count={`${store.totalFiles} pages on disk`} />
+        <SectionHead label="İşlem hattı" count={`${store.totalFiles} sayfa diskte`} />
         <div className="flex flex-col gap-2 xl:flex-row xl:items-stretch">
-          <Stage step="1" title="Markdown brain-store" caption={storeShort}>
+          <Stage step="1" title="Markdown bilgi deposu" caption={storeShort}>
             <div className="text-xs text-os-muted">
-              {store.totalFiles} pages on disk, plain <span className="font-semibold text-os-text">.md</span> files —
-              the source of truth. <code className="font-mono text-[11px]">gbrain sync</code> walks the git repo and
-              pushes changed pages up.
+              Diskte {store.totalFiles} sayfa, düz <span className="font-semibold text-os-text">.md</span> dosyaları
+              — tek doğru kaynak. <code className="font-mono text-[11px]">gbrain sync</code> git deposunu tarar ve
+              değişen sayfaları yukarı gönderir.
             </div>
             <ul className="mt-3 space-y-1.5">
               {store.folders.map((folder) => (
@@ -253,12 +253,12 @@ export default async function DoctorPage() {
             </ul>
           </Stage>
 
-          <Arrow label="sync · import" />
+          <Arrow label="senkronize · içe aktar" />
 
-          <Stage step="2" title="gbrain CLI" caption="chunk · embed · route — the engine between disk and database">
+          <Stage step="2" title="gbrain CLI" caption="parçala · gömme oluştur · yönlendir — disk ile veritabanı arasındaki motor">
             <div className="flex items-baseline gap-2">
               <span className="font-mono text-3xl font-bold">{doctor.healthScore ?? '—'}</span>
-              <span className="font-mono text-xs text-os-dim">/ 100 health{doctor.connected ? '' : ' · CLI unreachable'}</span>
+              <span className="font-mono text-xs text-os-dim">/ 100 sağlık{doctor.connected ? '' : ' · CLI erişilemiyor'}</span>
             </div>
             <ul className="mt-3 space-y-1.5">
               {doctor.checks.map((check) => (
@@ -271,7 +271,7 @@ export default async function DoctorPage() {
               ))}
               {doctor.checks.length === 0 && (
                 <li className="rounded-md-t border border-dashed border-os-border px-3 py-2 font-mono text-[11px] text-os-dim">
-                  doctor offline — {doctor.detail}
+                  doktor çevrimdışı — {doctor.detail}
                 </li>
               )}
             </ul>
@@ -284,28 +284,29 @@ export default async function DoctorPage() {
             </div>
           </Stage>
 
-          <Arrow label="embed · upsert" />
+          <Arrow label="göm · ekle/güncelle" />
 
-          <Stage step="3" title="Supabase Postgres + pgvector" caption='"Second Brain" · ZeroEntropy embeddings'>
+          <Stage step="3" title="Supabase Postgres + pgvector" caption='"İkinci Beyin" · ZeroEntropy gömmeleri'>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-md-t border border-os-border bg-os-surface2 px-3 py-2.5">
                 <div className="font-mono text-xl font-bold">1240</div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-os-dim">pages · last known</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-os-dim">sayfa · son bilinen</div>
               </div>
               <div className="rounded-md-t border border-os-border bg-os-surface2 px-3 py-2.5">
                 <div className="font-mono text-xl font-bold">15k</div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-os-dim">chunks · last known</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-os-dim">parça · son bilinen</div>
               </div>
             </div>
             <div className="mt-3 space-y-1.5 text-[11px] leading-relaxed text-os-muted">
               <p>
-                Each page is split into chunks; every chunk gets a ZeroEntropy embedding stored in a{' '}
-                <code className="font-mono">vector</code> column. Postgres holds both the text (tsvector) and the
-                vectors, so one database answers keyword and semantic queries.
+                Her sayfa parçalara ayrılır; her parça bir{' '}
+                <code className="font-mono">vector</code> sütununda saklanan ZeroEntropy gömmesi alır. Postgres hem
+                metni (tsvector) hem de vektörleri tutar, böylece tek bir veritabanı hem anahtar kelime hem de
+                anlamsal sorguları yanıtlar.
               </p>
               <p className="text-os-dim">
-                Free tier pauses on idle — when hybrid queries fail, unpause from the Supabase dashboard. The
-                brain-store on disk keeps working regardless.
+                Ücretsiz plan boşta kaldığında duraklar — hibrit sorgular başarısız olduğunda Supabase panelinden
+                devam ettirin. Diskteki bilgi deposu bundan bağımsız çalışmaya devam eder.
               </p>
             </div>
           </Stage>
@@ -314,30 +315,30 @@ export default async function DoctorPage() {
 
       {/* How a query actually resolves */}
       <section className="mt-8">
-        <SectionHead label="Query path" />
+        <SectionHead label="Sorgu akışı" />
         <p className="mb-3 text-xs text-os-dim">
-          What happens when an agent calls <code className="font-mono">gbrain query</code> — hybrid retrieval with an
-          honest fallback.
+          Bir ajan <code className="font-mono">gbrain query</code> çağırdığında ne olur — dürüst bir yedeğe sahip
+          hibrit erişim.
         </p>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-          <FlowStep title="Question" detail="Natural-language query from you or an agent run." />
-          <Arrow label="expand" />
-          <FlowStep title="Query expansion" detail="The CLI rewrites the question into search variants (skip with --no-expand)." />
-          <Arrow label="fan out" />
+          <FlowStep title="Soru" detail="Sizden veya bir ajan çalıştırmasından gelen doğal dil sorgusu." />
+          <Arrow label="genişlet" />
+          <FlowStep title="Sorgu genişletme" detail="CLI, soruyu arama varyantlarına yeniden yazar (--no-expand ile atlanabilir)." />
+          <Arrow label="dağıt" />
           <div className="flex flex-1 flex-col gap-2">
-            <FlowStep title="Keyword search" detail="Postgres tsvector full-text match over chunk text." />
-            <FlowStep title="Vector search" detail="pgvector nearest-neighbor over ZeroEntropy embeddings." />
+            <FlowStep title="Anahtar kelime arama" detail="Parça metni üzerinde Postgres tsvector tam metin eşleşmesi." />
+            <FlowStep title="Vektör arama" detail="ZeroEntropy gömmeleri üzerinde pgvector en yakın komşu araması." />
           </div>
-          <Arrow label="merge" />
-          <FlowStep title="RRF fusion" detail="Reciprocal-rank fusion merges both result lists into one ranking." />
-          <Arrow label="answer" />
-          <FlowStep title="Ranked snippets" detail="Top pages with snippets, returned to the agent." />
+          <Arrow label="birleştir" />
+          <FlowStep title="RRF birleştirme" detail="Reciprocal-rank fusion, her iki sonuç listesini tek bir sıralamada birleştirir." />
+          <Arrow label="yanıt" />
+          <FlowStep title="Sıralı alıntılar" detail="Ajana döndürülen, alıntılarla birlikte en üst sıradaki sayfalar." />
         </div>
         <div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-stretch">
           <FlowStep
             dashed
-            title="Fallback: local grep"
-            detail="If Supabase is paused or unreachable, FOUNDER OS greps the markdown brain-store directly — fewer smarts, zero downtime."
+            title="Yedek: yerel grep"
+            detail="Supabase durakladıysa veya erişilemiyorsa, FOUNDER OS markdown bilgi deposunu doğrudan tarar — daha az akıllı, sıfır kesinti."
           />
         </div>
       </section>

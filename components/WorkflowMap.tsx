@@ -43,7 +43,7 @@ function StepCard({ step, toolLogos }: { step: WorkflowStep; toolLogos: Record<s
             style={{ background: 'color-mix(in oklab, var(--err) 18%, transparent)', color: 'var(--err)' }}
           >
             <TriangleAlert className="h-2.5 w-2.5" />
-            leak {usd(step.leakUsd!)}/mo
+            kayıp {usd(step.leakUsd!)}/ay
           </span>
         )}
       </div>
@@ -57,7 +57,7 @@ function StepCard({ step, toolLogos }: { step: WorkflowStep; toolLogos: Record<s
         <span className="truncate text-os-muted">{step.owner}</span>
         <span className="ml-auto flex shrink-0 items-center gap-1 text-os-dim">
           <Clock className="h-3 w-3" />
-          {step.hoursPerWeek}h/wk
+          {step.hoursPerWeek}sa/hf
         </span>
       </div>
 
@@ -93,10 +93,10 @@ function StepCard({ step, toolLogos }: { step: WorkflowStep; toolLogos: Record<s
             style={{ color: auto.state === 'live' ? 'var(--ok)' : 'var(--text-3)' }}
           >
             {auto.state === 'live'
-              ? `live · recovering ${usd(auto.recoveredUsd)}/mo`
+              ? `canlı · ${usd(auto.recoveredUsd)}/ay geri kazanılıyor`
               : auto.recoveredUsd > 0
-                ? `suggested · +${usd(auto.recoveredUsd)}/mo`
-                : 'suggested'}
+                ? `önerildi · +${usd(auto.recoveredUsd)}/ay`
+                : 'önerildi'}
           </div>
         </div>
       )}
@@ -122,10 +122,10 @@ function Edge({ label }: { label: string | null }) {
 function PlaceholderCard() {
   return (
     <div className="flex w-[224px] shrink-0 flex-col gap-2 rounded-xl border border-dashed border-os-border-strong p-3">
-      <span className="text-[13px] font-semibold text-os-dim">New step</span>
+      <span className="text-[13px] font-semibold text-os-dim">Yeni adım</span>
       <div className="flex items-center gap-1.5 font-mono text-[10px] text-os-dim">
         <User className="h-3 w-3" />
-        unassigned · set an owner
+        atanmadı · bir sorumlu atayın
       </div>
     </div>
   );
@@ -163,7 +163,7 @@ export function WorkflowMap({
   if (!current || !stats) {
     return (
       <p className="rounded-xl border border-dashed border-os-border px-4 py-10 text-center text-xs text-os-dim">
-        No workflows seeded yet.
+        Henüz iş akışı eklenmemiş.
       </p>
     );
   }
@@ -194,14 +194,14 @@ export function WorkflowMap({
             onClick={addStep}
             className="flex items-center gap-1 rounded-md border border-os-border-strong bg-os-surface2 px-2.5 py-1.5 font-mono text-[11px] text-os-text transition-colors hover:border-os-dim"
           >
-            <Plus className="h-3 w-3" /> Add step
+            <Plus className="h-3 w-3" /> Adım ekle
           </button>
           {extra > 0 && (
             <button
               onClick={reset}
               className="flex items-center gap-1 rounded-md border border-os-border px-2.5 py-1.5 font-mono text-[11px] text-os-dim transition-colors hover:text-os-muted"
             >
-              <RotateCcw className="h-3 w-3" /> Reset
+              <RotateCcw className="h-3 w-3" /> Sıfırla
             </button>
           )}
         </div>
@@ -211,14 +211,14 @@ export function WorkflowMap({
 
       {/* legend */}
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[9.5px] uppercase tracking-wide text-os-dim">
-        <span>legend</span>
-        <span className="flex items-center gap-1.5"><User className="h-3 w-3 text-os-muted" /> human</span>
-        <span className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-os-accent" /> agent</span>
-        <span className="flex items-center gap-1.5"><Wrench className="h-3 w-3" /> tool</span>
+        <span>gösterge</span>
+        <span className="flex items-center gap-1.5"><User className="h-3 w-3 text-os-muted" /> insan</span>
+        <span className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-os-accent" /> ajan</span>
+        <span className="flex items-center gap-1.5"><Wrench className="h-3 w-3" /> araç</span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2" style={{ background: 'var(--err)' }} /> bottleneck leak
+          <span className="h-2 w-2" style={{ background: 'var(--err)' }} /> darboğaz kaybı
         </span>
-        <span className="flex items-center gap-1.5"><Zap className="h-3 w-3" style={{ color: 'var(--ok)' }} /> automation</span>
+        <span className="flex items-center gap-1.5"><Zap className="h-3 w-3" style={{ color: 'var(--ok)' }} /> otomasyon</span>
       </div>
 
       {/* the map */}
@@ -243,20 +243,20 @@ export function WorkflowMap({
       <div className="mt-3 flex flex-wrap items-center gap-x-7 gap-y-3 rounded-xl border border-os-border bg-os-surface px-4 py-3.5">
         <div className="min-w-0 shrink-0">
           <div className="text-[12.5px] font-semibold">{current.name}</div>
-          <div className="font-mono text-[10px] text-os-dim">{usd(current.revenueUsd)}/mo revenue</div>
+          <div className="font-mono text-[10px] text-os-dim">{usd(current.revenueUsd)}/ay gelir</div>
         </div>
-        <Stat label="Manual load" value={`${stats.manualHours}h/wk`} />
-        <Stat label="Tagged leak" value={`${usd(stats.leakUsd)}/mo`} tone="err" />
+        <Stat label="Manuel yük" value={`${stats.manualHours}sa/hf`} />
+        <Stat label="Etiketli kayıp" value={`${usd(stats.leakUsd)}/ay`} tone="err" />
         <Stat
-          label="Automation returns"
-          value={`${usd(stats.liveReturnsUsd)}/mo`}
-          sub={stats.suggestedReturnsUsd > 0 ? `+${usd(stats.suggestedReturnsUsd)} suggested` : undefined}
+          label="Otomasyon getirisi"
+          value={`${usd(stats.liveReturnsUsd)}/ay`}
+          sub={stats.suggestedReturnsUsd > 0 ? `+${usd(stats.suggestedReturnsUsd)} önerildi` : undefined}
           tone="ok"
         />
         <div className="ml-auto flex shrink-0 items-center gap-3 font-mono text-[10px] text-os-dim">
-          <span className="flex items-center gap-1"><User className="h-3 w-3" /> {stats.humanSteps} human</span>
-          <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {stats.agentSteps} agent</span>
-          <span className="flex items-center gap-1"><Wrench className="h-3 w-3" /> {stats.toolCount} tool</span>
+          <span className="flex items-center gap-1"><User className="h-3 w-3" /> {stats.humanSteps} insan</span>
+          <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {stats.agentSteps} ajan</span>
+          <span className="flex items-center gap-1"><Wrench className="h-3 w-3" /> {stats.toolCount} araç</span>
         </div>
       </div>
     </div>

@@ -6,22 +6,22 @@ import { ArrowRight, Check, X } from 'lucide-react';
 import { PROJECT_LIFECYCLE_PHASES, type ProjectLifecyclePhase } from '@/lib/project-lifecycle';
 
 const PHASE_LABEL: Record<ProjectLifecyclePhase, string> = {
-  idea: 'Idea',
-  research: 'Research',
-  validation: 'Validation',
-  product_planning: 'Product planning',
-  technical_planning: 'Technical planning',
-  implementation: 'Implementation',
+  idea: 'Fikir',
+  research: 'Araştırma',
+  validation: 'Doğrulama',
+  product_planning: 'Ürün planlama',
+  technical_planning: 'Teknik planlama',
+  implementation: 'Uygulama',
   qa: 'QA',
-  security: 'Security',
+  security: 'Güvenlik',
   ui_ux: 'UI/UX',
-  launch_readiness: 'Launch readiness',
-  deployment_approval: 'Deployment approval',
-  growth: 'Growth',
-  social: 'Social',
-  monitoring: 'Monitoring',
-  iteration: 'Iteration',
-  reporting: 'Reporting',
+  launch_readiness: 'Lansmana hazırlık',
+  deployment_approval: 'Dağıtım onayı',
+  growth: 'Büyüme',
+  social: 'Sosyal',
+  monitoring: 'İzleme',
+  iteration: 'Yineleme',
+  reporting: 'Raporlama',
 };
 
 interface LifecycleSummary {
@@ -71,7 +71,7 @@ export function ProjectLifecycleWidget({
       });
       const body = await res.json();
       if (!res.ok) {
-        setError(body.error ?? 'Could not advance the phase.');
+        setError(body.error ?? 'Aşama ilerletilemedi.');
         if (body.state) setSummary((s) => ({ ...s, currentPhase: body.state.currentPhase }));
         return;
       }
@@ -121,29 +121,29 @@ export function ProjectLifecycleWidget({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-os-border pt-3">
         <div className="text-[11.5px] text-os-muted">
-          Responsible: <span className="text-os-text">{agentNames[summary.responsibleAgentId] ?? summary.responsibleAgentId}</span>
-          <span className="ml-2 text-os-dim">· step {currentIndex + 1} of {PROJECT_LIFECYCLE_PHASES.length}</span>
+          Sorumlu: <span className="text-os-text">{agentNames[summary.responsibleAgentId] ?? summary.responsibleAgentId}</span>
+          <span className="ml-2 text-os-dim">· adım {currentIndex + 1} / {PROJECT_LIFECYCLE_PHASES.length}</span>
         </div>
         <button
           onClick={advance}
           disabled={busy || summary.pendingApprovals.length > 0}
           className="inline-flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-bg px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-text transition-colors hover:border-os-border-strong disabled:opacity-40"
         >
-          Advance phase <ArrowRight className="h-3 w-3" />
+          Aşamayı ilerlet <ArrowRight className="h-3 w-3" />
         </button>
       </div>
 
       <div className="mt-2 text-[11.5px] text-os-muted">
-        Next action: <span className="text-os-text">{summary.nextAction}</span>
+        Sonraki adım: <span className="text-os-text">{summary.nextAction}</span>
       </div>
 
       {summary.requiredEvidence && (
         <div className="mt-2 flex items-center gap-2 text-[11px]">
           <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${summary.requiredEvidence.satisfied ? 'bg-os-ok' : 'bg-os-err'}`} />
-          <span className="text-os-dim">Required evidence:</span>
+          <span className="text-os-dim">Gerekli kanıt:</span>
           <span className="text-os-text">{summary.requiredEvidence.kind}</span>
           <span className={summary.requiredEvidence.satisfied ? 'text-os-ok' : 'text-os-err'}>
-            {summary.requiredEvidence.satisfied ? 'satisfied' : 'not yet satisfied'}
+            {summary.requiredEvidence.satisfied ? 'sağlandı' : 'henüz sağlanmadı'}
           </span>
           {summary.requiredEvidence.latestSummary && (
             <span className="text-os-dim">— {summary.requiredEvidence.latestSummary}</span>
@@ -165,14 +165,14 @@ export function ProjectLifecycleWidget({
                   disabled={busy}
                   className="inline-flex items-center gap-1 rounded-sm-t border border-os-ok/50 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok disabled:opacity-40"
                 >
-                  <Check className="h-3 w-3" /> Approve
+                  <Check className="h-3 w-3" /> Onayla
                 </button>
                 <button
                   onClick={() => decide(a.id, 'rejected')}
                   disabled={busy}
                   className="inline-flex items-center gap-1 rounded-sm-t border border-os-err/50 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err disabled:opacity-40"
                 >
-                  <X className="h-3 w-3" /> Reject
+                  <X className="h-3 w-3" /> Reddet
                 </button>
               </div>
             </div>
@@ -182,7 +182,7 @@ export function ProjectLifecycleWidget({
 
       {summary.openTasks.length > 0 && (
         <div className="mt-3 border-t border-os-border pt-3">
-          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Open tasks</div>
+          <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">Açık görevler</div>
           <ul className="space-y-1">
             {summary.openTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2 text-[11.5px] text-os-muted">

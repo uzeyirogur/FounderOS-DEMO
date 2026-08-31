@@ -190,20 +190,20 @@ export default async function AnalyticsPage() {
   const inputs: MetricInput[] = [
     {
       id: 'audience',
-      label: 'Audience',
+      label: 'Kitle',
       unit: 'followers',
       source: '7d · Zernio',
       value: totalFollowers || null,
       delta: audience7d != null ? Math.round(audience7d * 10) / 10 : 0,
       deltaPct: audience7d != null,
     },
-    { id: 'subscribers', label: 'Subscribers', unit: 'subs', source: 'Beehiiv', value: subs },
-    { id: 'pipeline', label: 'Open Pipeline', unit: 'deals', source: 'Attio', value: pipelineDeals },
-    { id: 'stripe', label: 'Stripe Available', unit: 'usd', source: 'Stripe', value: stripeAvail },
-    { id: 'agent-runs', label: 'Agent Runs', unit: 'runs', source: 'all time', value: runs.length || null, delta: runs7d },
-    { id: 'unread', label: 'Unread · all inboxes', unit: 'emails', source: 'Email', value: emailUnread },
-    { id: 'brain', label: 'Brain-store Pages', unit: 'pages', source: 'GBrain', value: brainPages },
-    { id: 'dictations', label: 'Dictations', unit: 'dictations', source: 'Wispr Flow', value: dictations },
+    { id: 'subscribers', label: 'Aboneler', unit: 'subs', source: 'Beehiiv', value: subs },
+    { id: 'pipeline', label: 'Açık Fırsatlar', unit: 'deals', source: 'Attio', value: pipelineDeals },
+    { id: 'stripe', label: 'Stripe Bakiyesi', unit: 'usd', source: 'Stripe', value: stripeAvail },
+    { id: 'agent-runs', label: 'Ajan Çalıştırmaları', unit: 'runs', source: 'tüm zamanlar', value: runs.length || null, delta: runs7d },
+    { id: 'unread', label: 'Okunmamış · tüm gelen kutuları', unit: 'emails', source: 'E-posta', value: emailUnread },
+    { id: 'brain', label: 'Bilgi Deposu Sayfaları', unit: 'pages', source: 'GBrain', value: brainPages },
+    { id: 'dictations', label: 'Dikteler', unit: 'dictations', source: 'Wispr Flow', value: dictations },
   ];
   const { live, pending } = splitMetrics(inputs);
 
@@ -215,7 +215,7 @@ export default async function AnalyticsPage() {
     label: PLATFORM_LABELS[p.platform],
     value: p.followers,
   }));
-  if (subs) audienceItems.push({ key: 'email', label: 'Email list', value: subs });
+  if (subs) audienceItems.push({ key: 'email', label: 'E-posta listesi', value: subs });
   const audienceReach = totalFollowers + (subs ?? 0);
 
   // Agent runs by agent — top handful, the long tail folded into "Other".
@@ -227,21 +227,21 @@ export default async function AnalyticsPage() {
     .slice(0, 6)
     .map(([id, n]) => ({ key: id, label: agentName.get(id) ?? id, value: n }));
   const tailRuns = rankedAgents.slice(6).reduce((s, [, n]) => s + n, 0);
-  if (tailRuns > 0) runsByAgentItems.push({ key: 'other', label: 'Other agents', value: tailRuns });
+  if (tailRuns > 0) runsByAgentItems.push({ key: 'other', label: 'Diğer ajanlar', value: tailRuns });
 
   // Run outcomes — reliability at a glance.
   const okRuns = runs.filter((r) => r.ok).length;
   const outcomeItems: PieItem[] = [
-    { key: 'ok', label: 'Succeeded', value: okRuns },
-    { key: 'fail', label: 'Failed', value: runs.length - okRuns },
+    { key: 'ok', label: 'Başarılı', value: okRuns },
+    { key: 'fail', label: 'Başarısız', value: runs.length - okRuns },
   ];
 
   return (
     <div>
       <PageHeader
-        eyebrow="operating metrics"
-        title="Analytics"
-        right={<Badge tone="accent">{live.length} live · {pending.length} pending</Badge>}
+        eyebrow="işletme metrikleri"
+        title="Analitik"
+        right={<Badge tone="accent">{live.length} canlı · {pending.length} bekliyor</Badge>}
       />
 
       {/* Live metric tiles */}
@@ -255,39 +255,39 @@ export default async function AnalyticsPage() {
 
       {/* Distribution — share donuts across audience, agents, run outcomes */}
       <section className="mb-6">
-        <SectionHead label="Distribution" count="share of totals" />
+        <SectionHead label="Dağılım" count="toplamların payı" />
         <div className="grid gap-3.5 lg:grid-cols-3">
           {audienceReach > 0 && (
             <PieCard
-              title="Audience share"
-              sub={`${formatFollowers(audienceReach)} reach`}
+              title="Kitle payı"
+              sub={`${formatFollowers(audienceReach)} erişim`}
               items={audienceItems}
               total={audienceReach}
-              centerLabel="total reach"
+              centerLabel="toplam erişim"
               format={formatFollowers}
-              ariaLabel="Audience share by channel"
+              ariaLabel="Kanala göre kitle payı"
             />
           )}
           {runs.length > 0 && (
             <PieCard
-              title="Agent runs · by agent"
-              sub={`${fmtCount(runs.length)} runs`}
+              title="Ajan çalıştırmaları · ajana göre"
+              sub={`${fmtCount(runs.length)} çalıştırma`}
               items={runsByAgentItems}
               total={runs.length}
-              centerLabel="agent runs"
+              centerLabel="ajan çalıştırmaları"
               format={fmtCount}
-              ariaLabel="Agent runs by agent"
+              ariaLabel="Ajana göre ajan çalıştırmaları"
             />
           )}
           {runs.length > 0 && (
             <PieCard
-              title="Run outcomes"
-              sub={`${Math.round((okRuns / runs.length) * 100)}% ok`}
+              title="Çalıştırma sonuçları"
+              sub={`%${Math.round((okRuns / runs.length) * 100)} başarılı`}
               items={outcomeItems}
               total={runs.length}
-              centerLabel="run outcomes"
+              centerLabel="çalıştırma sonuçları"
               format={fmtCount}
-              ariaLabel="Agent run outcomes"
+              ariaLabel="Ajan çalıştırma sonuçları"
             />
           )}
         </div>
@@ -297,8 +297,8 @@ export default async function AnalyticsPage() {
       <section className="mb-6 grid gap-3.5 xl:grid-cols-3">
         <div className="rounded-lg-t border border-os-border bg-os-surface p-5 xl:col-span-2">
           <div className="flex items-center justify-between gap-2">
-            <Label>Agent run volume · 14d</Label>
-            <span className="font-mono text-[11px] text-os-muted">{windowRuns} runs</span>
+            <Label>Ajan çalıştırma hacmi · 14g</Label>
+            <span className="font-mono text-[11px] text-os-muted">{windowRuns} çalıştırma</span>
           </div>
           <div className="mt-4">
             <RunVolumeChart data={runVolume} />
@@ -311,11 +311,11 @@ export default async function AnalyticsPage() {
         </div>
 
         <div className="flex flex-col rounded-lg-t border border-os-border bg-os-surface p-5">
-          <Label>Awaiting credentials</Label>
+          <Label>Kimlik bilgisi bekleniyor</Label>
           <div className="mt-3 flex flex-1 flex-col gap-2">
             {pending.length === 0 ? (
               <div className="flex flex-1 items-center justify-center font-mono text-[11px] text-os-dim">
-                all connectors live ✓
+                tüm bağlayıcılar canlı ✓
               </div>
             ) : (
               pending.map((m) => (
@@ -337,14 +337,14 @@ export default async function AnalyticsPage() {
             href="/integrations"
             className="mt-3 flex items-center justify-center gap-1.5 rounded-sm-t border border-os-border bg-os-surface2 py-2.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-os-muted transition-colors hover:border-os-accent hover:text-os-accent"
           >
-            wire connectors → flip to live
+            bağlayıcıları bağla → canlıya geç
           </Link>
         </div>
       </section>
 
       {/* Audience by platform — real Zernio snapshot data */}
       <section>
-        <SectionHead label="Audience · by platform" count={`${formatFollowers(totalFollowers)} total`} link="Open Social" href="/social" />
+        <SectionHead label="Kitle · platforma göre" count={`${formatFollowers(totalFollowers)} toplam`} link="Sosyal'i Aç" href="/social" />
         <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3 ultra:grid-cols-4">
           {dash.platforms.map((p) => {
             const Icon = PLATFORM_ICONS[p.platform];
@@ -365,7 +365,7 @@ export default async function AnalyticsPage() {
                       <div className="font-mono text-[10px] text-os-dim">{p.handle}</div>
                     </div>
                   </div>
-                  <GrowthBadge label="7d" value={p.growth.d7} />
+                  <GrowthBadge label="7g" value={p.growth.d7} />
                 </div>
                 <div className="mt-4 flex items-end justify-between gap-3">
                   <div className="font-mono text-[24px] font-semibold tracking-[-0.02em]">
@@ -376,7 +376,7 @@ export default async function AnalyticsPage() {
                 <div className="mt-3 h-1 overflow-hidden rounded-sm-t bg-os-surface2">
                   <div className="h-full bg-os-accent opacity-60" style={{ width: `${share}%` }} />
                 </div>
-                <div className="mt-1.5 font-mono text-[9.5px] text-os-dim">{share.toFixed(0)}% of reach</div>
+                <div className="mt-1.5 font-mono text-[9.5px] text-os-dim">erişimin %{share.toFixed(0)}'i</div>
               </Link>
             );
           })}

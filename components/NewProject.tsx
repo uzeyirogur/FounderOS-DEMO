@@ -41,7 +41,7 @@ export function NewProject() {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: unknown };
-        setError(typeof body.error === 'string' ? body.error : 'Check the name and the path or URL.');
+        setError(typeof body.error === 'string' ? body.error : 'Adı ve yolu veya URL\'yi kontrol edin.');
         return;
       }
       const body = (await res.json()) as { project?: { name?: string } };
@@ -50,7 +50,7 @@ export function NewProject() {
       setOpen(false);
       router.refresh();
     } catch {
-      setError('Network error. Try again.');
+      setError('Ağ hatası. Tekrar deneyin.');
     } finally {
       setBusy(false);
     }
@@ -70,9 +70,9 @@ export function NewProject() {
           }}
           className="flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-surface px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong"
         >
-          <Plus className="h-3 w-3" /> New project
+          <Plus className="h-3 w-3" /> Yeni proje
         </button>
-        {done && <span className="font-mono text-[10.5px] text-os-ok">Registered {done}.</span>}
+        {done && <span className="font-mono text-[10.5px] text-os-ok">{done} kaydedildi.</span>}
       </div>
     );
   }
@@ -80,11 +80,11 @@ export function NewProject() {
   return (
     <form onSubmit={submit} className="mb-4 rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="mb-3 flex items-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Register a project</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Bir proje kaydet</span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          aria-label="Close"
+          aria-label="Kapat"
           className="ml-auto text-os-dim hover:text-os-text"
         >
           <X className="h-3.5 w-3.5" />
@@ -93,22 +93,22 @@ export function NewProject() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className={label} htmlFor="pr-name">
-            Name
+            Ad
           </label>
           <input id="pr-name" className={field} value={form.name} onChange={set('name')} required placeholder="TIVARO" />
         </div>
         <div>
           <label className={label} htmlFor="pr-kind">
-            Kind
+            Tür
           </label>
           <select id="pr-kind" className={field} value={form.kind} onChange={set('kind')}>
-            <option value="local">Local folder</option>
-            <option value="git">Git repository</option>
+            <option value="local">Yerel klasör</option>
+            <option value="git">Git deposu</option>
           </select>
         </div>
         <div className="sm:col-span-2">
           <label className={label} htmlFor="pr-path">
-            {form.kind === 'git' ? 'Git URL' : 'Local path'}
+            {form.kind === 'git' ? 'Git URL' : 'Yerel yol'}
           </label>
           <input
             id="pr-path"
@@ -121,7 +121,7 @@ export function NewProject() {
         </div>
         <div className="sm:col-span-2">
           <label className={label} htmlFor="pr-purpose">
-            Purpose
+            Amaç
           </label>
           <textarea
             id="pr-purpose"
@@ -129,12 +129,12 @@ export function NewProject() {
             className={`${field} resize-y`}
             value={form.purpose}
             onChange={set('purpose')}
-            placeholder="What this project is and why an agent might work on it"
+            placeholder="Bu projenin ne olduğu ve bir ajanın neden üzerinde çalışabileceği"
           />
         </div>
       </div>
       <p className="mt-2 font-mono text-[10px] text-os-dim">
-        New projects start read-only with no authorized agents. Grant access from the row after it lands.
+        Yeni projeler yetkili ajan olmadan salt okunur başlar. Erişimi kayıttan sonra satırdan verebilirsiniz.
       </p>
       {error && <p className="mt-2 font-mono text-[10.5px] text-os-err">{error}</p>}
       <button
@@ -142,7 +142,7 @@ export function NewProject() {
         disabled={busy}
         className="mt-3 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        {busy ? 'saving…' : 'register project'}
+        {busy ? 'kaydediliyor…' : 'projeyi kaydet'}
       </button>
     </form>
   );

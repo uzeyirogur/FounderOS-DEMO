@@ -8,20 +8,20 @@ import type { Project } from '@/lib/schemas';
  * permission level spelled out in the open rather than buried in code.
  */
 const KIND = {
-  local: { Icon: FolderCog, label: 'Local' },
+  local: { Icon: FolderCog, label: 'Yerel' },
   git: { Icon: GitBranch, label: 'Git' },
 } as const;
 
-const STATUS: Record<Project['status'], { dot: string; text: string }> = {
-  active: { dot: 'bg-os-ok', text: 'text-os-ok' },
-  paused: { dot: 'bg-os-warn', text: 'text-os-warn' },
-  archived: { dot: 'bg-os-dim', text: 'text-os-dim' },
+const STATUS: Record<Project['status'], { dot: string; text: string; label: string }> = {
+  active: { dot: 'bg-os-ok', text: 'text-os-ok', label: 'Aktif' },
+  paused: { dot: 'bg-os-warn', text: 'text-os-warn', label: 'Duraklatıldı' },
+  archived: { dot: 'bg-os-dim', text: 'text-os-dim', label: 'Arşivlendi' },
 };
 
 const PERMISSION_LABEL: Record<Project['permissionLevel'], string> = {
-  read_only: 'Read only',
-  auto_safe_write: 'Auto (safe writes)',
-  full_with_approval: 'Full (needs approval)',
+  read_only: 'Salt okuma',
+  auto_safe_write: 'Otomatik (güvenli yazma)',
+  full_with_approval: 'Tam (onay gerekli)',
 };
 
 export function ProjectsTable({
@@ -37,7 +37,7 @@ export function ProjectsTable({
   if (rows.length === 0) {
     return (
       <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-        No projects registered yet. Add one so an agent has something it is explicitly allowed to touch.
+        Henüz kayıtlı proje yok. Bir ajanın açıkça dokunmasına izin verilen bir şey olması için bir tane ekleyin.
       </p>
     );
   }
@@ -46,7 +46,7 @@ export function ProjectsTable({
       <table className="w-full min-w-[820px] border-collapse">
         <thead>
           <tr className="border-b border-os-border">
-            {['Name', 'Kind', 'Status', 'Permission', 'Authorized agents', 'Purpose', ...(manage ? ['Manage'] : [])].map(
+            {['Ad', 'Tür', 'Durum', 'İzin', 'Yetkili ajanlar', 'Amaç', ...(manage ? ['Yönet'] : [])].map(
               (h) => (
                 <th
                   key={h}
@@ -78,7 +78,7 @@ export function ProjectsTable({
                 <td className="whitespace-nowrap px-4 py-3 align-top">
                   <span className="inline-flex items-center gap-1.5">
                     <span className={`h-1.5 w-1.5 shrink-0 ${s.dot}`} />
-                    <span className={`font-mono text-[10.5px] uppercase tracking-wider ${s.text}`}>{p.status}</span>
+                    <span className={`font-mono text-[10.5px] uppercase tracking-wider ${s.text}`}>{s.label}</span>
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] text-os-muted">
@@ -87,7 +87,7 @@ export function ProjectsTable({
                 <td className="px-4 py-3 align-top text-[11.5px] leading-snug text-os-muted">
                   {p.authorizedAgentIds.length === 0 ? (
                     <span className="inline-flex items-center gap-1 text-os-dim">
-                      <Minus className="h-3 w-3" /> none authorized
+                      <Minus className="h-3 w-3" /> yetkili yok
                     </span>
                   ) : (
                     p.authorizedAgentIds.map((id) => agentNames[id] ?? id).join(', ')

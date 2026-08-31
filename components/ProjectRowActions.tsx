@@ -12,10 +12,15 @@ import type { Project, ProjectPermissionLevel, ProjectStatus } from '@/lib/schem
  * a stray click should not silently revoke or grant it.
  */
 const STATUSES: ProjectStatus[] = ['active', 'paused', 'archived'];
+const STATUS_LABEL: Record<ProjectStatus, string> = {
+  active: 'Aktif',
+  paused: 'Duraklatıldı',
+  archived: 'Arşivlendi',
+};
 const PERMISSIONS: { value: ProjectPermissionLevel; label: string }[] = [
-  { value: 'read_only', label: 'Read only' },
-  { value: 'auto_safe_write', label: 'Auto (safe writes)' },
-  { value: 'full_with_approval', label: 'Full (needs approval)' },
+  { value: 'read_only', label: 'Salt okuma' },
+  { value: 'auto_safe_write', label: 'Otomatik (güvenli yazma)' },
+  { value: 'full_with_approval', label: 'Tam (onay gerekli)' },
 ];
 
 export function ProjectRowActions({ project }: { project: Project }) {
@@ -40,7 +45,7 @@ export function ProjectRowActions({ project }: { project: Project }) {
   return (
     <span className="flex items-center gap-1.5">
       <select
-        aria-label="Status"
+        aria-label="Durum"
         disabled={busy}
         value={project.status}
         onChange={(e) => call({ method: 'PATCH', body: JSON.stringify({ status: e.target.value }) })}
@@ -48,12 +53,12 @@ export function ProjectRowActions({ project }: { project: Project }) {
       >
         {STATUSES.map((s) => (
           <option key={s} value={s}>
-            {s}
+            {STATUS_LABEL[s]}
           </option>
         ))}
       </select>
       <select
-        aria-label="Permission level"
+        aria-label="İzin seviyesi"
         disabled={busy}
         value={project.permissionLevel}
         onChange={(e) => call({ method: 'PATCH', body: JSON.stringify({ permissionLevel: e.target.value }) })}
@@ -72,20 +77,20 @@ export function ProjectRowActions({ project }: { project: Project }) {
             disabled={busy}
             className="rounded-sm-t border border-os-border px-1.5 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err transition-colors hover:border-os-border-strong disabled:opacity-40"
           >
-            sure?
+            emin misin?
           </button>
           <button
             onClick={() => setConfirming(false)}
             className="font-mono text-[10px] uppercase tracking-widest text-os-dim transition-colors hover:text-os-text"
           >
-            no
+            hayır
           </button>
         </span>
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          aria-label="Remove project"
-          title="Remove"
+          aria-label="Projeyi kaldır"
+          title="Kaldır"
           className="text-os-dim opacity-0 transition-opacity hover:text-os-err group-hover:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5" />

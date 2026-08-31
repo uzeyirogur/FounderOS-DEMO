@@ -32,14 +32,14 @@ export function NewIdea() {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: unknown };
-        setError(typeof body.error === 'string' ? body.error : 'Check the title and ratings (1-5).');
+        setError(typeof body.error === 'string' ? body.error : 'Başlığı ve puanları (1-5) kontrol et.');
         return;
       }
       setForm(empty);
       setOpen(false);
       router.refresh();
     } catch {
-      setError('Network error. Try again.');
+      setError('Ağ hatası. Tekrar dene.');
     } finally {
       setBusy(false);
     }
@@ -56,7 +56,7 @@ export function NewIdea() {
         onClick={() => setOpen(true)}
         className="mb-4 flex items-center gap-1.5 rounded-sm-t border border-os-border bg-os-surface px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong"
       >
-        <Plus className="h-3 w-3" /> New idea
+        <Plus className="h-3 w-3" /> Yeni fikir
       </button>
     );
   }
@@ -64,30 +64,30 @@ export function NewIdea() {
   return (
     <form onSubmit={submit} className="mb-4 rounded-lg-t border border-os-border bg-os-surface p-4">
       <div className="mb-3 flex items-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Score an idea</span>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="ml-auto text-os-dim hover:text-os-text">
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-os-dim">Bir fikri puanla</span>
+        <button type="button" onClick={() => setOpen(false)} aria-label="Kapat" className="ml-auto text-os-dim hover:text-os-text">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className={label} htmlFor="idea-title">Title</label>
-          <input id="idea-title" className={field} value={form.title} onChange={set('title')} required placeholder="Weekly grade digest for parents" />
+          <label className={label} htmlFor="idea-title">Başlık</label>
+          <input id="idea-title" className={field} value={form.title} onChange={set('title')} required placeholder="Veliler için haftalık not özeti" />
         </div>
         <div className="sm:col-span-2">
-          <label className={label} htmlFor="idea-desc">Description</label>
-          <textarea id="idea-desc" rows={2} className={`${field} resize-y`} value={form.description} onChange={set('description')} placeholder="What it is, why it might matter" />
+          <label className={label} htmlFor="idea-desc">Açıklama</label>
+          <textarea id="idea-desc" rows={2} className={`${field} resize-y`} value={form.description} onChange={set('description')} placeholder="Ne olduğu, neden önemli olabileceği" />
         </div>
         <div>
-          <label className={label} htmlFor="idea-market">Market size (1-5)</label>
+          <label className={label} htmlFor="idea-market">Pazar büyüklüğü (1-5)</label>
           <input id="idea-market" type="number" min={1} max={5} className={rating} value={form.marketSize} onChange={set('marketSize')} />
         </div>
         <div>
-          <label className={label} htmlFor="idea-effort">Ease to build (1-5, 5=easy)</label>
+          <label className={label} htmlFor="idea-effort">Geliştirme kolaylığı (1-5, 5=kolay)</label>
           <input id="idea-effort" type="number" min={1} max={5} className={rating} value={form.effort} onChange={set('effort')} />
         </div>
         <div>
-          <label className={label} htmlFor="idea-fit">Strategic fit (1-5)</label>
+          <label className={label} htmlFor="idea-fit">Stratejik uyum (1-5)</label>
           <input id="idea-fit" type="number" min={1} max={5} className={rating} value={form.strategicFit} onChange={set('strategicFit')} />
         </div>
       </div>
@@ -97,7 +97,7 @@ export function NewIdea() {
         disabled={busy}
         className="mt-3 rounded-sm-t border border-os-border bg-os-surface2 px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-widest text-os-accent transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        {busy ? 'saving…' : 'score it'}
+        {busy ? 'kaydediliyor…' : 'puanla'}
       </button>
     </form>
   );

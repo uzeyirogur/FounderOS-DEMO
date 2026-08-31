@@ -106,24 +106,24 @@ function SendComposer({
     <div className="border-t border-os-border bg-os-bg p-3">
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
         <label className="flex items-center border border-os-border bg-os-surface px-2.5">
-          <span className="mr-2 font-mono text-[9px] uppercase tracking-widest text-os-dim">to</span>
-          <input
-            type="email"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-            placeholder="name@example.com"
-            className="min-w-0 flex-1 bg-transparent py-2 text-[11px] text-os-text outline-none placeholder:text-os-dim"
-          />
-        </label>
-        <label className="flex items-center border border-os-border bg-os-surface px-2.5">
-          <span className="mr-2 font-mono text-[9px] uppercase tracking-widest text-os-dim">subject</span>
-          <input
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            placeholder="Subject"
-            className="min-w-0 flex-1 bg-transparent py-2 text-[11px] text-os-text outline-none placeholder:text-os-dim"
-          />
-        </label>
+            <span className="mr-2 font-mono text-[9px] uppercase tracking-widest text-os-dim">kime</span>
+            <input
+              type="email"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+              placeholder="ad@ornek.com"
+              className="min-w-0 flex-1 bg-transparent py-2 text-[11px] text-os-text outline-none placeholder:text-os-dim"
+            />
+          </label>
+          <label className="flex items-center border border-os-border bg-os-surface px-2.5">
+            <span className="mr-2 font-mono text-[9px] uppercase tracking-widest text-os-dim">konu</span>
+            <input
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder="Konu"
+              className="min-w-0 flex-1 bg-transparent py-2 text-[11px] text-os-text outline-none placeholder:text-os-dim"
+            />
+          </label>
       </div>
       <textarea
         value={bodyText}
@@ -140,9 +140,9 @@ function SendComposer({
           className="flex items-center gap-1.5 border border-os-border-strong bg-os-accent px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-os-bg disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send className="h-3 w-3" />
-          {phase === 'sending' ? 'sending...' : 'send'}
+          {phase === 'sending' ? 'gönderiliyor...' : 'gönder'}
         </button>
-        {phase === 'sent' ? <Badge tone="ok">sent</Badge> : null}
+        {phase === 'sent' ? <Badge tone="ok">gönderildi</Badge> : null}
         {phase === 'error' ? <span className="text-[10px] text-os-err">{error}</span> : null}
       </div>
     </div>
@@ -156,22 +156,22 @@ function ThreadView({ thread, account }: { thread: EmailThread; account: string 
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2 border-b border-os-border px-4 py-2.5">
         <h2 className="truncate text-[13px] font-semibold text-os-text">{thread.subject}</h2>
-        <Badge>{thread.messages.length} {thread.messages.length === 1 ? 'message' : 'messages'}</Badge>
+        <Badge>{thread.messages.length} {thread.messages.length === 1 ? 'mesaj' : 'mesaj'}</Badge>
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {thread.messages.map((message) => (
           <article key={`${message.uid}:${message.messageId ?? ''}`} className="border border-os-border bg-os-bg">
             <header className="border-b border-os-border px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="truncate text-[12px] font-semibold">{message.sentByMe ? 'You' : message.from}</span>
+                <span className="truncate text-[12px] font-semibold">{message.sentByMe ? 'Siz' : message.from}</span>
                 {message.starred ? <Star className="h-3 w-3 fill-os-warn text-os-warn" /> : null}
-                {message.unread ? <Badge tone="accent">unread</Badge> : null}
+                {message.unread ? <Badge tone="accent">okunmadı</Badge> : null}
                 <time className="ml-auto shrink-0 font-mono text-[9px] text-os-dim">
                   {new Date(message.date).toLocaleString()}
                 </time>
               </div>
               <p className="mt-1 truncate font-mono text-[9px] text-os-dim">
-                to {message.to.join(', ') || 'unknown recipient'}
+                alıcı {message.to.join(', ') || 'bilinmeyen alıcı'}
                 {message.cc.length ? ` | cc ${message.cc.join(', ')}` : ''}
               </p>
             </header>
@@ -206,10 +206,10 @@ function ThreadView({ thread, account }: { thread: EmailThread; account: string 
           initialSubject={replySubject(thread.subject)}
           inReplyTo={last?.messageId}
           references={references}
-          label="Write a reply to this conversation"
+          label="Bu konuşmaya bir yanıt yazın"
         />
       ) : (
-        <p className="border-t border-os-border px-4 py-3 font-mono text-[10px] text-os-dim">No reply address was supplied.</p>
+        <p className="border-t border-os-border px-4 py-3 font-mono text-[10px] text-os-dim">Yanıt adresi belirtilmemiş.</p>
       )}
     </div>
   );
@@ -261,7 +261,7 @@ function InboxReader({ lane, nowISO, initialItemId, onClose }: { lane: CommsLane
         if (!response.ok || responseBody.unavailable) throw new Error(responseBody.error ?? `HTTP ${response.status}`);
         setSearchResults(responseBody.items ?? []);
       } catch (searchError) {
-        if (!controller.signal.aborted) setError(searchError instanceof Error ? searchError.message : 'Inbox search failed');
+        if (!controller.signal.aborted) setError(searchError instanceof Error ? searchError.message : 'Gelen kutusu araması başarısız oldu');
       } finally {
         if (!controller.signal.aborted) setSearching(false);
       }
@@ -311,7 +311,7 @@ function InboxReader({ lane, nowISO, initialItemId, onClose }: { lane: CommsLane
           : current);
       }
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Inbox action failed');
+      setError(actionError instanceof Error ? actionError.message : 'Gelen kutusu işlemi başarısız oldu');
     } finally {
       if (!background) setActionBusy(false);
     }
@@ -334,7 +334,7 @@ function InboxReader({ lane, nowISO, initialItemId, onClose }: { lane: CommsLane
       if (item.unread && item.emailThreadId) void performActionFor(item, 'read', true);
     } catch (loadError) {
       setThreadPhase('error');
-      setError(loadError instanceof Error ? loadError.message : 'Could not load the conversation');
+      setError(loadError instanceof Error ? loadError.message : 'Konuşma yüklenemedi');
     }
   };
 
@@ -355,32 +355,32 @@ function InboxReader({ lane, nowISO, initialItemId, onClose }: { lane: CommsLane
           <span className="hidden font-mono text-[9px] text-os-dim sm:inline">{lane.detail}</span>
           <div className="ml-auto flex items-center gap-1.5">
             <span className="sm:hidden">
-              <ToolButton label="Compose new email" onClick={() => { setCompose(true); setSelectedId(''); }}><PenLine className="h-3.5 w-3.5" /></ToolButton>
+              <ToolButton label="Yeni e-posta oluştur" onClick={() => { setCompose(true); setSelectedId(''); }}><PenLine className="h-3.5 w-3.5" /></ToolButton>
             </span>
             {selected?.emailThreadId && !compose ? (
               <>
-                <ToolButton label={selected.starred ? 'Unstar conversation' : 'Star conversation'} active={selected.starred} busy={actionBusy} onClick={() => performAction(selected.starred ? 'unstar' : 'star')}>
+                <ToolButton label={selected.starred ? 'Yıldızı kaldır' : 'Yıldızla'} active={selected.starred} busy={actionBusy} onClick={() => performAction(selected.starred ? 'unstar' : 'star')}>
                   <Star className={`h-3.5 w-3.5 ${selected.starred ? 'fill-current' : ''}`} />
                 </ToolButton>
-                <ToolButton label={selected.unread ? 'Mark read' : 'Mark unread'} busy={actionBusy} onClick={() => performAction(selected.unread ? 'read' : 'unread')}>
+                <ToolButton label={selected.unread ? 'Okundu olarak işaretle' : 'Okunmadı olarak işaretle'} busy={actionBusy} onClick={() => performAction(selected.unread ? 'read' : 'unread')}>
                   {selected.unread ? <MailOpen className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
                 </ToolButton>
-                <ToolButton label="Archive conversation" busy={actionBusy} onClick={() => performAction('archive')}><Archive className="h-3.5 w-3.5" /></ToolButton>
-                <ToolButton label="Move conversation to trash" busy={actionBusy} onClick={() => performAction('trash')}><Trash2 className="h-3.5 w-3.5" /></ToolButton>
+                <ToolButton label="Konuşmayı arşivle" busy={actionBusy} onClick={() => performAction('archive')}><Archive className="h-3.5 w-3.5" /></ToolButton>
+                <ToolButton label="Konuşmayı çöp kutusuna taşı" busy={actionBusy} onClick={() => performAction('trash')}><Trash2 className="h-3.5 w-3.5" /></ToolButton>
               </>
             ) : null}
-            <button type="button" onClick={onClose} aria-label="Close inbox" className="ml-1 p-1.5 text-os-dim hover:text-os-text"><X className="h-4 w-4" /></button>
+            <button type="button" onClick={onClose} aria-label="Gelen kutusunu kapat" className="ml-1 p-1.5 text-os-dim hover:text-os-text"><X className="h-4 w-4" /></button>
           </div>
         </header>
         <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="hidden min-h-0 flex-col border-r border-os-border sm:flex">
             <div className="space-y-2 border-b border-os-border p-2.5">
               <button type="button" onClick={() => { setCompose(true); setSelectedId(''); }} className="flex w-full items-center justify-center gap-2 border border-os-border-strong bg-os-accent px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-os-bg">
-                <PenLine className="h-3.5 w-3.5" /> compose
+                <PenLine className="h-3.5 w-3.5" /> oluştur
               </button>
               <label className="flex items-center gap-2 border border-os-border bg-os-bg px-2.5">
                 {searching ? <RefreshCw className="h-3 w-3 animate-spin text-os-dim" /> : <Search className="h-3 w-3 text-os-dim" />}
-                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search entire inbox" className="min-w-0 flex-1 bg-transparent py-2 font-mono text-[9.5px] text-os-text outline-none placeholder:text-os-dim" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tüm gelen kutusunda ara" className="min-w-0 flex-1 bg-transparent py-2 font-mono text-[9.5px] text-os-text outline-none placeholder:text-os-dim" />
               </label>
             </div>
             <div className="min-h-0 flex-1 divide-y divide-os-border overflow-y-auto">
@@ -394,27 +394,27 @@ function InboxReader({ lane, nowISO, initialItemId, onClose }: { lane: CommsLane
                   <p className={`mt-1 truncate text-[10px] ${item.unread ? 'text-os-text' : 'text-os-dim'}`}>{item.subject ?? item.preview}</p>
                 </button>
               ))}
-              {displayedItems.length === 0 ? <p className="p-4 font-mono text-[10px] text-os-dim">No matching mail.</p> : null}
+              {displayedItems.length === 0 ? <p className="p-4 font-mono text-[10px] text-os-dim">Eşleşen posta yok.</p> : null}
             </div>
           </aside>
           <main className="flex min-h-0 min-w-0 flex-col">
             {compose ? (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex-1 p-5"><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-os-dim">new message from {lane.name}</p></div>
-                <SendComposer account={lane.id} label="Write a new message" />
+                <div className="flex-1 p-5"><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-os-dim">{lane.name} üzerinden yeni mesaj</p></div>
+                <SendComposer account={lane.id} label="Yeni bir mesaj yazın" />
               </div>
             ) : null}
             {!compose && threadPhase === 'loading' ? (
-              <div className="flex flex-1 items-center justify-center gap-2 font-mono text-[10px] text-os-dim"><RefreshCw className="h-3.5 w-3.5 animate-spin" /> loading full conversation...</div>
+              <div className="flex flex-1 items-center justify-center gap-2 font-mono text-[10px] text-os-dim"><RefreshCw className="h-3.5 w-3.5 animate-spin" /> tüm konuşma yükleniyor...</div>
             ) : null}
             {!compose && threadPhase === 'error' ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
                 <p className="max-w-md text-[11px] text-os-err">{error}</p>
-                {selected ? <button type="button" onClick={() => loadThread(selected)} className="border border-os-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-muted">retry</button> : null}
+                {selected ? <button type="button" onClick={() => loadThread(selected)} className="border border-os-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-os-muted">tekrar dene</button> : null}
               </div>
             ) : null}
             {!compose && threadPhase === 'ready' && thread ? <ThreadView thread={thread} account={lane.id} /> : null}
-            {!compose && !selected && threadPhase !== 'loading' ? <p className="m-auto font-mono text-[10px] text-os-dim">Inbox clear. Compose a new message or close this view.</p> : null}
+            {!compose && !selected && threadPhase !== 'loading' ? <p className="m-auto font-mono text-[10px] text-os-dim">Gelen kutusu boş. Yeni bir mesaj oluşturun veya bu görünümü kapatın.</p> : null}
             {error && threadPhase !== 'error' ? <p className="border-t border-os-border px-3 py-2 text-[10px] text-os-err">{error}</p> : null}
           </main>
         </div>
@@ -434,12 +434,12 @@ function LaneColumn({ lane, nowISO, onExpand, onOpenItem }: { lane: CommsLane; n
         <span className="ml-auto flex items-center gap-1.5">
           {lane.unread > 0 ? <Badge tone="accent">{lane.unread}</Badge> : null}
           <Dot state={lane.state} pulse />
-          {onExpand ? <button type="button" onClick={onExpand} title={`Open ${lane.name} inbox`} aria-label={`Open ${lane.name} inbox`} className="text-os-dim hover:text-os-accent"><Maximize2 className="h-3 w-3" /></button> : null}
+          {onExpand ? <button type="button" onClick={onExpand} title={`${lane.name} gelen kutusunu aç`} aria-label={`${lane.name} gelen kutusunu aç`} className="text-os-dim hover:text-os-accent"><Maximize2 className="h-3 w-3" /></button> : null}
         </span>
       </div>
       <div className="flex max-h-[calc(100dvh-19rem)] min-h-[320px] flex-col divide-y divide-os-border overflow-y-auto">
         {lane.items.length === 0 ? (
-          <p className="px-3 py-4 font-mono text-[10px] leading-relaxed text-os-dim">{connected ? 'Nothing here right now.' : lane.detail}</p>
+          <p className="px-3 py-4 font-mono text-[10px] leading-relaxed text-os-dim">{connected ? 'Şu anda burada bir şey yok.' : lane.detail}</p>
         ) : lane.items.map((item) => <ItemRow key={item.id} item={item} nowISO={nowISO} onOpen={onOpenItem ? () => onOpenItem(item) : undefined} />)}
       </div>
     </div>

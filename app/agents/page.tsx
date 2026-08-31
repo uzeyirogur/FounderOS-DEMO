@@ -33,6 +33,19 @@ function emblemShade(agent: Agent): string {
 
 export const dynamic = 'force-dynamic';
 
+const STATUS_LABEL: Record<Agent['status'], string> = {
+  active: 'Aktif',
+  idle: 'Boşta',
+  training: 'Eğitimde',
+  planned: 'Planlandı',
+};
+
+const TIER_LABEL: Record<Agent['tier'], string> = {
+  lead: 'Lider',
+  specialist: 'Uzman',
+  worker: 'Çalışan',
+};
+
 function AgentRosterCard({
   agent,
   parent,
@@ -63,7 +76,7 @@ function AgentRosterCard({
           </div>
           <div className="mt-1 truncate font-mono text-[10.5px] text-os-dim">{agent.role}</div>
         </div>
-        <Badge>{agent.tier}</Badge>
+        <Badge>{TIER_LABEL[agent.tier]}</Badge>
       </div>
 
       <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-os-muted [text-wrap:pretty]">{agent.description}</p>
@@ -86,16 +99,16 @@ function AgentRosterCard({
 
       <div className="mt-auto pt-4">
         <div className="mb-3 flex items-center justify-between gap-3 font-mono text-[10px] text-os-dim">
-          <span className="truncate">{parent ? `under ${parent.name}` : `instance ${agent.instance}`}</span>
-          <span className="shrink-0 uppercase tracking-wider">{agent.status}</span>
+          <span className="truncate">{parent ? `${parent.name} altında` : `örnek ${agent.instance}`}</span>
+          <span className="shrink-0 uppercase tracking-wider">{STATUS_LABEL[agent.status]}</span>
         </div>
         {lastRun && (
           <div className="flex items-baseline gap-1.5 font-mono text-[10px] leading-snug text-os-dim">
             <span className={`font-bold ${lastRun.ok ? 'text-os-ok' : 'text-os-err'}`}>
-              {lastRun.ok ? 'OK' : 'FAIL'}
+              {lastRun.ok ? 'OK' : 'HATA'}
             </span>
             <span className="truncate" title={lastRun.summary}>
-              last check: {lastRun.summary.slice(0, 56)}
+              son kontrol: {lastRun.summary.slice(0, 56)}
             </span>
           </div>
         )}
@@ -121,8 +134,8 @@ export default function AgentsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="runtime"
-        title="Real Agents"
+        eyebrow="çalışma zamanı"
+        title="Gerçek Ajanlar"
       />
 
       <div className="mb-6">
@@ -131,11 +144,11 @@ export default function AgentsPage() {
 
       <div className="mb-6 grid grid-cols-5 gap-3 max-[1100px]:grid-cols-2">
         {[
-          ['Total', agents.length],
-          ['Active', agents.filter((a) => a.status === 'active').length],
-          ['Open tasks', openTasks],
-          ['Cron jobs', allCrons.length],
-          ['Runs', totalRuns],
+          ['Toplam', agents.length],
+          ['Aktif', agents.filter((a) => a.status === 'active').length],
+          ['Açık görevler', openTasks],
+          ['Zamanlanmış işler', allCrons.length],
+          ['Çalışmalar', totalRuns],
         ].map(([label, value]) => (
           <div key={label} className="hoverable flex flex-col gap-1.5 rounded-lg-t border border-os-border bg-os-surface px-4 py-3">
             <Label>{label}</Label>
@@ -154,7 +167,7 @@ export default function AgentsPage() {
           if (deptAgents.length === 0) return null;
           return (
             <section key={dept.id}>
-              <SectionHead label={dept.name} count={`${deptAgents.length} agents`} />
+              <SectionHead label={dept.name} count={`${deptAgents.length} ajan`} />
               <div className="-mt-1 mb-3 text-[11.5px] text-os-dim">{dept.tagline}</div>
               <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 ultra:grid-cols-5">
                 {deptAgents.map((agent) => (

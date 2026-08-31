@@ -5,10 +5,10 @@ import { Badge, SectionHead } from '@/components/terminal';
 export const dynamic = 'force-dynamic';
 
 const SOURCE_LABEL: Record<string, string> = {
-  api_route: 'API route',
-  scheduler: 'Scheduler',
-  client: 'Browser',
-  server_unhandled: 'Uncaught (server)',
+  api_route: 'API rotası',
+  scheduler: 'Zamanlayıcı',
+  client: 'Tarayıcı',
+  server_unhandled: 'Yakalanmamış (sunucu)',
 };
 
 /**
@@ -24,16 +24,17 @@ export default function MonitoringPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="operations" title="Monitoring" caret right={<Badge tone={logs.length === 0 ? 'ok' : 'err'}>{logs.length} error(s)</Badge>} />
+      <PageHeader eyebrow="operasyonlar" title="İzleme" caret right={<Badge tone={logs.length === 0 ? 'ok' : 'err'}>{logs.length} hata</Badge>} />
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        Real, captured errors across the app: API route failures, scheduler tick failures, uncaught
-        server exceptions, and browser-side React render errors. This is the same sink{' '}
-        <code className="text-os-text">GET /api/errors</code> reads — nothing here is synthetic.
+        Uygulama genelinde yakalanan gerçek hatalar: API rotası hataları, zamanlayıcı tetiklenme hataları,
+        yakalanmamış sunucu istisnaları ve tarayıcı tarafı React render hataları. Bu, {' '}
+        <code className="text-os-text">GET /api/errors</code> uç noktasının okuduğu aynı kaynaktır — burada
+        hiçbir şey uydurma değildir.
       </p>
 
-      <SectionHead label="Recent errors" count={logs.length} />
+      <SectionHead label="Son hatalar" count={logs.length} />
       {logs.length === 0 ? (
-        <p className="text-[12px] text-os-dim">No errors captured yet.</p>
+        <p className="text-[12px] text-os-dim">Henüz hata yakalanmadı.</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {logs.map((l) => (
@@ -46,7 +47,7 @@ export default function MonitoringPage() {
               <div className="mt-1 text-os-text">{l.message}</div>
               {l.stack && (
                 <details className="mt-1">
-                  <summary className="cursor-pointer text-os-dim">stack trace</summary>
+                  <summary className="cursor-pointer text-os-dim">yığın izi</summary>
                   <pre className="mt-1 max-h-[200px] overflow-auto whitespace-pre-wrap text-[10px] text-os-dim">{l.stack}</pre>
                 </details>
               )}

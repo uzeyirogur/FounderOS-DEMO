@@ -14,6 +14,15 @@ const STATUS_TEXT: Record<string, string> = {
   failed: 'text-os-err',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  drafted: 'taslak',
+  pending_approval: 'onay bekliyor',
+  approved: 'onaylandı',
+  rejected: 'reddedildi',
+  published: 'yayınlandı',
+  failed: 'hata',
+};
+
 /**
  * Social Publishing's queue: every plan naming which channels a Content
  * Studio piece goes to. Separate from Content Studio by design — this is
@@ -27,24 +36,24 @@ export default function PublishPlansPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="publish planning"
-        title="Publish Plans"
-        right={<Badge tone={pending > 0 ? 'warn' : 'accent'}>{pending} awaiting approval</Badge>}
+        eyebrow="yayın planlama"
+        title="Yayın Planları"
+        right={<Badge tone={pending > 0 ? 'warn' : 'accent'}>{pending} onay bekliyor</Badge>}
       />
       <p className="mb-4 max-w-[720px] text-[12.5px] leading-relaxed text-os-muted">
-        Which channels a produced piece goes to, and how the caption is adapted per platform. A real post never
-        happens without an explicit approve here first.
+        Üretilen bir içeriğin hangi kanallara gideceği ve başlığın her platforma nasıl uyarlandığı. Gerçek bir
+        paylaşım, burada önce açıkça onaylanmadan asla yapılmaz.
       </p>
       {rows.length === 0 ? (
         <p className="rounded-lg-t border border-os-border bg-os-surface px-4 py-3 font-mono text-[10.5px] text-os-dim">
-          No publish plans yet.
+          Henüz yayın planı yok.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg-t border border-os-border bg-os-surface">
           <table className="w-full min-w-[820px] border-collapse">
             <thead>
               <tr className="border-b border-os-border">
-                {['Content piece', 'Platforms', 'Status', 'Created', 'Actions'].map((h) => (
+                {['İçerik', 'Platformlar', 'Durum', 'Oluşturulma', 'İşlemler'].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left font-mono text-[9.5px] uppercase tracking-[0.18em] text-os-dim">
                     {h}
                   </th>
@@ -57,7 +66,7 @@ export default function PublishPlansPage() {
                   <td className="px-4 py-3 align-top font-mono text-[11px] text-os-muted">{p.contentPieceId}</td>
                   <td className="px-4 py-3 align-top text-[11.5px] text-os-muted">{p.platforms.join(', ')}</td>
                   <td className={`whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] uppercase tracking-wider ${STATUS_TEXT[p.status]}`}>
-                    {p.status.replace(/_/g, ' ')}
+                    {STATUS_LABEL[p.status] ?? p.status.replace(/_/g, ' ')}
                     {p.failureReason && <div className="mt-0.5 max-w-[220px] text-[10px] normal-case text-os-err">{p.failureReason}</div>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-[10.5px] text-os-dim">

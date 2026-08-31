@@ -38,12 +38,12 @@ export default function SkillsPage() {
   const cards = [...realCards, ...operatorCards];
   const sourceNote =
     real.length > 0
-      ? `${real.length} skills live from ~/.claude (user + plugins) + ${operatorCards.length} operator skills — open any card to read or download its SKILL.md.`
-      : `${operatorCards.length} operator skills (no ~/.claude/skills on this machine) — open any card to read or download its SKILL.md.`;
+      ? `${real.length} yetenek ~/.claude'dan canlı olarak (kullanıcı + eklentiler) + ${operatorCards.length} operatör yeteneği — SKILL.md'sini okumak veya indirmek için bir karta tıkla.`
+      : `${operatorCards.length} operatör yeteneği (bu makinede ~/.claude/skills yok) — SKILL.md'sini okumak veya indirmek için bir karta tıkla.`;
 
   return (
     <div>
-      <PageHeader eyebrow="capability library" title="Skills" />
+      <PageHeader eyebrow="yetenek kütüphanesi" title="Yetenekler" />
       <SkillsGrid cards={cards} sourceNote={sourceNote} />
     </div>
   );

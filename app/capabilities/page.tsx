@@ -25,15 +25,15 @@ export default function CapabilitiesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="shared infrastructure"
-        title="Capability Registry"
-        right={<Badge tone={pending > 0 ? 'warn' : 'accent'}>{pending} awaiting review</Badge>}
+        eyebrow="paylaşılan altyapı"
+        title="Yetenek Kayıt Defteri"
+        right={<Badge tone={pending > 0 ? 'warn' : 'accent'}>{pending} inceleme bekliyor</Badge>}
       />
       <p className="mb-4 max-w-[760px] text-[12.5px] leading-relaxed text-os-muted">
-        Every MCP server, API, CLI, SDK, SKILL.md, GitHub repo, hosted service, or media-generation tool any agent
-        has discovered or been given. AI Intelligence adds new rows as &apos;candidate&apos; when a task needs a
-        capability nothing active covers — a paid or auth-required candidate never activates itself; approve it here
-        first.
+        Herhangi bir ajanın keşfettiği veya kendisine verilmiş her MCP sunucusu, API, CLI, SDK, SKILL.md, GitHub
+        deposu, barındırılan servis veya medya üretim aracı. AI Intelligence, aktif hiçbir yetenek kapsamıyorsa bir
+        görev için yeni satırları &apos;aday&apos; olarak ekler — ücretli veya kimlik doğrulama gerektiren bir aday
+        kendiliğinden etkinleşmez; önce burada onaylanması gerekir.
       </p>
       <CapabilityRegistryTable rows={rows} />
     </div>

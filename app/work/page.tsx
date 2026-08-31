@@ -21,11 +21,11 @@ export default function WorkPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="work assistant" title="My Tasks" />
+      <PageHeader eyebrow="iş asistanı" title="Görevlerim" />
       <WorkAssistantBoard tasks={tasks} />
 
       <div className="mt-8">
-        <PageHeader eyebrow="personal ops" title="Routines" />
+        <PageHeader eyebrow="kişisel operasyonlar" title="Rutinler" />
         <PersonalOpsBoard routines={routines} />
       </div>
     </div>

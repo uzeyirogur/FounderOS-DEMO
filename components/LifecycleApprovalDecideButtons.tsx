@@ -37,14 +37,14 @@ export function LifecycleApprovalDecideButtons({ approval }: { approval: Lifecyc
         disabled={busy}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border bg-os-surface2 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-ok transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        <Check className="h-3 w-3" /> approve
+        <Check className="h-3 w-3" /> onayla
       </button>
       <button
         onClick={() => decide('rejected')}
         disabled={busy}
         className="inline-flex items-center gap-1 rounded-sm-t border border-os-border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-os-err transition-colors hover:border-os-border-strong disabled:opacity-40"
       >
-        <X className="h-3 w-3" /> reject
+        <X className="h-3 w-3" /> reddet
       </button>
     </span>
   );
