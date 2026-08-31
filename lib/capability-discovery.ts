@@ -89,8 +89,17 @@ export async function discoverCapability(
   }
 
   const candidates: CapabilityProvider[] = [];
+  const seenIds = new Set<string>();
   for (const r of results) {
     const id = idFromUrl(capability, r.url, randomUUID());
+    // Same search response can return multiple hits that collapse to the
+    // same stable id (e.g. two Brave results for the same host, differing
+    // only by URL fragment/anchor) — a real bug found live: 3 Brave hits
+    // for the same tool produced 3 identical registry entries in a single
+    // discovery response. Once per id per call, regardless of whether the
+    // row was already in the registry or freshly inserted this pass.
+    if (seenIds.has(id)) continue;
+    seenIds.add(id);
     const already = db.capabilities.byId(id);
     if (already) {
       candidates.push(already);

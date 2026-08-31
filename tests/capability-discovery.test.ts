@@ -77,6 +77,17 @@ describe('discoverCapability', () => {
     expect(db.capabilities.byCapability('video-generation')).toHaveLength(1);
   });
 
+  it('a single search response with multiple results on the same host returns each candidate ONCE, not once per matching result — real bug found live: Brave returning 3 hits for llamaindex.ai produced 3 identical "HIPAA-compliant OCR" entries in the same response', async () => {
+    const searchFn = vi.fn().mockResolvedValue([
+      { title: 'Best HIPAA-Compliant OCR Tools — overview', url: 'https://www.llamaindex.ai/insights/top-hipaa-compliant-ocr', description: 'a' },
+      { title: 'Best HIPAA-Compliant OCR Tools — pricing', url: 'https://www.llamaindex.ai/insights/top-hipaa-compliant-ocr#pricing', description: 'b' },
+      { title: 'Best HIPAA-Compliant OCR Tools — faq', url: 'https://www.llamaindex.ai/insights/top-hipaa-compliant-ocr#faq', description: 'c' },
+    ]);
+    const result = await discoverCapability(db, 'hipaa-document-ocr', 'q', searchFn);
+    expect(result.candidates).toHaveLength(1);
+    expect(db.capabilities.byCapability('hipaa-document-ocr')).toHaveLength(1);
+  });
+
   it('guesses a paid cost model from "paid"/"subscription" language, free otherwise-worded results stay unknown', async () => {
     const searchFn = vi.fn().mockResolvedValue([
       { title: 'X', url: 'https://x.example/a', description: 'Paid subscription required, from $20/mo.' },
