@@ -53,9 +53,8 @@ describe('buildBrainDocs', () => {
   test('an agent doc holds its charter, SOP instructions and wikilinked tools', () => {
     const docs = docsFor(seeded());
     const gmail = docs.find((x) => x.path === 'agents/gmail-worker.md')!.content;
-    expect(gmail).toContain('IMAP Inboxes');
-    expect(gmail).toContain('Triage the four Gmail inboxes');
-    expect(gmail).toContain('Classify each thread');
+    expect(gmail).toContain('IMAP Gelen Kutuları');
+    expect(gmail).toContain('Her mesajı sınıflandır');
     expect(gmail).toContain('[[imap]]');
     expect(gmail).toContain('[[comms-agent]]'); // reports to
     expect(gmail).toContain('[[pillar-communications]]');
