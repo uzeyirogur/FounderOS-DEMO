@@ -34,16 +34,8 @@ const PLATFORM_ICONS: Record<SocialPlatform, LucideIcon> = {
   linkedin: Linkedin,
 };
 
-// Recent published content — seeded dummy until a Zernio published-posts pull
-// lands (the publish queue below is the real, wired path). views/likes carry
-// the like-to-view (engagement) ratio shown per post + averaged in the header.
-const RECENT_POSTS = [
-  { tag: 'Instagram · Reel', ago: '2h', caption: 'Ben uyurken işimi yürüten 3 ajan', kind: 'views', views: 12400, likes: 1104 },
-  { tag: 'TikTok · Video', ago: '6h', caption: 'POV: işletim sisteminde bir komut paleti var', kind: 'views', views: 8100, likes: 640 },
-  { tag: 'X · Thread', ago: '1d', caption: '7 gerçek bağlantıyı tek bir işletim sisteminde nasıl birleştirdim', kind: 'impressions', views: 1200, likes: 74 },
-  { tag: 'YouTube · Long', ago: '2d', caption: 'Founder OS gezintisi — herkesin gözü önünde inşa etmek #4', kind: 'views', views: 940, likes: 88 },
-  { tag: 'Instagram · Carousel', ago: '3d', caption: 'Önce simülasyon, gerçek zamana hazır mimari', kind: 'reach', views: 6700, likes: 717 },
-];
+// Son yayınlar — gerçek Zernio API'sinden gelecek, şimdilik boş.
+const RECENT_POSTS: { tag: string; ago: string; caption: string; kind: string; views: number; likes: number }[] = [];
 
 // Human label for a raw Zernio platform string (falls back to capitalising it).
 function platformLabel(platform: string): string {
