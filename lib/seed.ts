@@ -606,47 +606,8 @@ const people: Person[] = [
 // ── SOP tasks — every department role's job, written out ─────────────────────
 // One task per worker, one worker per task (monogamous; tests enforce it).
 // The chain the /brain graph draws: department → task → worker → tools.
-const leadMagnets: LeadMagnet[] = [
-  {
-    id: 'operator-stack',
-    name: 'The Operator Stack',
-    offer: 'Every layer of the agent stack, and what to use instead of each one',
-    url: 'https://stack.example.com',
-    status: 'live',
-    captures: 'email',
-    destination: 'Newsletter · main list',
-    source: 'Carousel · "One person, a company of agents" (comment STACK)',
-    launchedAt: '2026-08-12',
-    origin: 'seed',
-    notes: 'Ungated. Newsletter signup plus a separate cohort waitlist form.',
-  },
-  {
-    id: 'automation-teardown',
-    name: 'The Automation Teardown',
-    offer: 'A workflow pulled apart step by step, with the hours each one costs',
-    url: 'https://teardown.example.com',
-    status: 'live',
-    captures: 'email',
-    destination: 'Newsletter · main list',
-    source: 'Short · "Where the week actually goes" (comment TEARDOWN)',
-    launchedAt: '2026-08-05',
-    origin: 'seed',
-    notes: 'Built from the workflows view. Doubles as the cohort lesson one handout.',
-  },
-  {
-    id: 'cohort-waitlist',
-    name: 'Cohort Waitlist',
-    offer: 'A seat in the next cohort before it opens publicly',
-    url: 'https://waitlist.example.com',
-    status: 'paused',
-    captures: 'email',
-    destination: 'Newsletter · cohort waitlist segment',
-    source: 'Bio link + end cards',
-    launchedAt: '2026-07-28',
-    origin: 'seed',
-    notes: 'Paused between cohorts. Reopen when the next intake is dated.',
-  },
-];
+// Lead magnetler — kullanıcı kendi içeriklerini ekleyene kadar BOŞ.
+const leadMagnets: LeadMagnet[] = [];
 
 // ── Project Registry — seeded starting point ─────────────────────────────────
 // Real projects Alex actually works, registered so agents have somewhere
@@ -1235,7 +1196,7 @@ const tools: Tool[] = [
   { id: 'tool-obsidian', name: 'Notes Vault', category: 'Knowledge', status: 'connected', color: GRAY.light, description: 'Yerel not kasası. Doğrudan dosya sistemi erişimi.' },
   { id: 'tool-notion', name: 'Notion', category: 'Knowledge', status: 'available', color: GRAY.dim, description: 'İstemci hazır. NOTION_API_KEY tanımlayıp sayfaları entegrasyonla paylaş.' },
   // Social & growth
-  { id: 'tool-postly', name: 'Postly', category: 'Social', status: 'connected', color: GRAY.white, description: '@founderos.ai altında 6 platform (IG, TikTok, X…). Anahtar ~/.config/social/.env içinde — aktif.' },
+  { id: 'tool-postly', name: 'Postly', category: 'Social', status: 'available', color: GRAY.white, description: 'Sosyal medya yönetimi — hesap bağlandığında aktif olacak.' },
   { id: 'tool-dmflow', name: 'DMFlow', category: 'Social', status: 'available', color: GRAY.dim, description: 'DM otomasyonu. Uç nokta haritası shared-config içinde tam belgelenmiş; DMFLOW_API_KEY gerekiyor.' },
   { id: 'tool-skool', name: 'Skool (via Playwright)', category: 'Social', status: 'connected', color: GRAY.mid, description: 'Belgelenen Playwright akışıyla yürütülen topluluk yönetimi.' },
   // CRM & revenue
@@ -1314,14 +1275,9 @@ const phases: Phase[] = [
   { id: 'phase-4', number: 4, title: 'Kendine Ait Sunucu', items: ['İşlemi taşı', 'Uzaktan erişim + kimlik doğrulama', '7/24 çalışma süresi'] },
 ];
 
-// The @founderos.ai footprint, handles straight from the Postly config.
-const socialAccounts: SocialAccount[] = [
-  { platform: 'instagram', handle: '@founderos.ai', url: 'https://instagram.com/founderos.ai', order: 1 },
-  { platform: 'tiktok', handle: '@founderos.ai', url: 'https://tiktok.com/@founderos.ai', order: 2 },
-  { platform: 'twitter', handle: '@Founderosai', url: 'https://x.com/Founderosai', order: 3 },
-  { platform: 'youtube', handle: '@founderosai', url: 'https://youtube.com/@founderosai', order: 4 },
-  { platform: 'linkedin', handle: 'Alex Rivera', url: null, order: 5 },
-];
+// Sosyal hesaplar — kullanıcı kendi hesaplarını bağlayana kadar BOŞ.
+// Gerçek veriler Postly/connector senkronizasyonuyla gelecek.
+const socialAccounts: SocialAccount[] = [];
 
 // Demo follower counts. LinkedIn has no baseline in this demo, so it gets
 // honest nulls until scrapes land. Live syncs append from here.
@@ -1361,107 +1317,21 @@ function ramp(start: number, end: number, seed: number): number[] {
   });
 }
 
-// Demo current follower counts; LinkedIn history is fully DUMMY. Each
-// platform ramps up to its current value.
-const FOLLOWER_TARGETS: { platform: SocialAccount['platform']; start: number; end: number }[] = [
-  { platform: 'instagram', start: 30000, end: 42000 },
-  { platform: 'tiktok', start: 6000, end: 12000 },
-  { platform: 'twitter', start: 3000, end: 5200 },
-  { platform: 'youtube', start: 300, end: 900 },
-  { platform: 'linkedin', start: 800, end: 1500 },
-];
+// Takipçi sayıları — hesap bağlanana kadar BOŞ.
+const FOLLOWER_TARGETS: { platform: SocialAccount['platform']; start: number; end: number }[] = [];
+const socialBaseline: SocialSnapshot[] = [];
 
-const socialBaseline: SocialSnapshot[] = FOLLOWER_TARGETS.flatMap((t, ti) =>
-  ramp(t.start, t.end, ti + 1).map((followers, i) => ({
-    platform: t.platform,
-    capturedAt: SERIES_DATES[i],
-    followers,
-    // the final seeded point keeps its source; history is seeded dummy
-    source: i === SERIES_DATES.length - 1 && t.platform !== 'linkedin' ? 'postly-config' : 'seed-dummy',
-  })),
-);
+// E-posta listesi — Beehiiv bağlanana kadar BOŞ.
+const emailListBaseline: EmailListSnapshot[] = [];
 
-// Email list — demo Beehiiv snapshot. Beehiiv's stats endpoint exposes only
-// current + all-time aggregates, not a daily series, so we seed the honest
-// shape: the list exists from a single import date and sits essentially flat
-// over the window. Once BEEHIIV_API_KEY lands, syncBeehiivEmail overwrites
-// today's point with the live count.
-const BEEHIIV_IMPORT_DATE = '2026-05-28';
-const BEEHIIV_ACTIVE_SUBSCRIBERS = 1850;
-const emailListDates = SERIES_DATES.filter((d) => d >= BEEHIIV_IMPORT_DATE);
-const emailListBaseline: EmailListSnapshot[] = emailListDates.map((capturedAt, i) => ({
-  capturedAt,
-  // flat since the import; the final point is the seeded current value
-  subscribers: i === emailListDates.length - 1 ? BEEHIIV_ACTIVE_SUBSCRIBERS : BEEHIIV_ACTIVE_SUBSCRIBERS - 1,
-  source: 'seed-beehiiv',
-}));
+// DM sayıları — connector bağlanana kadar BOŞ.
+const DM_TARGETS: { platform: SocialDm['platform']; start: number; end: number }[] = [];
+const socialDms: SocialDm[] = [];
+const socialDmMessages: SocialDmMessage[] = [];
+const socialDmSnapshots: SocialDmSnapshot[] = [];
 
-// DM counts — DUMMY until a DMFlow/Postly source is wired. Current totals…
-const DM_TARGETS: { platform: SocialDm['platform']; start: number; end: number }[] = [
-  { platform: 'instagram', start: 820, end: 1240 },
-  { platform: 'tiktok', start: 210, end: 386 },
-  { platform: 'twitter', start: 120, end: 214 },
-  { platform: 'youtube', start: 26, end: 58 },
-  { platform: 'linkedin', start: 44, end: 92 },
-];
-const socialDms: SocialDm[] = DM_TARGETS.map((t) => ({
-  platform: t.platform,
-  count: t.end,
-  updatedAt: '2026-06-12',
-}));
-
-// Instagram DM inbox — realistic seeded conversations so the /social DM tab is
-// alive on a fresh clone. DUMMY until the DMFlow webhook feeds it live
-// (source 'seed-dummy'; real messages arrive as source 'dmflow'). Four
-// threads, inbound + outbound, believable Vantage / FounderOS lead-gen tone.
-const socialDmMessages: SocialDmMessage[] = [
-  // Alex — agency owner off a reel
-  ['ig-alex', 'Alex Rivera', 'alex.rivera', 'in', 'saw your reel on the 3-agent setup 🔥 do you actually work with agencies?', null, '2026-07-18T14:02:00.000Z'],
-  ['ig-alex', 'Alex Rivera', 'alex.rivera', 'out', 'appreciate it! yeah — agencies are exactly who Vantage is built for. what are you running right now?', null, '2026-07-18T14:09:00.000Z'],
-  ['ig-alex', 'Alex Rivera', 'alex.rivera', 'in', 'SMMA, ~12 clients, drowning in fulfillment tbh 😅', null, '2026-07-18T14:15:00.000Z'],
-  // Jordan — keyword flow "SCALE"
-  ['ig-jordan', 'Jordan Blake', 'jordanbuilds', 'in', 'SCALE', 'SCALE', '2026-07-18T12:41:00.000Z'],
-  ['ig-jordan', 'Jordan Blake', 'jordanbuilds', 'out', 'boom 💥 here’s the free breakdown → founderos.ai/scale. want me to show how it maps to your funnel?', 'SCALE', '2026-07-18T12:41:20.000Z'],
-  ['ig-jordan', 'Jordan Blake', 'jordanbuilds', 'in', 'yes pls', null, '2026-07-18T13:05:00.000Z'],
-  // Priya — story reply
-  ['ig-priya', 'Priya N', 'priya.builds', 'in', 'replied to your story — I want OUT of retainer hell 😩', null, '2026-07-17T21:12:00.000Z'],
-  ['ig-priya', 'Priya N', 'priya.builds', 'out', 'lol felt. that’s the whole thesis. what’s your current model — retainers or projects?', null, '2026-07-17T21:30:00.000Z'],
-  // Sam — pricing question (unreplied → shows as needing attention)
-  ['ig-sam', 'Sam Ortiz', 'sam.ortiz.co', 'in', 'what does pricing look like for the done-for-you build?', null, '2026-07-18T15:48:00.000Z'],
-].map(([subscriberId, name, handle, direction, text, tag, ts], i) => ({
-  id: `dm-${subscriberId}-${i}`,
-  platform: 'instagram' as const,
-  subscriberId: subscriberId as string,
-  name: name as string,
-  handle: handle as string,
-  text: text as string,
-  direction: direction as SocialDmMessage['direction'],
-  tag: tag as string | null,
-  ts: ts as string,
-  source: 'seed-dummy',
-}));
-// …and the per-day history behind them, so DM growth charts over every window.
-const socialDmSnapshots: SocialDmSnapshot[] = DM_TARGETS.flatMap((t, ti) =>
-  ramp(t.start, t.end, ti + 50).map((count, i) => ({
-    platform: t.platform,
-    capturedAt: SERIES_DATES[i],
-    count,
-    source: 'seed-dummy',
-  })),
-);
-
-// One example queued post so the composer's queue isn't empty on first load.
-const socialPosts: SocialPost[] = [
-  {
-    id: 'post-seed-1',
-    caption: 'New Vantage case study — 3x pipeline in 60 days. Full breakdown dropping this week 🚀',
-    mediaUrl: null,
-    platforms: ['instagram', 'tiktok', 'twitter'],
-    status: 'queued',
-    scheduledFor: null,
-    createdAt: '2026-06-12T18:00:00Z',
-  },
-];
+// Sıraya alınmış paylaşım — boş başlar.
+const socialPosts: SocialPost[] = [];
 
 // ── Funnel journeys — DUMMY clients from first touch to conversion ──────────
 // Real-ready: `source` on every touch names where it will come from live —
@@ -1491,364 +1361,17 @@ type SeededJourney = {
   touches: SeededTouch[]; // 4–5, chronological (last number = days ago)
 };
 
-const FUNNEL_JOURNEYS: SeededJourney[] = [
-  // — Launchpad Cohort (mentorship) —
-  {
-    id: 'fc-jake-moreau', name: 'Jake Moreau', venture: 'launchpad-cohort',
-    relationship: 'hot', likelihood: 100,
-    product: 'Launchpad Cohort — mentorship (PIF)', amountUsd: 6800,
-    touches: [
-      ['first_touch', 'organic', 'IG reel: "3 AI offers that close themselves"', 'trakyo', 59],
-      ['engaged', 'dm', 'Replied to story CTA — "wants out of retainer hell"', 'manual', 57],
-      ['nurtured', 'email', 'Day-3 email: student case study (0→22k/mo)', 'manual', 54],
-      ['opted_in', 'call', 'Booked strategy call via Trakyo link', 'trakyo', 51],
-      ['converted', 'checkout', 'Paid in full — PayKit checkout', 'manual', 49],
-    ],
-  },
-  {
-    id: 'fc-priya-shah', name: 'Priya Shah', venture: 'launchpad-cohort',
-    relationship: 'warm', likelihood: 95,
-    product: 'Launchpad Cohort — mentorship (3-pay)', amountUsd: 2600,
-    touches: [
-      ['first_touch', 'ads', 'Meta ad: "Agency owners — install AI in 30 days"', 'meta-ads', 45],
-      ['engaged', 'ads', 'Watched VSL to 80% — retarget pool', 'meta-ads', 45],
-      ['opted_in', 'webinar', 'Registered + attended WebinarJam training', 'manual', 42],
-      ['converted', 'checkout', 'First of 3 payments — PayKit', 'manual', 40],
-    ],
-  },
-  {
-    id: 'fc-danny-okafor', name: 'Danny Okafor', venture: 'launchpad-cohort',
-    relationship: 'hot', likelihood: 100,
-    product: 'Launchpad Cohort — mentorship (PIF)', amountUsd: 6800,
-    touches: [
-      ['first_touch', 'organic', 'TikTok: "day in the life running an AI agency"', 'trakyo', 38],
-      ['engaged', 'organic', 'Binged 6 reels, followed, saved lead magnet post', 'trakyo', 36],
-      ['nurtured', 'ads', 'Retargeting ad: student-wins carousel', 'meta-ads', 33],
-      ['opted_in', 'call', 'Booked call from link-in-bio (Trakyo attributed)', 'trakyo', 30],
-      ['converted', 'checkout', 'Paid in full — PayKit checkout', 'manual', 29],
-    ],
-  },
-  {
-    id: 'fc-sofia-reyes', name: 'Sofia Reyes', venture: 'launchpad-cohort',
-    relationship: 'warm', likelihood: 95,
-    product: 'Launchpad Cohort — mentorship (3-pay)', amountUsd: 2600,
-    touches: [
-      ['first_touch', 'organic', 'YT long-form: "how I\'d start an agency in 2026"', 'trakyo', 31],
-      ['engaged', 'email', 'Joined newsletter from YT description', 'manual', 30],
-      ['nurtured', 'email', 'Newsletter: pricing-psychology issue clicked', 'manual', 26],
-      ['opted_in', 'webinar', 'Attended WebinarJam training, stayed for offer', 'manual', 23],
-      ['converted', 'checkout', 'First of 3 payments — PayKit', 'manual', 22],
-    ],
-  },
-  {
-    // Ads ghost — three engaged touches, quiet for 3 weeks: the red node.
-    id: 'fc-liam-carter', name: 'Liam Carter', venture: 'launchpad-cohort',
-    relationship: 'cold', likelihood: 15,
-    touches: [
-      ['first_touch', 'ads', 'Meta ad: "stop selling hours" (cold traffic)', 'meta-ads', 27],
-      ['engaged', 'ads', 'Clicked through, watched VSL 45%', 'meta-ads', 27],
-      ['engaged', 'ads', 'Retarget click — opened application form, abandoned', 'meta-ads', 23],
-      ['engaged', 'email', 'Abandoned-form email opened, no reply yet', 'manual', 21],
-    ],
-  },
-  {
-    // Warm but drifting — 10 quiet days in nurture: also red until re-touched.
-    id: 'fc-marcus-webb', name: 'Marcus Webb', venture: 'launchpad-cohort',
-    relationship: 'warm', likelihood: 42,
-    touches: [
-      ['first_touch', 'organic', 'IG carousel: "agency niches that print in 2026"', 'trakyo', 24],
-      ['engaged', 'dm', 'DMFlow keyword "SCALE" → DM flow', 'manual', 24],
-      ['nurtured', 'email', 'Lead magnet delivered, day-1 email opened', 'manual', 12],
-      ['nurtured', 'email', 'Newsletter: student-win breakdown clicked', 'manual', 10],
-    ],
-  },
-  {
-    id: 'fc-tayla-nguyen', name: 'Tayla Nguyen', venture: 'launchpad-cohort',
-    relationship: 'hot', likelihood: 84,
-    email: 'tayla.nguyen@example.com', phone: '+15550100841',
-    touches: [
-      ['first_touch', 'organic', 'TikTok: "AI receptionist demo" went semi-viral', 'trakyo', 4],
-      ['engaged', 'organic', 'Profile visit → followed + commented', 'trakyo', 4],
-      ['nurtured', 'dm', 'DM convo — asked about payment plans', 'manual', 3],
-      ['opted_in', 'call', 'Call booked for next week (Trakyo attributed)', 'trakyo', 2],
-    ],
-  },
-  {
-    // Mid-decay: 70 quiet days — visibly fading toward red, 20 days from the archive.
-    id: 'fc-remy-cole', name: 'Remy Cole', venture: 'launchpad-cohort',
-    relationship: 'cold', likelihood: 25,
-    touches: [
-      ['first_touch', 'organic', 'IG reel: "fire your lead-gen agency"', 'trakyo', 84],
-      ['engaged', 'dm', 'Story-reply convo, asked for pricing', 'manual', 80],
-      ['engaged', 'email', 'Pricing breakdown sent, opened twice', 'manual', 74],
-      ['engaged', 'email', 'Follow-up: "circling back" — no reply since', 'manual', 70],
-    ],
-  },
-  {
-    // Went quiet in March — decayed past 90 days into the archive tab.
-    id: 'fc-jordan-blake', name: 'Jordan Blake', venture: 'launchpad-cohort',
-    relationship: 'cold', likelihood: 20,
-    touches: [
-      ['first_touch', 'ads', 'Meta ad: "quit your 9-5 with one client" (old campaign)', 'meta-ads', 118],
-      ['engaged', 'ads', 'Clicked through, watched VSL 30%', 'meta-ads', 118],
-      ['engaged', 'dm', 'One-word DM reply, then silence', 'manual', 112],
-      ['engaged', 'email', 'Re-engagement email bounced-opened, no click', 'manual', 104],
-    ],
-  },
-  // — Vantage (AI agency clients) —
-  {
-    id: 'fc-ava-stone', name: 'Ava Stone — Northwind Legal', venture: 'vantage',
-    relationship: 'hot', likelihood: 100,
-    product: 'Vantage — AI intake build (sprint)', amountUsd: 12000,
-    touches: [
-      ['first_touch', 'organic', 'LinkedIn post: legal-intake automation teardown', 'trakyo', 57],
-      ['engaged', 'email', 'Replied to newsletter — "this is our exact bottleneck"', 'manual', 55],
-      ['opted_in', 'call', 'Discovery call booked via site (Trakyo attributed)', 'trakyo', 50],
-      ['nurtured', 'email', 'Proposal + Loom walkthrough sent, viewed 3×', 'manual', 47],
-      ['converted', 'checkout', 'Signed — 50% deposit via Stripe invoice', 'manual', 43],
-    ],
-  },
-  {
-    id: 'fc-omar-haddad', name: 'Omar Haddad — Pulse Fitness Group', venture: 'vantage',
-    relationship: 'warm', likelihood: 95,
-    product: 'Vantage — AI ops retainer (monthly)', amountUsd: 4500,
-    touches: [
-      ['first_touch', 'ads', 'Meta ad: "your gym\'s front desk, automated"', 'meta-ads', 48],
-      ['engaged', 'ads', 'Case-study page dwell 4m — retarget pool', 'meta-ads', 47],
-      ['nurtured', 'email', 'ROI one-pager emailed after form fill', 'manual', 44],
-      ['opted_in', 'call', 'Demo call — 3 locations scoped', 'manual', 41],
-      ['converted', 'checkout', 'Retainer live — Stripe subscription', 'manual', 37],
-    ],
-  },
-  {
-    id: 'fc-elena-brooks', name: 'Elena Brooks — Harbor Dental', venture: 'vantage',
-    relationship: 'hot', likelihood: 100,
-    product: 'Vantage — AI intake build (sprint)', amountUsd: 9500,
-    touches: [
-      ['first_touch', 'organic', 'IG reel: missed-call → booked-patient demo', 'trakyo', 31],
-      ['engaged', 'dm', 'DM: "does this work for dental?"', 'manual', 30],
-      ['opted_in', 'call', 'Discovery call via link-in-bio (Trakyo attributed)', 'trakyo', 27],
-      ['converted', 'checkout', 'Signed — deposit via Stripe invoice', 'manual', 23],
-    ],
-  },
-  {
-    id: 'fc-noah-fields', name: 'Noah Fields — Fields Roofing', venture: 'vantage',
-    relationship: 'warm', likelihood: 66,
-    touches: [
-      ['first_touch', 'ads', 'Meta ad: "book 20 estimates/mo on autopilot"', 'meta-ads', 8],
-      ['engaged', 'ads', 'Lead form opened, 60% VSL', 'meta-ads', 8],
-      ['nurtured', 'email', 'Follow-up sequence day 2 — case study clicked', 'manual', 5],
-      ['opted_in', 'call', 'Discovery call booked for Friday', 'manual', 2],
-    ],
-  },
-  {
-    id: 'fc-grace-lin', name: 'Grace Lin — Lin & Co Accounting', venture: 'vantage',
-    relationship: 'warm', likelihood: 74,
-    email: 'grace@linandco.example.com', phone: '+15550100742',
-    person: 'Grace Lin', company: 'Lin & Co Accounting', role: 'Managing Partner',
-    linkedin: 'https://linkedin.com/in/gracelin-example',
-    touches: [
-      ['first_touch', 'organic', 'X thread: client-onboarding agent breakdown', 'trakyo', 6],
-      ['engaged', 'organic', 'Followed + bookmarked, visited site twice', 'trakyo', 5],
-      ['nurtured', 'email', 'Newsletter signup — welcome sequence started', 'manual', 3],
-      ['opted_in', 'call', 'Call request form submitted (Trakyo attributed)', 'trakyo', 1],
-    ],
-  },
-];
+// Satış hunisi — müşteri verisi bağlanana kadar BOŞ.
+// Gerçek veriler CRM/Trakyo entegrasyonuyla gelecek.
+const FUNNEL_JOURNEYS: SeededJourney[] = [];
+const funnelContacts: FunnelContact[] = [];
+const funnelTouches: FunnelTouch[] = [];
 
-const funnelContacts: FunnelContact[] = FUNNEL_JOURNEYS.map((j) => ({
-  id: j.id,
-  name: j.name,
-  venture: j.venture,
-  status: j.touches[j.touches.length - 1][0], // furthest stage reached
-  product: j.product ?? null,
-  amountUsd: j.amountUsd ?? null,
-  relationship: j.relationship,
-  likelihood: j.likelihood,
-  url: null,
-  email: j.email ?? null,
-  phone: j.phone ?? null,
-  person: j.person ?? null,
-  company: j.company ?? null,
-  role: j.role ?? null,
-  linkedin: j.linkedin ?? null,
-  createdAt: funnelDay(j.touches[0][4]), // journey starts at the first touch
-}));
+// İş akışları — kullanıcı kendi süreçlerini tanımlayana kadar BOŞ.
+const workflows: Workflow[] = [];
 
-const funnelTouches: FunnelTouch[] = FUNNEL_JOURNEYS.flatMap((j) =>
-  j.touches.map(([stage, channel, label, source, daysBack], i) => ({
-    id: `${j.id}-t${i + 1}`,
-    contactId: j.id,
-    seq: i + 1,
-    stage,
-    channel,
-    label,
-    source,
-    at: funnelDay(daysBack),
-  })),
-);
-
-// The machine, mapped: each venture's process as an owned chain of steps.
-// Real-ready — owners, weekly hours, tools, the bottlenecks that leak money,
-// and the automations (live or suggested) that carry the load back.
-const workflows: Workflow[] = [
-  {
-    id: 'wf-vantage-sales',
-    name: 'Vantage sales machine',
-    subtitle: 'Cold outbound to closed retainer.',
-    revenueUsd: 120_000,
-    order: 0,
-    steps: [
-      {
-        id: 'wf-mer-1',
-        title: 'Run outbound campaigns',
-        ownerKind: 'agent',
-        owner: 'Postly Publisher',
-        hoursPerWeek: 6,
-        tools: ['postly', 'adsmith'],
-        edgeLabel: 'replies',
-        leakUsd: null,
-        automation: { title: 'Always-on content + DM outreach', state: 'live', recoveredUsd: 4200 },
-      },
-      {
-        id: 'wf-mer-2',
-        title: 'Qualify replies',
-        ownerKind: 'agent',
-        owner: 'Comms Agent',
-        hoursPerWeek: 9,
-        tools: ['dmflow', 'gmail'],
-        edgeLabel: 'qualified',
-        leakUsd: 14_000,
-        automation: { title: 'Auto-qualify + book', state: 'suggested', recoveredUsd: 9000 },
-      },
-      {
-        id: 'wf-mer-3',
-        title: 'Book demos',
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 4,
-        tools: ['calendar', 'ledger'],
-        edgeLabel: 'demo',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-4',
-        title: 'Sales call',
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 10,
-        tools: ['webinarjam', 'ledger'],
-        edgeLabel: 'proposal',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-5',
-        title: 'Proposal & follow-up',
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 5,
-        tools: ['proposal-gen', 'gmail'],
-        edgeLabel: 'won',
-        leakUsd: 6000,
-        automation: { title: 'Proposal follow-up sequence', state: 'suggested', recoveredUsd: 6000 },
-      },
-      {
-        id: 'wf-mer-6',
-        title: 'Onboard & deliver',
-        ownerKind: 'agent',
-        owner: 'Onboarding Agent',
-        hoursPerWeek: 3,
-        tools: ['ledger', 'slack', 'notion'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Onboarding rails', state: 'live', recoveredUsd: 3000 },
-      },
-    ],
-  },
-  {
-    id: 'wf-lc-delivery',
-    name: 'Launchpad Cohort delivery',
-    subtitle: 'Webinar lead to retained program member.',
-    revenueUsd: 80_000,
-    order: 1,
-    steps: [
-      {
-        id: 'wf-lc-1',
-        title: 'Capture webinar leads',
-        ownerKind: 'agent',
-        owner: 'WebinarJam',
-        hoursPerWeek: 2,
-        tools: ['webinarjam', 'ghl'],
-        edgeLabel: 'registered',
-        leakUsd: null,
-        automation: { title: 'Webinar to GHL sync', state: 'live', recoveredUsd: 2500 },
-      },
-      {
-        id: 'wf-lc-2',
-        title: 'Nurture in GHL',
-        ownerKind: 'agent',
-        owner: 'GoHighLevel',
-        hoursPerWeek: 3,
-        tools: ['ghl'],
-        edgeLabel: 'booked',
-        leakUsd: 8000,
-        automation: { title: 'Nurture sequences', state: 'live', recoveredUsd: 5000 },
-      },
-      {
-        id: 'wf-lc-3',
-        title: 'Strategy call',
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 8,
-        tools: ['ghl', 'calendar'],
-        edgeLabel: 'closed',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-lc-4',
-        title: 'Deliver program',
-        ownerKind: 'human',
-        owner: 'LC Team',
-        hoursPerWeek: 12,
-        tools: ['skool', 'notion'],
-        edgeLabel: 'retained',
-        leakUsd: 5000,
-        automation: { title: 'Skool community ops', state: 'suggested', recoveredUsd: 4000 },
-      },
-      {
-        id: 'wf-lc-5',
-        title: 'Track attribution',
-        ownerKind: 'agent',
-        owner: 'Trakyo',
-        hoursPerWeek: 1,
-        tools: ['trakyo'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Revenue attribution', state: 'suggested', recoveredUsd: 0 },
-      },
-    ],
-  },
-];
-
-// Agent task board — seeded across open/doing/done so the Kanban is alive on
-// first load. Demo cards; user-added tasks coexist (we insert by id, never wipe).
-const SEED_TS = '2026-07-21T12:00:00.000Z';
-const agentTasks: AgentTask[] = [
-  { id: 'task-seed-1', agentId: 'comms-agent', title: '4 gelen kutusundaki gece boyu mesajları önceliklendir', status: 'open', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-2', agentId: 'social-agent', title: 'Yeni lansman için 3 Instagram hook taslağı hazırla', status: 'open', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-3', agentId: 'gmail-worker', title: 'Yanıt bekleyen 6 sıcak lead ile takip yap', status: 'open', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-4', agentId: 'adsmith-creative', title: 'Yeni teklif için 5 UGC varyasyonu üret', status: 'open', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-5', agentId: 'postly-publisher', title: 'Bu haftanın çoklu platform paylaşımlarını zamanla', status: 'doing', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-6', agentId: 'comms-agent', title: 'Kampanyadan gelen 12 yeni DM\'i değerlendir', status: 'doing', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-7', agentId: 'reelkit-editor', title: 'Satış görüşmesi öne çıkanlar videosunu kurgula', status: 'doing', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-8', agentId: 'gmail-worker', title: 'Teklif takip e-postasını gönder', status: 'done', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-9', agentId: 'slack-worker', title: 'Pazartesi durum özetini paylaş', status: 'done', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-10', agentId: 'social-agent', title: 'Salı carousel gönderisini yayınla', status: 'done', createdAt: SEED_TS, updatedAt: SEED_TS },
-  { id: 'task-seed-11', agentId: 'postly-publisher', title: '6 platformda takipçi sayılarını senkronize et', status: 'done', createdAt: SEED_TS, updatedAt: SEED_TS },
-];
+// Görev panosu — boş başlar, gerçek görevler kullanımda eklenir.
+const agentTasks: AgentTask[] = [];
 
 const SKILL_STATUS_NOTE: Record<string, string> = {
   live: 'Üretimde aktif. Sahibi ajan bunu bugün çalıştırıyor.',
