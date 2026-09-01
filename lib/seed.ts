@@ -1507,7 +1507,11 @@ export function seedDatabase(db: FounderDb): void {
   for (const p of PERSONAS) db.personas.insert(p);
   for (const p of phases) db.phases.insert(p);
   for (const a of socialAccounts) db.social.upsertAccount(a);
-  for (const s of socialBaseline) db.social.insertSnapshot(s);
+    // Sosyal eski seed verileri temizlenir — artık boş olduğu için tüm seed kayıtları silinir.
+    if (socialAccounts.length === 0) {
+      db.social.clearSeeded();
+    }
+    for (const s of socialBaseline) db.social.insertSnapshot(s);
   for (const d of socialDms) db.social.upsertDm(d);
   for (const s of socialDmSnapshots) db.social.insertDmSnapshot(s);
   for (const m of socialDmMessages) db.social.upsertDmMessage(m);
@@ -1517,6 +1521,10 @@ export function seedDatabase(db: FounderDb): void {
   for (const s of emailListBaseline) db.emailList.insertSnapshot(s);
   for (const p of socialPosts) db.socialPosts.enqueue(p);
   for (const c of funnelContacts) db.funnel.insertContact(c);
-  for (const t of funnelTouches) db.funnel.insertTouch(t);
+    // Funnel eski seed verileri temizlenir — artık boş olduğu için tüm seed kayıtları silinir.
+    if (funnelContacts.length === 0) {
+      db.funnel.clearSeeded();
+    }
+    for (const t of funnelTouches) db.funnel.insertTouch(t);
   for (const c of agentCrons) db.agentCrons.insert(c);
 }

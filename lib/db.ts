@@ -1110,7 +1110,16 @@ export function openDb(path: string) {
     });
 
   const social = {
-    upsertAccount(a: SocialAccount): void {
+      /** Tüm sosyal seed verilerini temizle. */
+      clearSeeded(): void {
+        db.prepare('DELETE FROM social_snapshots').run();
+        db.prepare('DELETE FROM social_accounts').run();
+        db.prepare('DELETE FROM social_dm_messages').run();
+        db.prepare('DELETE FROM social_dm_snapshots').run();
+        db.prepare('DELETE FROM social_dms').run();
+        db.prepare('DELETE FROM social_posts').run();
+      },
+      upsertAccount(a: SocialAccount): void {
       SocialAccountSchema.parse(a);
       db.prepare(
         'INSERT OR REPLACE INTO social_accounts (platform, handle, url, "order") VALUES (?, ?, ?, ?)',
@@ -2447,7 +2456,12 @@ export function openDb(path: string) {
     });
 
   const funnel = {
-    insertContact(c: FunnelContact): void {
+      /** Seed verilerini temizle (fc-* pattern). */
+      clearSeeded(): void {
+        db.prepare("DELETE FROM funnel_touches WHERE contact_id IN (SELECT id FROM funnel_contacts WHERE id LIKE 'fc-%')").run();
+        db.prepare("DELETE FROM funnel_contacts WHERE id LIKE 'fc-%'").run();
+      },
+      insertContact(c: FunnelContact): void {
       FunnelContactSchema.parse(c);
       db.prepare(
         'INSERT OR REPLACE INTO funnel_contacts (id, name, venture, status, product, amount_usd, relationship, likelihood, email, phone, person, company, role, linkedin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
