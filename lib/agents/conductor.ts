@@ -253,7 +253,7 @@ export async function routeMessage(
         createdAt: now,
         updatedAt: now,
         origin: 'os',
-        pathOrUrl: '',
+        pathOrUrl: 'telegram://command',  // Telegram-originated project
         purpose: goal.slice(0, 200),
         permissionLevel: 'full_with_approval',
         authorizedAgentIds: [targetId!],
