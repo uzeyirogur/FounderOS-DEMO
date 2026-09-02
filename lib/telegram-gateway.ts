@@ -394,7 +394,8 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<Gat
     const authCheck = checkAuthorization(db, userId);
     
     if (!authCheck.authorized) {
-      await sendTelegramMessage(chatId, '🚫 Bu botu kullanma yetkiniz yok. Yöneticiyle iletişime geçin.');
+      console.log(`[Telegram Auth] REJECTED: userId=${userId} userName=${userName} reason=${authCheck.reason}`);
+      await sendTelegramMessage(chatId, `🚫 Bu botu kullanma yetkiniz yok.\n\nUser ID: ${userId}\n\nYönetici bu ID'yi ekleyerek erişim verebilir.`);
       return { success: false, status: 'unauthorized', message: 'User not authorized' };
     }
     
