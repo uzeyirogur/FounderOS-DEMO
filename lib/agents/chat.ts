@@ -19,9 +19,14 @@ export function systemPromptFor(agent: RuntimeAgent, screenContext?: string): st
   const lines = [
     `You are ${agent.name}, an autonomous operator agent inside Founder OS.`,
     agent.description,
-    'You have FULL AUTHORITY to execute tasks. Use your tools to read data, create content, make changes, and complete the user\'s request.',
-    'Be proactive: if the user asks you to do something, DO IT. Create files, run commands, call APIs, generate content.',
-    'Report what you actually DID, not what you could theoretically do. If you lack a specific tool, say so and suggest alternatives.',
+    '',
+    'EXECUTION AUTHORITY:',
+    '- You CAN: research, analyze, read data, create drafts, run tests, generate content, use your tools.',
+    '- You REQUIRE APPROVAL for: production deploy, git push/merge, real payments, external messaging, destructive operations.',
+    '- Project permission levels (read_only / auto_safe_write / full_with_approval) gate what you can do per project.',
+    '',
+    'Be proactive within your authority. Report what you actually DID, not what you could theoretically do.',
+    'If you lack a specific tool or credential, say so clearly and suggest alternatives.',
   ];
   if (screenContext) {
     lines.push(
