@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendTelegramMessage } from '@/lib/connectors/telegram';
-
-// Telegram'dan gelen komutlari isleyen ana handler
-// Simdilik basit echo + komut tanimlari
+import { braveSearch } from '@/lib/connectors/web-search';
 
 type TelegramUpdate = {
   message?: {
@@ -13,6 +11,42 @@ type TelegramUpdate = {
     date: number;
   };
 };
+
+// Arastirma anahtar kelimeleri
+const RESEARCH_KEYWORDS = ['araştır', 'arastir', 'bul', 'karşılaştır', 'karsilastir', 'incele', 'analiz'];
+
+function isResearchRequest(text: string): boolean {
+  const lower = text.toLowerCase();
+  return RESEARCH_KEYWORDS.some(k => lower.includes(k));
+}
+
+// Web arastirmasi yap ve formatla
+async function doResearch(query: string): Promise<string> {
+  const key = process.env.BRAVE_SEARCH_API_KEY;
+  if (!key) {
+    return 'Arastirma sistemi yapilandirmamis (BRAVE_SEARCH_API_KEY eksik).';
+  }
+
+  try {
+    const results = await braveSearch(query, key, 8);
+    if (results.length === 0) {
+      return `"${query}" icin sonuc bulunamadi.`;
+    }
+
+    let response = `🔍 <b>Arastirma: ${query}</b>\n\n`;
+    
+    results.forEach((r, i) => {
+      response += `<b>${i + 1}. ${r.title}</b>\n`;
+      response += `${r.description.slice(0, 200)}${r.description.length > 200 ? '...' : ''}\n`;
+      response += `🔗 ${r.url}\n\n`;
+    });
+
+    response += `\n📊 ${results.length} sonuc bulundu. Detayli analiz icin "analiz et" yaz.`;
+    return response;
+  } catch (err) {
+    return `Arastirma hatasi: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
 
 // Komut isleyicileri
 async function handleCommand(chatId: number, text: string, from: string): Promise<string> {
@@ -25,10 +59,12 @@ async function handleCommand(chatId: number, text: string, from: string): Promis
 Kullanilabilir komutlar:
 /durum - Sistem durumu
 /projeler - Aktif projeler
-/ajans - Ajan listesi
+/arastir [konu] - Web arastirmasi
 /yardim - Komut listesi
 
-Veya direkt talimat yaz, ben anlayacagim.`;
+Veya direkt talimat yaz:
+"video uretim araclarini arastir"
+"Kling vs Runway karsilastir"`;
   }
 
   // /yardim komutu
@@ -37,13 +73,13 @@ Veya direkt talimat yaz, ben anlayacagim.`;
 
 /durum - FounderOS sistem durumu
 /projeler - Aktif proje listesi
-/ajans - Calisan ajan listesi
-/arastir [konu] - Arastirma baslat
+/arastir [konu] - Web arastirmasi baslat
 /rapor - Gunluk ozet
 
-Veya direkt yazabilirsin:
-"Is Radar icin video araci arastir"
-"Yarin icin 3 post hazirla"`;
+Ornek talimatlar:
+"AI video araclarini arastir"
+"Kling AI fiyatlarini bul"
+"sosyal medya zamanlama araclari karsilastir"`;
   }
 
   // /durum komutu
@@ -59,10 +95,21 @@ Veya direkt yazabilirsin:
 - Ajanlar: ${health.agentCount || '?'} aktif
 - Uptime: ${Math.floor((health.uptimeSeconds || 0) / 60)} dakika
 - Veritabani: ${health.db === 'ok' ? 'Bagli' : 'Hata'}
-- Telegram: Bagli`;
+- Telegram: Bagli
+- Arastirma: ${process.env.BRAVE_SEARCH_API_KEY ? 'Aktif' : 'Devre disi'}`;
     } catch {
       return 'Sistem durumu alinamadi. Sunucu calisiyor mu?';
     }
+  }
+
+  // /arastir komutu
+  if (cmd.startsWith('/arastir') || cmd.startsWith('/araştır')) {
+    const query = text.replace(/^\/(arastir|araştır)\s*/i, '').trim();
+    if (!query) {
+      return 'Kullanim: /arastir [konu]\nOrnek: /arastir AI video uretim araclari';
+    }
+    await sendTelegramMessage(chatId, `🔄 "${query}" arastiriliyor...`);
+    return await doResearch(query);
   }
 
   // Diger komutlar henuz tanimli degil
@@ -71,10 +118,19 @@ Veya direkt yazabilirsin:
 /yardim yazarak mevcut komutlari gorebilirsin.`;
   }
 
-  // Normal mesaj - AI isleme icin kuyrukla (simdilik echo)
+  // Normal mesaj - arastirma mi kontrol et
+  if (isResearchRequest(text)) {
+    await sendTelegramMessage(chatId, `🔄 Arastiriliyor...`);
+    return await doResearch(text);
+  }
+
+  // Diger talimatlar
   return `Talimat alindi: "${text}"
 
-Bu ozellik yakin zamanda aktif olacak. Talimatlariniz AI ajana iletilecek ve sonuc size bildirilecek.`;
+Simdilik sadece arastirma komutlari aktif.
+Ornek: "video uretim araclarini arastir"
+
+Diger ozellikler yakin zamanda eklenecek.`;
 }
 
 export async function POST(req: NextRequest) {
