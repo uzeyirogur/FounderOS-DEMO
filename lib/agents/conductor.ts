@@ -41,41 +41,30 @@ function matchAgent(agents: RuntimeAgent[], token: string): RuntimeAgent | undef
   return agents.find((a) => a.id === token || a.id === t || slug(a.name) === t);
 }
 
-/** Keyword-based agent matching — fast, no LLM needed */
+/** Keyword-based agent matching — FALLBACK ONLY when LLM fails */
 function matchAgentByKeywords(routable: RuntimeAgent[], message: string): string | undefined {
   const lower = message.toLowerCase();
   
-  // Research keywords
   if (/araştır|research|analiz|incel|karşılaştır|compare/i.test(lower)) {
     const research = routable.find(a => a.id.includes('research') || a.name.toLowerCase().includes('araştır'));
     if (research) return research.id;
   }
-  
-  // Social media keywords
   if (/sosyal|social|linkedin|twitter|instagram|tiktok|post|paylaş/i.test(lower)) {
     const social = routable.find(a => a.id.includes('social') || a.name.toLowerCase().includes('sosyal'));
     if (social) return social.id;
   }
-  
-  // Code/development keywords
   if (/kod|code|geliştir|develop|implement|bug|fix|backend|frontend/i.test(lower)) {
     const code = routable.find(a => a.id.includes('code') || a.id.includes('claude-code'));
     if (code) return code.id;
   }
-  
-  // Marketing/growth keywords
   if (/pazarlama|marketing|growth|reklam|ad|kampanya|campaign/i.test(lower)) {
     const growth = routable.find(a => a.id.includes('growth') || a.id.includes('marketing'));
     if (growth) return growth.id;
   }
-  
-  // Sales/CRM keywords
   if (/satış|sales|crm|müşteri|customer|lead/i.test(lower)) {
     const sales = routable.find(a => a.id.includes('sales') || a.id.includes('crm'));
     if (sales) return sales.id;
   }
-  
-  // Communication keywords
   if (/email|mail|slack|mesaj|message|iletişim/i.test(lower)) {
     const comms = routable.find(a => a.id.includes('comms') || a.name.toLowerCase().includes('comms'));
     if (comms) return comms.id;
@@ -84,13 +73,37 @@ function matchAgentByKeywords(routable: RuntimeAgent[], message: string): string
   return undefined;
 }
 
-/** Ask the model for the single best-fit agent id; fall back to keyword matching or first agent. */
+/** Retry helper with exponential backoff */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  baseDelayMs: number = 1000,
+): Promise<T> {
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const isRateLimit = lastError.message.includes('rate-limit') || 
+                          lastError.message.includes('429') ||
+                          lastError.message.includes('too many requests');
+      
+      if (attempt < maxAttempts && isRateLimit) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+        console.log(`[Conductor] Rate limited, retry ${attempt}/${maxAttempts} in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw lastError;
+      }
+    }
+  }
+  throw lastError;
+}
+
+/** Ask the model for the single best-fit agent id. LLM-first, keyword fallback. */
 async function pickAgent(routable: RuntimeAgent[], message: string): Promise<string> {
-  // First try keyword matching (fast, no LLM)
-  const keywordMatch = matchAgentByKeywords(routable, message);
-  if (keywordMatch) return keywordMatch;
-  
-  // Then try LLM routing
+  // PRIMARY: LLM routing with retry
   try {
     const roster = routable.map((a) => `- ${a.id}: ${a.name} — ${a.description}`).join('\n');
     const system = [
@@ -99,16 +112,30 @@ async function pickAgent(routable: RuntimeAgent[], message: string): Promise<str
       'Reply with ONLY that agent id and nothing else. Options:',
       roster,
     ].join('\n');
-    const res = await llmChat({ system, messages: [{ role: 'user', content: message }] });
+    
+    const res = await withRetry(
+      () => llmChat({ system, messages: [{ role: 'user', content: message }] }),
+      3,  // max attempts
+      1000 // base delay
+    );
+    
     const picked = (res.text.trim().split(/\s+/)[0] ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
     const found = routable.find((a) => a.id === picked);
     if (found) return found.id;
   } catch (error) {
-    // LLM failed (rate limit, network, etc.) — fall through to default
-    console.warn('[Conductor] LLM routing failed, using default agent:', error instanceof Error ? error.message : error);
+    // LLM failed after retries — fall through to keyword matching
+    console.warn('[Conductor] LLM routing failed after retries:', error instanceof Error ? error.message : error);
   }
   
-  // Final fallback: first agent (usually ai-intelligence or research)
+  // FALLBACK: Keyword-based routing
+  const keywordMatch = matchAgentByKeywords(routable, message);
+  if (keywordMatch) {
+    console.log('[Conductor] Using keyword fallback:', keywordMatch);
+    return keywordMatch;
+  }
+  
+  // FINAL FALLBACK: First agent
+  console.log('[Conductor] Using first agent fallback:', routable[0].id);
   return routable[0].id;
 }
 
