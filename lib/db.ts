@@ -31,6 +31,8 @@ import {
   PhaseSchema,
   ProjectSchema,
   PublishPlanSchema,
+  TelegramCommandSchema,
+  TelegramAuthorizedUserSchema,
   RoadmapItemSchema,
   RoutineSchema,
   RoutineCompletionSchema,
@@ -81,6 +83,8 @@ import {
   type Project,
   type ProjectLifecycleState,
   type PublishPlan,
+  type TelegramCommand,
+  type TelegramAuthorizedUser,
   type Routine,
   type RoutineCompletion,
   type RoadmapItem,
@@ -538,6 +542,34 @@ CREATE TABLE IF NOT EXISTS creative_briefs (
   recommendation TEXT NOT NULL,
   sources TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS telegram_commands (
+  id TEXT PRIMARY KEY,
+  update_id INTEGER NOT NULL UNIQUE,
+  chat_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  user_name TEXT NOT NULL DEFAULT '',
+  message_text TEXT NOT NULL,
+  routed_to_agent_id TEXT,
+  project_id TEXT,
+  lifecycle_task_id TEXT,
+  approval_id TEXT,
+  response_text TEXT,
+  status TEXT NOT NULL DEFAULT 'received',
+  error_message TEXT,
+  processing_time_ms INTEGER,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_telegram_commands_update_id ON telegram_commands(update_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_commands_chat_id ON telegram_commands(chat_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_commands_status ON telegram_commands(status);
+CREATE TABLE IF NOT EXISTS telegram_authorized_users (
+  user_id INTEGER PRIMARY KEY,
+  user_name TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'operator',
+  added_at TEXT NOT NULL,
+  added_by TEXT NOT NULL DEFAULT 'system'
 );
 CREATE TABLE IF NOT EXISTS delegated_tasks (
   id TEXT PRIMARY KEY,
@@ -1894,6 +1926,123 @@ export function openDb(path: string) {
     });
   }
 
+  // ── Telegram Command Gateway ─────────────────────────────────────────────
+  function rowToTelegramCommand(r: any): TelegramCommand {
+    return TelegramCommandSchema.parse({
+      id: r.id,
+      updateId: r.update_id,
+      chatId: r.chat_id,
+      userId: r.user_id,
+      userName: r.user_name,
+      messageText: r.message_text,
+      routedToAgentId: r.routed_to_agent_id,
+      projectId: r.project_id,
+      lifecycleTaskId: r.lifecycle_task_id,
+      approvalId: r.approval_id,
+      responseText: r.response_text,
+      status: r.status,
+      errorMessage: r.error_message,
+      processingTimeMs: r.processing_time_ms,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    });
+  }
+
+  function rowToTelegramAuthorizedUser(r: any): TelegramAuthorizedUser {
+    return TelegramAuthorizedUserSchema.parse({
+      userId: r.user_id,
+      userName: r.user_name,
+      role: r.role,
+      addedAt: r.added_at,
+      addedBy: r.added_by,
+    });
+  }
+
+  const telegramCommands = {
+    /** Check if this update_id was already processed (idempotency) */
+    existsByUpdateId(updateId: number): boolean {
+      const r = db.prepare('SELECT 1 FROM telegram_commands WHERE update_id = ?').get(updateId);
+      return !!r;
+    },
+    byId(id: string): TelegramCommand | null {
+      const r = db.prepare('SELECT * FROM telegram_commands WHERE id = ?').get(id) as any;
+      return r ? rowToTelegramCommand(r) : null;
+    },
+    byUpdateId(updateId: number): TelegramCommand | null {
+      const r = db.prepare('SELECT * FROM telegram_commands WHERE update_id = ?').get(updateId) as any;
+      return r ? rowToTelegramCommand(r) : null;
+    },
+    recent(limit = 50): TelegramCommand[] {
+      return (
+        db.prepare('SELECT * FROM telegram_commands ORDER BY created_at DESC LIMIT ?').all(limit) as any[]
+      ).map(rowToTelegramCommand);
+    },
+    byChatId(chatId: number, limit = 20): TelegramCommand[] {
+      return (
+        db.prepare('SELECT * FROM telegram_commands WHERE chat_id = ? ORDER BY created_at DESC LIMIT ?').all(chatId, limit) as any[]
+      ).map(rowToTelegramCommand);
+    },
+    pending(): TelegramCommand[] {
+      return (
+        db.prepare("SELECT * FROM telegram_commands WHERE status IN ('received', 'processing') ORDER BY created_at ASC").all() as any[]
+      ).map(rowToTelegramCommand);
+    },
+    awaitingApproval(): TelegramCommand[] {
+      return (
+        db.prepare("SELECT * FROM telegram_commands WHERE status = 'awaiting_approval' ORDER BY created_at ASC").all() as any[]
+      ).map(rowToTelegramCommand);
+    },
+    insert(cmd: TelegramCommand): void {
+      const parsed = TelegramCommandSchema.parse(cmd);
+      db.prepare(
+        `INSERT INTO telegram_commands 
+         (id, update_id, chat_id, user_id, user_name, message_text, routed_to_agent_id, project_id, lifecycle_task_id, approval_id, response_text, status, error_message, processing_time_ms, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        parsed.id, parsed.updateId, parsed.chatId, parsed.userId, parsed.userName, parsed.messageText,
+        parsed.routedToAgentId, parsed.projectId, parsed.lifecycleTaskId, parsed.approvalId, parsed.responseText,
+        parsed.status, parsed.errorMessage, parsed.processingTimeMs, parsed.createdAt, parsed.updatedAt,
+      );
+    },
+    updateStatus(id: string, status: string, updates: Partial<{ routedToAgentId: string; projectId: string; lifecycleTaskId: string; approvalId: string; responseText: string; errorMessage: string; processingTimeMs: number }>): void {
+      const now = new Date().toISOString();
+      const sets: string[] = ['status = ?', 'updated_at = ?'];
+      const vals: any[] = [status, now];
+      if (updates.routedToAgentId !== undefined) { sets.push('routed_to_agent_id = ?'); vals.push(updates.routedToAgentId); }
+      if (updates.projectId !== undefined) { sets.push('project_id = ?'); vals.push(updates.projectId); }
+      if (updates.lifecycleTaskId !== undefined) { sets.push('lifecycle_task_id = ?'); vals.push(updates.lifecycleTaskId); }
+      if (updates.approvalId !== undefined) { sets.push('approval_id = ?'); vals.push(updates.approvalId); }
+      if (updates.responseText !== undefined) { sets.push('response_text = ?'); vals.push(updates.responseText); }
+      if (updates.errorMessage !== undefined) { sets.push('error_message = ?'); vals.push(updates.errorMessage); }
+      if (updates.processingTimeMs !== undefined) { sets.push('processing_time_ms = ?'); vals.push(updates.processingTimeMs); }
+      vals.push(id);
+      db.prepare(`UPDATE telegram_commands SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    },
+  };
+
+  const telegramAuthorizedUsers = {
+    all(): TelegramAuthorizedUser[] {
+      return (db.prepare('SELECT * FROM telegram_authorized_users ORDER BY added_at').all() as any[]).map(rowToTelegramAuthorizedUser);
+    },
+    isAuthorized(userId: number): boolean {
+      const r = db.prepare('SELECT 1 FROM telegram_authorized_users WHERE user_id = ?').get(userId);
+      return !!r;
+    },
+    getRole(userId: number): string | null {
+      const r = db.prepare('SELECT role FROM telegram_authorized_users WHERE user_id = ?').get(userId) as any;
+      return r ? r.role : null;
+    },
+    add(user: TelegramAuthorizedUser): void {
+      const parsed = TelegramAuthorizedUserSchema.parse(user);
+      db.prepare(
+        'INSERT OR REPLACE INTO telegram_authorized_users (user_id, user_name, role, added_at, added_by) VALUES (?, ?, ?, ?, ?)',
+      ).run(parsed.userId, parsed.userName, parsed.role, parsed.addedAt, parsed.addedBy);
+    },
+    remove(userId: number): boolean {
+      return db.prepare('DELETE FROM telegram_authorized_users WHERE user_id = ?').run(userId).changes > 0;
+    },
+  };
+
   const creativeBriefs = {
     all(): CreativeBrief[] {
       return (db.prepare('SELECT * FROM creative_briefs ORDER BY created_at DESC').all() as any[]).map(rowToCreativeBrief);
@@ -2536,6 +2685,8 @@ export function openDb(path: string) {
     capabilities,
     contentPieces,
     creativeBriefs,
+    telegramCommands,
+    telegramAuthorizedUsers,
     delegatedTasks,
     claudeCodeRuns,
     growthBriefs,

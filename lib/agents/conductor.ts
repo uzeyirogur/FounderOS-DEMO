@@ -9,8 +9,26 @@ import { chat as llmChat } from '@/lib/connectors/llm';
 import { chatWithAgent, type ChatResult } from '@/lib/agents/chat';
 import type { FounderDb } from '@/lib/db';
 import type { RuntimeAgent } from '@/lib/agents/runtime';
+import { openDb } from '@/lib/db';
+import { realAgents } from './real';
+import { randomUUID } from 'crypto';
 
 export type ConductorResult = ChatResult & { routedTo: string };
+
+/** Result type for Telegram gateway integration */
+export interface TelegramRouteResult {
+  type: 'agent_dispatch' | 'direct_response' | 'clarification_needed';
+  agentId?: string;
+  projectId?: string;
+  taskId?: string;
+  approvalId?: string;
+  taskCreated?: boolean;
+  projectCreated?: boolean;
+  requiresApproval?: boolean;
+  immediateResult?: string;
+  response?: string;
+  question?: string;
+}
 
 const AT_PREFIX = /^@(\S+)\s*/;
 
@@ -62,4 +80,168 @@ export async function routeConductorMessage(
 
   const result = await chatWithAgent(db, agents, targetId, delivered, opts);
   return { routedTo: targetId, ...result };
+}
+
+// ── Telegram Gateway Integration ────────────────────────────────────────────
+
+/**
+ * Route a message from Telegram to the appropriate agent.
+ * Creates proper DB records (tasks, projects) and returns structured result.
+ */
+export async function routeMessage(
+  goal: string,
+  context: {
+    source: 'telegram';
+    sourceId: string;
+    chatId: number;
+    userId: number;
+  },
+): Promise<TelegramRouteResult> {
+  const db = openDb(process.env.FOUNDER_OS_DB || ':memory:');
+  const routable = realAgents.filter((a: RuntimeAgent) => a.id !== 'conductor');
+  
+  // Check if this is a simple query or a task that needs tracking
+  const isSimpleQuery = /^(durum|ne|nasıl|hangi|kaç|listele|göster)/i.test(goal.trim()) ||
+    goal.length < 30;
+  
+  // Pick agent
+  let targetId: string | undefined;
+  let delivered = goal;
+  
+  const at = goal.match(AT_PREFIX);
+  if (at) {
+    const explicit = matchAgent(routable, at[1]);
+    if (explicit) {
+      targetId = explicit.id;
+      delivered = goal.replace(AT_PREFIX, '').trim() || goal;
+    }
+  }
+  
+  if (!targetId) {
+    targetId = await pickAgent(routable, goal);
+  }
+  
+  // For simple queries, just route and return
+  if (isSimpleQuery) {
+    try {
+      const result = await chatWithAgent(db, realAgents, targetId!, delivered, {});
+      return {
+        type: 'agent_dispatch',
+        agentId: targetId,
+        immediateResult: result.reply,
+      };
+    } catch (error) {
+      return {
+        type: 'direct_response',
+        response: `Hata: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+  
+  // For complex tasks, create a lifecycle task
+  const taskId = randomUUID();
+  const now = new Date().toISOString();
+  
+  // Check if this might need a project
+  const needsProject = /proje|oluştur|başlat|kur|geliştir|implement/i.test(goal);
+  let projectId: string | undefined;
+  let projectCreated = false;
+  
+  if (needsProject) {
+    // Check if user mentioned an existing project
+    const projects = db.projects.all();
+    const mentionedProject = projects.find((p: { name: string }) => 
+      goal.toLowerCase().includes(p.name.toLowerCase())
+    );
+    
+    if (mentionedProject) {
+      projectId = mentionedProject.id;
+    } else {
+      // Create a new project
+      projectId = randomUUID();
+      const projectName = goal.split(/[,.]/).filter((s: string) => s.length > 10)[0]?.trim().slice(0, 50) || 
+        `Telegram Task ${new Date().toLocaleDateString('tr-TR')}`;
+      
+      db.projects.insert({
+        id: projectId,
+        name: projectName,
+        status: 'active',
+        kind: 'local',
+        createdAt: now,
+        updatedAt: now,
+        origin: 'os',
+        pathOrUrl: '',
+        purpose: goal.slice(0, 200),
+        permissionLevel: 'full_with_approval',
+        authorizedAgentIds: [targetId!],
+      });
+      projectCreated = true;
+    }
+  }
+  
+  // Create lifecycle task
+  db.lifecycleTasks.insert({
+    id: taskId,
+    projectId: projectId || 'telegram-tasks',  // Default project for non-project tasks
+    phase: 'implementation',  // Use valid phase
+    title: goal.slice(0, 100),
+    responsibleAgentId: targetId!,
+    status: 'open',
+    blockedReason: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+  
+  // Check if this needs approval
+  const needsApproval = /onay|onayla|izin|yayınla|deploy|push|commit|harca|öde|satın/i.test(goal);
+  let approvalId: string | undefined;
+  
+  if (needsApproval) {
+    approvalId = randomUUID();
+    db.lifecycleApprovals.insert({
+      id: approvalId,
+      projectId: projectId || 'telegram-tasks',
+      phase: 'implementation',
+      title: goal.slice(0, 100),
+      description: `Telegram'dan gelen talimat: ${goal}`,
+      requestedByAgentId: targetId!,
+      status: 'pending',
+      createdAt: now,
+      decidedAt: null,
+      decidedBy: null,
+      notes: null,
+    });
+  }
+  
+  // Now actually run the agent
+  try {
+    const result = await chatWithAgent(db, realAgents, targetId!, delivered, {});
+    
+    // Update task status
+    db.lifecycleTasks.updateStatus(taskId, needsApproval ? 'blocked' : 'done', null);
+    
+    return {
+      type: 'agent_dispatch',
+      agentId: targetId,
+      projectId,
+      taskId,
+      approvalId,
+      taskCreated: true,
+      projectCreated,
+      requiresApproval: needsApproval,
+      immediateResult: result.reply,
+    };
+  } catch (error) {
+    db.lifecycleTasks.updateStatus(taskId, 'blocked', 'Görev başarısız');
+    
+    return {
+      type: 'agent_dispatch',
+      agentId: targetId,
+      projectId,
+      taskId,
+      taskCreated: true,
+      projectCreated,
+      immediateResult: `Görev başarısız: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }

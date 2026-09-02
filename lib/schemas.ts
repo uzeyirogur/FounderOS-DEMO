@@ -1216,3 +1216,61 @@ export type CreativeFormat = z.infer<typeof CreativeFormatSchema>;
 export type CreativeSource = z.infer<typeof CreativeSourceSchema>;
 export type CreativeBrief = z.infer<typeof CreativeBriefSchema>;
 
+// ── Telegram Command Gateway ────────────────────────────────────────────────
+// Production-safe logging of every inbound Telegram command, with idempotency
+// key (update_id), correlation to FounderOS tasks, and approval flow support.
+
+export const TelegramCommandStatusSchema = z.enum([
+  'received',        // webhook received, not yet processed
+  'processing',      // conductor routing in progress
+  'awaiting_approval', // blocked on operator approval
+  'completed',       // successfully completed
+  'failed',          // processing error
+  'duplicate',       // idempotency: already processed this update_id
+]);
+
+export const TelegramCommandSchema = z.object({
+  id: z.string().min(1),
+  /** Telegram's update_id — the idempotency key. Never process twice. */
+  updateId: z.number().int(),
+  /** Telegram chat.id — used for reply routing */
+  chatId: z.number().int(),
+  /** Telegram user.id — for authorization */
+  userId: z.number().int(),
+  /** Display name for logs/UI */
+  userName: z.string().default(''),
+  /** Raw message text */
+  messageText: z.string().min(1),
+  /** Which agent handled it (set after conductor routing) */
+  routedToAgentId: z.string().nullable().default(null),
+  /** Correlated project if a project-level task was created */
+  projectId: z.string().nullable().default(null),
+  /** Correlated lifecycle task if one was created */
+  lifecycleTaskId: z.string().nullable().default(null),
+  /** Correlated approval if one is pending */
+  approvalId: z.string().nullable().default(null),
+  /** Conductor/agent response text (sent back to Telegram) */
+  responseText: z.string().nullable().default(null),
+  status: TelegramCommandStatusSchema.default('received'),
+  /** Error message if status=failed */
+  errorMessage: z.string().nullable().default(null),
+  /** Processing time in ms */
+  processingTimeMs: z.number().int().nullable().default(null),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
+
+export type TelegramCommandStatus = z.infer<typeof TelegramCommandStatusSchema>;
+export type TelegramCommand = z.infer<typeof TelegramCommandSchema>;
+
+// ── Telegram Authorized Users ───────────────────────────────────────────────
+// Whitelist of Telegram user IDs allowed to send commands. Empty = locked.
+export const TelegramAuthorizedUserSchema = z.object({
+  userId: z.number().int(),
+  userName: z.string().default(''),
+  role: z.enum(['owner', 'operator', 'viewer']).default('operator'),
+  addedAt: z.string().min(1),
+  addedBy: z.string().default('system'),
+});
+export type TelegramAuthorizedUser = z.infer<typeof TelegramAuthorizedUserSchema>;
+
