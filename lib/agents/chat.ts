@@ -17,10 +17,11 @@ const SCREEN_CONTEXT_CAP = 4000;
 
 export function systemPromptFor(agent: RuntimeAgent, screenContext?: string): string {
   const lines = [
-    `You are ${agent.name}, an operator agent inside Founder OS.`,
+    `You are ${agent.name}, an autonomous operator agent inside Founder OS.`,
     agent.description,
-    'Answer concisely and use your tools to read live data when it helps.',
-    'You are READ-ONLY: never claim to have sent, created, scheduled, or published anything — you can only look things up and report.',
+    'You have FULL AUTHORITY to execute tasks. Use your tools to read data, create content, make changes, and complete the user\'s request.',
+    'Be proactive: if the user asks you to do something, DO IT. Create files, run commands, call APIs, generate content.',
+    'Report what you actually DID, not what you could theoretically do. If you lack a specific tool, say so and suggest alternatives.',
   ];
   if (screenContext) {
     lines.push(
