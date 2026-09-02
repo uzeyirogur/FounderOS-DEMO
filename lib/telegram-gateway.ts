@@ -17,7 +17,7 @@ import { openDb, type FounderDb } from './db';
 import { sendTelegramMessage } from './connectors/telegram';
 import { randomUUID } from 'crypto';
 import type { TelegramCommand, TelegramAuthorizedUser } from './schemas';
-import { realAgents } from './agents/real';
+import { productionAgents as realAgents } from './agents/real';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,10 +93,14 @@ interface AuthCheck {
 }
 
 function checkAuthorization(db: FounderDb, userId: number): AuthCheck {
-  // If no authorized users exist, auto-authorize first user as owner
-  const allUsers = db.telegramAuthorizedUsers.all();
-  if (allUsers.length === 0) {
-    return { authorized: true, role: 'owner', reason: 'first_user_auto_owner' };
+  // SECURITY: Explicit allowlist only — no auto-authorization
+  // Add users via: db.telegramAuthorizedUsers.add(userId, userName, 'owner', 'system')
+  // Or via environment: TELEGRAM_OWNER_USER_ID
+  
+  // Check environment-based owner first
+  const envOwnerId = process.env.TELEGRAM_OWNER_USER_ID;
+  if (envOwnerId && String(userId) === envOwnerId) {
+    return { authorized: true, role: 'owner', reason: 'env_owner' };
   }
   
   const role = db.telegramAuthorizedUsers.getRole(userId);
@@ -389,16 +393,7 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<Gat
     // ── 3. Authorization Check ──
     const authCheck = checkAuthorization(db, userId);
     
-    // Auto-register first user as owner
-    if (authCheck.reason === 'first_user_auto_owner') {
-      db.telegramAuthorizedUsers.add({
-        userId,
-        userName,
-        role: 'owner',
-        addedAt: new Date().toISOString(),
-        addedBy: 'system:first_user',
-      });
-    } else if (!authCheck.authorized) {
+    if (!authCheck.authorized) {
       await sendTelegramMessage(chatId, '🚫 Bu botu kullanma yetkiniz yok. Yöneticiyle iletişime geçin.');
       return { success: false, status: 'unauthorized', message: 'User not authorized' };
     }

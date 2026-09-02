@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
-import { realAgents } from '@/lib/agents/real';
+import { productionAgents as realAgents } from '@/lib/agents/real';
 import { chatWithAgent } from '@/lib/agents/chat';
 import { routeConductorMessage } from '@/lib/agents/conductor';
 

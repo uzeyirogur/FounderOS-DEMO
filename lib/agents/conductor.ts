@@ -10,7 +10,7 @@ import { chatWithAgent, type ChatResult } from '@/lib/agents/chat';
 import type { FounderDb } from '@/lib/db';
 import type { RuntimeAgent } from '@/lib/agents/runtime';
 import { openDb } from '@/lib/db';
-import { realAgents } from './real';
+import { productionAgents as realAgents } from './real';
 import { randomUUID } from 'crypto';
 
 export type ConductorResult = ChatResult & { routedTo: string };

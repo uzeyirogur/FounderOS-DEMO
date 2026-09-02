@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { runSchedulerTick } from '@/lib/scheduler/tick';
-import { realAgents } from '@/lib/agents/real';
+import { productionAgents as realAgents } from '@/lib/agents/real';
 
 export const dynamic = 'force-dynamic';
 
