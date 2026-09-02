@@ -41,19 +41,75 @@ function matchAgent(agents: RuntimeAgent[], token: string): RuntimeAgent | undef
   return agents.find((a) => a.id === token || a.id === t || slug(a.name) === t);
 }
 
-/** Ask the model for the single best-fit agent id; fall back to the first agent. */
+/** Keyword-based agent matching — fast, no LLM needed */
+function matchAgentByKeywords(routable: RuntimeAgent[], message: string): string | undefined {
+  const lower = message.toLowerCase();
+  
+  // Research keywords
+  if (/araştır|research|analiz|incel|karşılaştır|compare/i.test(lower)) {
+    const research = routable.find(a => a.id.includes('research') || a.name.toLowerCase().includes('araştır'));
+    if (research) return research.id;
+  }
+  
+  // Social media keywords
+  if (/sosyal|social|linkedin|twitter|instagram|tiktok|post|paylaş/i.test(lower)) {
+    const social = routable.find(a => a.id.includes('social') || a.name.toLowerCase().includes('sosyal'));
+    if (social) return social.id;
+  }
+  
+  // Code/development keywords
+  if (/kod|code|geliştir|develop|implement|bug|fix|backend|frontend/i.test(lower)) {
+    const code = routable.find(a => a.id.includes('code') || a.id.includes('claude-code'));
+    if (code) return code.id;
+  }
+  
+  // Marketing/growth keywords
+  if (/pazarlama|marketing|growth|reklam|ad|kampanya|campaign/i.test(lower)) {
+    const growth = routable.find(a => a.id.includes('growth') || a.id.includes('marketing'));
+    if (growth) return growth.id;
+  }
+  
+  // Sales/CRM keywords
+  if (/satış|sales|crm|müşteri|customer|lead/i.test(lower)) {
+    const sales = routable.find(a => a.id.includes('sales') || a.id.includes('crm'));
+    if (sales) return sales.id;
+  }
+  
+  // Communication keywords
+  if (/email|mail|slack|mesaj|message|iletişim/i.test(lower)) {
+    const comms = routable.find(a => a.id.includes('comms') || a.name.toLowerCase().includes('comms'));
+    if (comms) return comms.id;
+  }
+  
+  return undefined;
+}
+
+/** Ask the model for the single best-fit agent id; fall back to keyword matching or first agent. */
 async function pickAgent(routable: RuntimeAgent[], message: string): Promise<string> {
-  const roster = routable.map((a) => `- ${a.id}: ${a.name} — ${a.description}`).join('\n');
-  const system = [
-    'You are the Conductor, the router for Founder OS operator agents.',
-    'Pick the single best-fit agent for the user message.',
-    'Reply with ONLY that agent id and nothing else. Options:',
-    roster,
-  ].join('\n');
-  const res = await llmChat({ system, messages: [{ role: 'user', content: message }] });
-  const picked = (res.text.trim().split(/\s+/)[0] ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
-  const found = routable.find((a) => a.id === picked);
-  return (found ?? routable[0]).id;
+  // First try keyword matching (fast, no LLM)
+  const keywordMatch = matchAgentByKeywords(routable, message);
+  if (keywordMatch) return keywordMatch;
+  
+  // Then try LLM routing
+  try {
+    const roster = routable.map((a) => `- ${a.id}: ${a.name} — ${a.description}`).join('\n');
+    const system = [
+      'You are the Conductor, the router for Founder OS operator agents.',
+      'Pick the single best-fit agent for the user message.',
+      'Reply with ONLY that agent id and nothing else. Options:',
+      roster,
+    ].join('\n');
+    const res = await llmChat({ system, messages: [{ role: 'user', content: message }] });
+    const picked = (res.text.trim().split(/\s+/)[0] ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const found = routable.find((a) => a.id === picked);
+    if (found) return found.id;
+  } catch (error) {
+    // LLM failed (rate limit, network, etc.) — fall through to default
+    console.warn('[Conductor] LLM routing failed, using default agent:', error instanceof Error ? error.message : error);
+  }
+  
+  // Final fallback: first agent (usually ai-intelligence or research)
+  return routable[0].id;
 }
 
 export async function routeConductorMessage(
